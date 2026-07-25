@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0f">
+<title>NK Godown</title>
+<style>
+:root{
+  --bg:#0b0b0f;--panel:#15151b;--panel2:#1d1d25;--ink:#f5f5f7;--mut:#9a9aa6;--mut2:#63636e;
+  --hair:rgba(255,255,255,.09);--hair2:rgba(255,255,255,.16);
+  --indigo:#6366f1;--violet:#8b5cf6;--mint:#34d399;--amber:#f5b13d;--rose:#fb7185;--sky:#38bdf8;
+  --grad:linear-gradient(135deg,#6366f1,#8b5cf6);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif;
+  letter-spacing:-.01em;min-height:100dvh;font-feature-settings:"tnum" 1}
+.hide{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+button,input,select{font-family:inherit;font-size:16px}
+.wrap{width:min(600px,100%);margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 20px)}
+
+/* gate */
+#gate{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px}
+.logo{width:64px;height:64px;border-radius:18px;background:var(--grad);display:grid;place-items:center;font-size:30px;box-shadow:0 10px 34px -8px rgba(99,102,241,.6)}
+.brand{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.tag{font-size:13px;color:var(--mut);margin-top:-10px}
+.field{width:100%;max-width:320px;font-size:18px;padding:15px;border-radius:14px;border:1px solid var(--hair2);background:#101016;color:var(--ink);outline:none;text-align:center}
+.field:focus{border-color:var(--indigo)}
+.pri{width:100%;max-width:320px;background:var(--grad);color:#fff;border:none;border-radius:14px;padding:17px;font-size:17px;font-weight:700;box-shadow:0 10px 26px -8px rgba(99,102,241,.55)}
+.pri:active{transform:scale(.98)}
+.linkbtn{background:none;border:none;color:var(--sky);font-size:14px;font-weight:600}
+
+/* topbar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.top .who{font-size:13px;color:var(--mut)}
+.top .who b{color:var(--ink)}
+.srcbtn{background:var(--panel);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:9px 12px;font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center}
+.srcbtn .lbl{color:var(--mut2);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.iconlink{background:var(--panel);border:1px solid var(--hair);color:var(--mut);border-radius:12px;padding:9px 11px;font-size:13px;font-weight:600}
+
+/* add card */
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:16px}
+.photo{position:relative;width:100%;aspect-ratio:4/3;border-radius:16px;border:2px dashed var(--hair2);background:#101016;display:grid;place-items:center;overflow:hidden;cursor:pointer}
+.photo.filled{border-style:solid;border-color:var(--mint)}
+.photo img{width:100%;height:100%;object-fit:cover}
+.photo .ph{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--mut)}
+.photo .ph .ic{font-size:44px}
+.photo .ph .t{font-size:15px;font-weight:600}
+.photo .redo{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.6);border:1px solid var(--hair2);color:#fff;border-radius:10px;padding:7px 11px;font-size:12px;font-weight:600}
+.lab{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:11px 14px;font-size:15px;font-weight:600}
+.chip.on{background:var(--grad);border-color:transparent;color:#fff}
+.chip.add{color:var(--sky);border-style:dashed}
+.qtyrow{display:flex;gap:10px;align-items:stretch}
+.toggle{display:flex;background:var(--panel2);border:1px solid var(--hair);border-radius:12px;padding:3px}
+.toggle button{background:none;border:none;color:var(--mut);font-size:14px;font-weight:700;padding:10px 14px;border-radius:9px}
+.toggle button.on{background:var(--grad);color:#fff}
+.qtyin{flex:1;font-size:22px;font-weight:700;text-align:center;padding:12px;border-radius:12px;border:1px solid var(--hair2);background:#101016;color:var(--ink);outline:none}
+.qtyin:focus{border-color:var(--indigo)}
+.optin{width:100%;font-size:15px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);background:#101016;color:var(--ink);outline:none}
+.optin:focus{border-color:var(--indigo)}
+.save{background:var(--mint);color:#04241a;border:none;border-radius:15px;padding:17px;font-size:17px;font-weight:800;box-shadow:0 10px 24px -8px rgba(52,211,153,.5)}
+.save:active{transform:scale(.985)}
+.save:disabled{opacity:.5;box-shadow:none}
+.recent{display:flex;gap:8px;overflow-x:auto;padding-top:2px}
+.recent .r{flex:0 0 auto;width:58px;height:58px;border-radius:12px;overflow:hidden;border:1px solid var(--hair);position:relative}
+.recent .r img{width:100%;height:100%;object-fit:cover}
+.subline{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--mut);margin-top:2px}
+.pend{color:var(--amber);font-weight:600}
+
+/* owner */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:12px 6px;text-align:center}
+.stat b{display:block;font-size:20px;font-weight:800}
+.stat span{display:block;font-size:9.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+.searchbar{width:100%;font-size:15px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);background:#101016;color:var(--ink);outline:none;margin-bottom:10px}
+.fchips{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px}
+.fchip{flex:0 0 auto;background:var(--panel);border:1px solid var(--hair);color:var(--mut);border-radius:99px;padding:8px 13px;font-size:13px;font-weight:600}
+.fchip.on{background:var(--ink);color:#0b0b0f;border-color:var(--ink)}
+.row{display:flex;gap:12px;background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:10px;margin-bottom:9px}
+.row img{width:74px;height:74px;border-radius:12px;object-fit:cover;flex:0 0 auto;background:#101016}
+.row .meta{flex:1;min-width:0}
+.row .m1{font-size:15px;font-weight:700}
+.row .m2{font-size:13px;color:var(--mut);margin-top:2px}
+.row .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.row .tg{font-size:11px;font-weight:600;background:var(--panel2);border:1px solid var(--hair);color:var(--mut);border-radius:8px;padding:3px 7px}
+.row .tg.zone{color:var(--sky)} .row .tg.src{color:var(--amber)}
+.empty{text-align:center;color:var(--mut2);font-size:14px;padding:40px 10px}
+
+/* sheet */
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:50;display:none;align-items:flex-end}
+#sheet.on{display:flex}
+.sheet{background:#15151b;border:1px solid var(--hair);border-bottom:none;border-radius:22px 22px 0 0;width:100%;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);display:flex;flex-direction:column;gap:12px}
+.grab{width:38px;height:4px;border-radius:99px;background:var(--hair2);align-self:center}
+.sheet h4{margin:0;font-size:17px;font-weight:700}
+
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 90px);transform:translateX(-50%) translateY(16px);background:#16161c;border:1px solid var(--hair2);color:var(--ink);padding:12px 18px;border-radius:99px;font-size:14px;font-weight:700;z-index:60;opacity:0;pointer-events:none;transition:.2s;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{color:var(--mint)} #toast.err{color:var(--rose)}
+</style></head>
+<body>
+
+<!-- LOGIN -->
+<div id="gate">
+  <div class="logo">📦</div>
+  <div class="brand">NK Godown</div>
+  <div class="tag">Log stock as it lands. Track it from anywhere.</div>
+  <input id="nameIn" class="field" placeholder="Your name" autocomplete="off">
+  <button class="pri" onclick="loginStaff()">Start logging →</button>
+  <button class="linkbtn" onclick="ownerLogin()">I'm the owner — view everything</button>
+</div>
+
+<!-- STAFF: ADD -->
+<div id="add" class="wrap hide">
+  <div class="top">
+    <button class="srcbtn" onclick="openSource()"><span class="lbl">From</span> <span id="srcLbl">Set godown</span> ▾</button>
+    <div style="display:flex;gap:8px">
+      <button class="iconlink" onclick="showOwnerFromStaff()">Owner</button>
+      <button class="iconlink" onclick="logout()">Exit</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="photo" id="photoBox" onclick="pickPhoto()">
+      <div class="ph" id="photoPh"><div class="ic">📷</div><div class="t">Tap to take photo</div></div>
+      <img id="photoImg" class="hide" alt="">
+      <button class="redo hide" id="redoBtn" onclick="event.stopPropagation();pickPhoto()">Retake</button>
+    </div>
+    <input id="fileIn" type="file" accept="image/*" capture="environment" class="hide" onchange="onPhoto(event)">
+
+    <div>
+      <div class="lab">What is it?</div>
+      <div class="chips" id="catChips"></div>
+    </div>
+
+    <div>
+      <div class="lab">How much?</div>
+      <div class="qtyrow">
+        <div class="toggle"><button id="tgLot" class="on" onclick="setType('lot')">Lot</button><button id="tgPiece" onclick="setType('piece')">Piece</button></div>
+        <input id="qtyIn" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty">
+      </div>
+      <div class="chips" id="unitChips" style="margin-top:9px"></div>
+    </div>
+
+    <input id="descIn" class="optin" placeholder="Size / brand / note (optional)">
+
+    <div>
+      <div class="lab">Where is it placed?</div>
+      <div class="chips" id="zoneChips"></div>
+    </div>
+
+    <button class="save" id="saveBtn" onclick="saveEntry()">✓ Save entry</button>
+  </div>
+
+  <div class="subline">
+    <span id="todayLbl">Today: 0 logged</span>
+    <span id="pendLbl" class="pend hide"></span>
+  </div>
+  <div class="recent" id="recentStrip"></div>
+</div>
+
+<!-- OWNER -->
+<div id="owner" class="wrap hide">
+  <div class="top">
+    <div class="who">Owner view · <b>NK Godown</b></div>
+    <div style="display:flex;gap:8px">
+      <button class="iconlink" onclick="loadStock()">↻</button>
+      <button class="iconlink" onclick="logout()">Exit</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b class="num" id="stEntries">0</b><span>Entries</span></div>
+    <div class="stat"><b class="num" id="stQty">0</b><span>Total qty</span></div>
+    <div class="stat"><b class="num" id="stToday">0</b><span>Today</span></div>
+    <div class="stat"><b class="num" id="stZones">0</b><span>Zones</span></div>
+  </div>
+  <input id="searchIn" class="searchbar" placeholder="Search item, note, zone…" oninput="renderStock()">
+  <div class="fchips" id="filterChips"></div>
+  <div id="stockList"></div>
+</div>
+
+<!-- SHEET (source / owner pin) -->
+<div id="sheet" onclick="if(event.target.id==='sheet')closeSheet()">
+  <div class="sheet" id="sheetInner"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB="https://enjlgflisuywkaorxetv.supabase.co";
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuamxnZmxpc3V5d2thb3J4ZXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5OTU3NjAsImV4cCI6MjA5ODU3MTc2MH0.qKoUBQonv1FYSSrIGfInqXzSWGZHRrGWWHtwgGfL9DQ";
+const OWNER_PIN="4321";
+const H={apikey:KEY,Authorization:"Bearer "+KEY};
+const HJ={...H,"Content-Type":"application/json"};
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+
+const CATS=["Plywood","Door","Hardware","Glass","Laminate","Mica","Adhesive","Other"];
+const UNITS=["pcs","sheets","bundles","boxes","kg","sets"];
+
+let me_={name:localStorage.getItem('nkg_name')||'',role:'staff'};
+let src=localStorage.getItem('nkg_src')||'';
+let zones=[];
+let sources=JSON.parse(localStorage.getItem('nkg_sources')||'[]');
+let sel={cat:'',unit:'',type:'lot',zone:'',photo:null};
+let stock=[];
+let filter={cat:'',zone:'',src:''};
+
+/* ---------- auth / routing ---------- */
+function loginStaff(){
+  const n=$('nameIn').value.trim(); if(!n){toast('Enter your name','err');return;}
+  me_={name:n,role:'staff'}; localStorage.setItem('nkg_name',n);
+  showStaff();
+}
+function ownerLogin(){
+  sheetHTML('<div class="grab"></div><h4>Owner access</h4><input id="pinIn" class="field" type="password" inputmode="numeric" placeholder="PIN" style="max-width:none">'
+   +'<button class="pri" style="max-width:none" onclick="checkPin()">Enter</button>');
+  openSheet(); setTimeout(()=>$('pinIn')&&$('pinIn').focus(),100);
+}
+function checkPin(){ if($('pinIn').value===OWNER_PIN){closeSheet();me_={name:'Owner',role:'owner'};showOwner();}else{toast('Wrong PIN','err');} }
+function showOwnerFromStaff(){ ownerLogin(); }
+function logout(){ ['add','owner'].forEach(i=>$(i).classList.add('hide')); $('gate').classList.remove('hide'); }
+
+async function showStaff(){
+  $('gate').classList.add('hide'); $('owner').classList.add('hide'); $('add').classList.remove('hide');
+  buildChips(); setType('lot');
+  updateSrcLbl();
+  if(!src){ openSource(); }
+  await loadZones(); renderZoneChips(); refreshToday(); syncPending();
+}
+async function showOwner(){
+  $('gate').classList.add('hide'); $('add').classList.add('hide'); $('owner').classList.remove('hide');
+  await loadStock();
+}
+
+/* ---------- source godown ---------- */
+function updateSrcLbl(){ $('srcLbl').textContent = src||'Set godown'; }
+function openSource(){
+  const recent = sources.map(s=>`<button class="chip${s===src?' on':''}" onclick="setSource('${esc(s)}')">${esc(s)}</button>`).join('');
+  sheetHTML('<div class="grab"></div><h4>Which godown are you unloading?</h4>'
+    +'<div style="font-size:13px;color:var(--mut)">Set it once — every item you log is tagged to it automatically.</div>'
+    +(recent?`<div class="chips">${recent}</div>`:'')
+    +'<input id="srcNew" class="optin" placeholder="Type godown name (e.g. Main Market)">'
+    +'<button class="pri" style="max-width:none" onclick="addSource()">Use this godown</button>');
+  openSheet();
+}
+function setSource(s){ src=s; localStorage.setItem('nkg_src',s); updateSrcLbl(); closeSheet(); }
+function addSource(){
+  const s=$('srcNew').value.trim(); if(!s)return;
+  if(!sources.includes(s)){sources.unshift(s);sources=sources.slice(0,8);localStorage.setItem('nkg_sources',JSON.stringify(sources));}
+  setSource(s);
+}
+
+/* ---------- chips ---------- */
+function buildChips(){
+  $('catChips').innerHTML=CATS.map(c=>`<button class="chip" data-cat="${c}" onclick="setCat('${c}')">${c}</button>`).join('');
+  $('unitChips').innerHTML=UNITS.map(u=>`<button class="chip" data-unit="${u}" onclick="setUnit('${u}')">${u}</button>`).join('');
+}
+function setCat(c){ sel.cat=c; document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.cat===c)); }
+function setUnit(u){ sel.unit=u; document.querySelectorAll('#unitChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.unit===u)); }
+function setType(t){ sel.type=t; $('tgLot').classList.toggle('on',t==='lot'); $('tgPiece').classList.toggle('on',t==='piece'); }
+
+async function loadZones(){
+  try{const r=await fetch(SB+"/rest/v1/nkg_zones?select=name&order=created_at.asc",{headers:H});const a=await r.json();zones=Array.isArray(a)?a.map(z=>z.name):[];}catch(e){}
+}
+function renderZoneChips(){
+  $('zoneChips').innerHTML=zones.map(z=>`<button class="chip${z===sel.zone?' on':''}" data-zone="${esc(z)}" onclick="setZone('${esc(z)}')">${esc(z)}</button>`).join('')
+    +'<button class="chip add" onclick="newZone()">＋ New zone</button>';
+}
+function setZone(z){ sel.zone=z; renderZoneChips(); }
+async function newZone(){
+  const name=prompt("New zone / rack name (e.g. A1, Rack 3, Back wall):"); if(!name)return;
+  const z=name.trim(); if(!z)return;
+  if(!zones.includes(z)){ try{await fetch(SB+"/rest/v1/nkg_zones",{method:'POST',headers:HJ,body:JSON.stringify({name:z,created_by:me_.name})});}catch(e){} zones.push(z);}
+  sel.zone=z; renderZoneChips();
+}
+
+/* ---------- photo ---------- */
+function pickPhoto(){ $('fileIn').click(); }
+function onPhoto(e){
+  const f=e.target.files&&e.target.files[0]; if(!f)return;
+  const img=new Image(); const rd=new FileReader();
+  rd.onload=()=>{ img.onload=()=>{
+    const max=1280, sc=Math.min(1,max/Math.max(img.width,img.height));
+    const c=document.createElement('canvas'); c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    sel.photo=c.toDataURL('image/jpeg',0.72);
+    $('photoImg').src=sel.photo; $('photoImg').classList.remove('hide'); $('photoPh').classList.add('hide');
+    $('redoBtn').classList.remove('hide'); $('photoBox').classList.add('filled');
+  }; img.src=rd.result; };
+  rd.readAsDataURL(f);
+}
+
+/* ---------- save ---------- */
+function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=h.match(/:(.*?);/)[1];const bin=atob(b);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:mime});}
+async function saveEntry(){
+  if(!sel.photo){toast('Take a photo first','err');return;}
+  if(!sel.cat){toast('Pick what it is','err');return;}
+  if(!sel.zone){toast('Pick where it is placed','err');return;}
+  const entry={
+    category:sel.cat, item_desc:$('descIn').value.trim()||null, entry_type:sel.type,
+    qty:$('qtyIn').value?Number($('qtyIn').value):null, unit:sel.unit||null,
+    source_godown:src||null, zone_name:sel.zone, logged_by:me_.name, note:null,
+    _photo:sel.photo, _ts:Date.now()
+  };
+  $('saveBtn').disabled=true; $('saveBtn').textContent='Saving…';
+  const ok=await pushEntry(entry);
+  $('saveBtn').disabled=false; $('saveBtn').textContent='✓ Save entry';
+  if(ok){ toast('Saved ✓','ok'); } else { queue(entry); toast('No signal — saved on phone, will sync','err'); }
+  // reset for next item, keep source + zone + category for speed
+  sel.photo=null; $('photoImg').classList.add('hide'); $('photoPh').classList.remove('hide'); $('redoBtn').classList.add('hide'); $('photoBox').classList.remove('filled');
+  $('qtyIn').value=''; $('descIn').value='';
+  refreshToday(); pushRecent(entry);
+}
+async function pushEntry(entry){
+  try{
+    const path=today()+'/'+entry._ts+'-'+Math.floor(performance.now()%100000)+'.jpg';
+    const up=await fetch(SB+"/storage/v1/object/nkg-photos/"+path,{method:'POST',headers:{...H,"Content-Type":"image/jpeg","x-upsert":"true"},body:dataURLtoBlob(entry._photo)});
+    if(!up.ok)throw new Error('upload');
+    const photo_url=SB+"/storage/v1/object/public/nkg-photos/"+path;
+    const row={...entry}; delete row._photo; delete row._ts; row.photo_url=photo_url;
+    const r=await fetch(SB+"/rest/v1/nkg_stock",{method:'POST',headers:HJ,body:JSON.stringify(row)});
+    if(!r.ok)throw new Error('insert');
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------- offline queue ---------- */
+function pending(){ return JSON.parse(localStorage.getItem('nkg_pending')||'[]'); }
+function queue(entry){ const p=pending(); p.push(entry); localStorage.setItem('nkg_pending',JSON.stringify(p)); showPend(); }
+function showPend(){ const n=pending().length; const el=$('pendLbl'); if(n){el.classList.remove('hide');el.textContent='⏳ '+n+' waiting to sync';}else{el.classList.add('hide');} }
+async function syncPending(){
+  let p=pending(); if(!p.length){showPend();return;}
+  const keep=[];
+  for(const e of p){ const ok=await pushEntry(e); if(!ok)keep.push(e); }
+  localStorage.setItem('nkg_pending',JSON.stringify(keep)); showPend();
+  if(p.length&&!keep.length)toast('Synced ✓','ok');
+}
+window.addEventListener('online',syncPending);
+
+/* ---------- today / recent ---------- */
+let todayCount=Number(localStorage.getItem('nkg_today_'+today())||0);
+function refreshToday(){ $('todayLbl').textContent='Today: '+todayCount+' logged'; showPend(); }
+function bumpToday(){ todayCount++; localStorage.setItem('nkg_today_'+today(),todayCount); refreshToday(); }
+let recent=[];
+function pushRecent(e){ bumpToday(); recent.unshift(e._photo); recent=recent.slice(0,8);
+  $('recentStrip').innerHTML=recent.map(p=>`<div class="r"><img src="${p}"></div>`).join(''); }
+
+/* ---------- owner ---------- */
+async function loadStock(){
+  try{ const r=await fetch(SB+"/rest/v1/nkg_stock?select=*&order=created_at.desc",{headers:H}); stock=await r.json(); if(!Array.isArray(stock))stock=[]; }
+  catch(e){ stock=[]; toast('Could not load','err'); }
+  buildFilters(); renderStock();
+}
+function buildFilters(){
+  const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))];
+  const zs=[...new Set(stock.map(s=>s.zone_name).filter(Boolean))];
+  const html=['<button class="fchip'+(!filter.cat&&!filter.zone?' on':'')+'" onclick="clearFilter()">All</button>']
+    .concat(cats.map(c=>`<button class="fchip${filter.cat===c?' on':''}" onclick="setFilter('cat','${esc(c)}')">${esc(c)}</button>`))
+    .concat(zs.map(z=>`<button class="fchip${filter.zone===z?' on':''}" onclick="setFilter('zone','${esc(z)}')">📍 ${esc(z)}</button>`));
+  $('filterChips').innerHTML=html.join('');
+}
+function clearFilter(){ filter={cat:'',zone:'',src:''}; buildFilters(); renderStock(); }
+function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderStock(); }
+function renderStock(){
+  const q=($('searchIn').value||'').toLowerCase();
+  let list=stock.filter(s=>{
+    if(filter.cat&&s.category!==filter.cat)return false;
+    if(filter.zone&&s.zone_name!==filter.zone)return false;
+    if(q){const hay=[s.category,s.item_desc,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase();if(!hay.includes(q))return false;}
+    return true;
+  });
+  const tq=stock.reduce((a,s)=>a+(Number(s.qty)||0),0);
+  const td=stock.filter(s=>(s.created_at||'').slice(0,10)===today()).length;
+  $('stEntries').textContent=stock.length; $('stQty').textContent=tq; $('stToday').textContent=td;
+  $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size;
+  if(!list.length){ $('stockList').innerHTML='<div class="empty">No entries yet.<br>Stock will appear here the moment staff start logging.</div>'; return; }
+  $('stockList').innerHTML=list.map(s=>{
+    const t=s.created_at?new Date(s.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    const qty=(s.qty!=null?s.qty:'')+' '+(s.unit||'');
+    return `<div class="row"><img src="${s.photo_url||''}" loading="lazy" onerror="this.style.opacity=.2">`
+     +`<div class="meta"><div class="m1">${esc(s.category||'—')}${s.item_desc?' · '+esc(s.item_desc):''}</div>`
+     +`<div class="m2">${qty.trim()?esc(qty.trim()):'—'} · ${esc(s.entry_type||'')} · by ${esc(s.logged_by||'—')} · ${t}</div>`
+     +`<div class="tags">${s.zone_name?`<span class="tg zone">📍 ${esc(s.zone_name)}</span>`:''}${s.source_godown?`<span class="tg src">from ${esc(s.source_godown)}</span>`:''}</div>`
+     +`</div></div>`;
+  }).join('');
+}
+
+/* ---------- misc ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function sheetHTML(h){ $('sheetInner').innerHTML=h; }
+function openSheet(){ $('sheet').classList.add('on'); }
+function closeSheet(){ $('sheet').classList.remove('on'); }
+let tt; function toast(m,k){ const t=$('toast'); t.textContent=m; t.className=''; if(k)t.classList.add(k); t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2200); }
+
+/* boot: resume staff if name saved */
+if(me_.name){ $('nameIn').value=me_.name; }
+
+</script>
+</body>
+</html>
