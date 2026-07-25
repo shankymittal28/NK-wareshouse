@@ -66,6 +66,9 @@ button,input,select{font-family:inherit;font-size:16px}
 .stat b{display:block;font-size:20px;font-weight:800}.stat span{display:block;font-size:9.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
 .obtns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .obtn{flex:1;min-width:44%;background:var(--panel);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:12px;font-size:14px;font-weight:700}.obtn.go{background:var(--grad);border-color:transparent;color:#fff}
+.rowbtns{display:flex;gap:5px;flex:0 0 auto;align-items:center}
+.rowbtns .obtn{flex:0 0 auto;min-width:0;padding:9px 10px}
+.rowbtns .obtn.ed{padding:9px 9px;color:var(--sky);font-size:15px}
 .searchbar{width:100%;font-size:15px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);background:#101016;color:var(--ink);outline:none;margin-bottom:10px}
 .fchips{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px}
 .fchip{flex:0 0 auto;background:var(--panel);border:1px solid var(--hair);color:var(--mut);border-radius:99px;padding:8px 13px;font-size:13px;font-weight:600}.fchip.on{background:var(--ink);color:#0b0b0f;border-color:var(--ink)}
@@ -102,7 +105,7 @@ button,input,select{font-family:inherit;font-size:16px}
   <div class="logo">&#128230;</div><div class="brand">NK Warehouse</div><div class="tag">Tap your name to start</div>
   <div class="namebtns" id="staffBtns"></div>
   <div class="nostaff hide" id="noStaff">No staff added yet.<br>Owner: tap below, add staff in <b>Manage</b>.</div>
-  <button class="linkbtn" onclick="showOwner()">I'm the owner &rarr;</button>
+  <button class="linkbtn" onclick="ownerLogin()">I'm the owner &rarr;</button>
 </div>
 
 <div id="add" class="wrap hide">
@@ -345,14 +348,20 @@ function clearFilter(){ filter={}; buildFilters(); renderOwner(); }
 function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderOwner(); }
 function matchF(s,q){ if(filter.category&&s.category!==filter.category)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; }
 function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m={};
-  stock.forEach(s=>{ if(!matchF(s,q))return; const k=[s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); if(!m[k])m[k]={name:s.item_name||s.category||'—',category:s.category,brand:s.brand,thickness:s.thickness,size:s.size,design:s.design,inq:0,outq:0}; const g=m[k]; if(s.direction==='out')g.outq+=Number(s.qty)||0; else g.inq+=Number(s.qty)||0; });
+  stock.forEach(s=>{ if(!matchF(s,q))return; const k=[s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); if(!m[k])m[k]={name:s.item_name||s.category||'—',category:s.category,brand:s.brand,thickness:s.thickness,size:s.size,design:s.design,inq:0,outq:0,ids:[]}; const g=m[k]; g.ids.push(s.id); if(s.direction==='out')g.outq+=Number(s.qty)||0; else g.inq+=Number(s.qty)||0; });
   groups=Object.values(m).sort((a,b)=>a.name>b.name?1:-1);
   if(!groups.length){ $('itemList').innerHTML='<div class="empty">No stock yet.</div>'; return; }
   $('itemList').innerHTML=groups.map((g,i)=>{ const net=g.inq-g.outq; const ic=g.category==='Door'?'&#128682;':'&#128230;';
-    return '<div class="row"><div class="thumb">'+ic+'</div><div class="meta"><div class="m1">'+esc(g.name)+' <span style="color:'+(net>0?'var(--mint)':'var(--rose)')+'">'+net+' pcs</span></div><div class="m2">'+esc(g.category||'')+' &middot; in '+g.inq+(g.outq?' &middot; out '+g.outq:'')+'</div></div><button class="obtn" style="flex:0 0 auto;min-width:0;padding:9px 12px" onclick="openDeduct('+i+')">&#8722; Out</button></div>'; }).join('');
+    return '<div class="row"><div class="thumb">'+ic+'</div><div class="meta"><div class="m1">'+esc(g.name)+' <span style="color:'+(net>0?'var(--mint)':'var(--rose)')+'">'+net+' pcs</span></div><div class="m2">'+esc(g.category||'')+' &middot; in '+g.inq+(g.outq?' &middot; out '+g.outq:'')+'</div></div><div class="rowbtns"><button class="obtn ed" onclick="openRename('+i+')" title="Edit name">&#9998;</button><button class="obtn" onclick="openDeduct('+i+')">&#8722; Out</button></div></div>'; }).join('');
 }
 function openDeduct(i){ const g=groups[i]; if(!g)return; window.__dg=g; const net=g.inq-g.outq;
   sheetHTML('<div class="grab"></div><h4>Give out to customer</h4><div style="font-size:16px;font-weight:700">'+esc(g.name)+'</div><div style="font-size:13px;color:var(--mut)">Available: <b style="color:var(--ink)">'+net+' pcs</b></div><div class="lab" style="margin-top:8px">Quantity out</div><div class="stepper"><button onclick="dStep(-1)">&#8722;</button><input id="dq" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty"><button onclick="dStep(1)">+</button></div><div class="lab" style="margin-top:10px">To customer <span class="opt">optional</span></div><input id="dcust" class="optin" placeholder="Customer name (optional)"><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmDeduct()">&#8722; Deduct from stock</button>'); openSheet();
+}
+function openRename(i){ const g=groups[i]; if(!g)return; window.__rg=g;
+  sheetHTML('<div class="grab"></div><h4>Edit item name</h4><div style="font-size:13px;color:var(--mut)">Fix a misspelled or unclear name. This updates every entry for this item.</div><div class="lab" style="margin-top:10px">Item name</div><input id="rn" class="optin" value="'+esc(g.name)+'"><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmRename()">Save name</button>'); openSheet(); setTimeout(()=>{const el=$('rn'); if(el){el.focus();el.select&&el.select();}},100);
+}
+async function confirmRename(){ const g=window.__rg; if(!g)return; const nm=$('rn').value.trim(); if(!nm){toast('Enter a name','err');return;} const ids=g.ids||[]; if(!ids.length){closeSheet();return;}
+  const r=await api("/rest/v1/nkg_stock?id=in.("+ids.join(',')+")",{method:'PATCH',headers:HJ,body:JSON.stringify({item_name:nm})}); closeSheet(); if(r===null){toast('Failed — check signal','err');return;} toast('Name updated ✓','ok'); await loadStock();
 }
 function dStep(d){ const v=Math.max(0,(Number($('dq').value)||0)+d); $('dq').value=v||''; }
 async function confirmDeduct(){ const g=window.__dg; if(!g)return; const qty=Number($('dq').value); if(!qty||qty<=0){toast('Enter quantity','err');return;}
