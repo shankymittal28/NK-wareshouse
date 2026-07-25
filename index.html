@@ -82,6 +82,7 @@ button,input,select{font-family:inherit;font-size:16px}
 .mchips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
 .mchip{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:11px;padding:9px 12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
 .mchip .del{background:none;border:none;color:var(--rose);font-size:17px;line-height:1;padding:0}
+.mchip .fav{background:none;border:none;color:#f5b301;font-size:16px;line-height:1;padding:0;cursor:pointer}
 .mlist{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .mitem{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--hair);border-radius:11px;padding:10px 12px;font-size:15px;font-weight:600}
 .mitem .del{background:none;border:none;color:var(--rose);font-size:20px;line-height:1;padding:0 4px}
@@ -101,7 +102,7 @@ button,input,select{font-family:inherit;font-size:16px}
   <div class="logo">&#128230;</div><div class="brand">NK Warehouse</div><div class="tag">Tap your name to start</div>
   <div class="namebtns" id="staffBtns"></div>
   <div class="nostaff hide" id="noStaff">No staff added yet.<br>Owner: tap below, add staff in <b>Manage</b>.</div>
-  <button class="linkbtn" onclick="ownerLogin()">I'm the owner</button>
+  <button class="linkbtn" onclick="showOwner()">I'm the owner &rarr;</button>
 </div>
 
 <div id="add" class="wrap hide">
@@ -145,13 +146,15 @@ button,input,select{font-family:inherit;font-size:16px}
     <div class="stat"><b class="num" id="stZones">0</b><span>Zones</span></div>
   </div>
   <div class="obtns">
-    <button class="obtn go" onclick="logAsOwner()">&#10133; Log stock</button>
+    <button class="obtn go" onclick="logAsOwner()">&#10133; Add stock</button>
     <button class="obtn" onclick="showManage()">&#9881; Manage</button>
     <button class="obtn" onclick="loadStock()">&#8635; Refresh</button>
   </div>
-  <input id="searchIn" class="searchbar" placeholder="Search brand, design, customer&hellip;" oninput="renderStock()">
+  <div class="modew" id="ownerView"><button id="vwItems" class="on" onclick="setOwnerView('items')">Stock (item-wise)</button><button id="vwLog" onclick="setOwnerView('log')">All entries</button></div>
+  <input id="searchIn" class="searchbar" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
   <div class="fchips" id="filterChips"></div>
-  <div id="stockList"></div>
+  <div id="itemList"></div>
+  <div id="stockList" class="hide"></div>
 </div>
 
 <div id="manage" class="wrap hide">
@@ -218,7 +221,7 @@ function setCat(c){ sel.cat=c; document.querySelectorAll('#catChips .chip').forE
 function setQty(q){ $('qtyIn').value=q; }
 function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); $('qtyIn').value=v||''; }
 
-async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,kind,name,sort,product&order=sort.asc,name.asc"))||[]; opts={brand:[],customer:[],thickness:{},size:{},design:{}};
+async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,kind,name,sort,product,favorite&order=favorite.desc,sort.asc,name.asc"))||[]; opts={brand:[],customer:[],thickness:{},size:{},design:{}};
   a.forEach(o=>{ if(o.kind==='brand')opts.brand.push(o); else if(o.kind==='customer')opts.customer.push(o); else { const p=o.product||'plywood'; opts[o.kind]=opts[o.kind]||{}; (opts[o.kind][p]=opts[o.kind][p]||[]).push(o); } }); }
 
 function setMode(m){ mode=m; sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.customer='';sel.cat='';
@@ -230,7 +233,11 @@ function setMode(m){ mode=m; sel.brand='';sel.thickness='';sel.size='';sel.desig
   renderChips(); updateReveal();
 }
 function renderChips(){
-  $('brandChips').innerHTML=(opts.brand||[]).map(o=>`<button class="chip${sel.brand===o.name?' on':''}" onclick="setBrand('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'brand\')">&#65291;</button>';
+  { const all=opts.brand||[]; const favs=all.filter(b=>b.favorite); const list=favs.length?favs:all;
+    let h=list.map(o=>`<button class="chip${sel.brand===o.name?' on':''}" onclick="setBrand('${esc(o.name)}')">${esc(o.name)}</button>`).join('');
+    if(sel.brand&&!list.some(b=>b.name===sel.brand)) h+=`<button class="chip on" onclick="setBrand('${esc(sel.brand)}')">${esc(sel.brand)}</button>`;
+    if(all.length>list.length) h+='<button class="chip add" onclick="pickBrand()">&#128269; Search brands</button>';
+    h+='<button class="chip add" onclick="newOpt(\'brand\')">&#65291;</button>'; $('brandChips').innerHTML=h; }
   $('thickChips').innerHTML=((opts.thickness.plywood)||[]).map(o=>`<button class="chip${sel.thickness===o.name?' on':''}" onclick="setThick('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'thickness\')">&#65291;</button>';
   $('sizeChips').innerHTML=((opts.size.plywood)||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
   $('dsizeChips').innerHTML=((opts.size.door)||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
@@ -264,6 +271,7 @@ function onDesignInput(v){ sel.design=(v||'').trim(); updateReveal(); }
 function pickRecentDesign(v){ sel.design=v; if($('designIn'))$('designIn').value=v; renderDesignRecent(); updateReveal(); }
 function renderDesignRecent(){ const l=(opts.design&&opts.design.door)||[]; const el=$('designRecent'); if(el)el.innerHTML=l.map(o=>`<button class="chip sm${sel.design===o.name?' on':''}" onclick="pickRecentDesign('${esc(o.name)}')">${esc(o.name)}</button>`).join(''); }
 function pickCustomer(){ openPicker({title:'Customer',list:opts.customer||[],allowNone:true,addKind:'customer',addProduct:null,onPick:v=>{ sel.customer=v; const b=$('customerBtn'); b.classList.toggle('ph',!v); b.innerHTML=(v?esc(v):'None (general stock)')+' <span>&#9662;</span>'; }}); }
+function pickBrand(){ openPicker({title:'Brand',list:opts.brand||[],addKind:'brand',addProduct:null,onPick:v=>{ if(v){sel.brand=v; renderChips(); updateReveal();} }}); }
 
 function updateSrcLbl(){ $('srcLbl').textContent=src||'Pick source'; $('srcBtn').classList.toggle('need',!src); }
 function openSource(){ const b=sources.length?sources.map(s=>`<button class="chip${s.name===src?' on':''}" onclick="setSource('${esc(s.name)}')">${esc(s.name)}</button>`).join(''):'<div style="font-size:13px;color:var(--mut)">No sources yet &mdash; owner adds them in Manage.</div>';
@@ -325,32 +333,50 @@ let recent=[];
 function renderRecent(){ $('recentStrip').innerHTML=recent.map(r=>`<div class="r">${esc(r.name)} <span>&times;${r.qty}</span></div>`).join(''); }
 function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),todayCount); refreshToday(); recent.unshift({name:e.item_name,qty:e.qty}); recent=recent.slice(0,10); renderRecent(); }
 
+let ownerView='items', groups=[];
 async function showOwner(){ ['gate','add','manage'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
-async function loadStock(){ stock=(await api("/rest/v1/nkg_stock?select=*&order=created_at.desc"))||[]; buildFilters(); renderStock(); }
-function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))],zs=[...new Set(stock.map(s=>s.zone_name).filter(Boolean))];
-  $('filterChips').innerHTML=['<button class="fchip'+(!filter.category&&!filter.zone?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).concat(zs.map(z=>`<button class="fchip${filter.zone===z?' on':''}" onclick="setFilter('zone','${esc(z)}')">&#128205; ${esc(z)}</button>`)).join(''); }
-function clearFilter(){ filter={}; buildFilters(); renderStock(); }
-function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderStock(); }
-function renderStock(){
-  const q=($('searchIn').value||'').toLowerCase();
-  const list=stock.filter(s=>{ if(filter.category&&s.category!==filter.category)return false; if(filter.zone&&s.zone_name!==filter.zone)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; });
-  $('stEntries').textContent=stock.length; $('stQty').textContent=stock.reduce((a,s)=>a+(Number(s.qty)||0),0);
-  $('stToday').textContent=stock.filter(s=>(s.created_at||'').slice(0,10)===today()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size;
-  if(!list.length){ $('stockList').innerHTML='<div class="empty">No entries yet.<br>Stock appears here the moment staff start logging.</div>'; return; }
-  $('stockList').innerHTML=list.map(s=>{ const t=s.created_at?new Date(s.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-    const thumb=s.photo_url?`<img class="thumb" src="${s.photo_url}" loading="lazy" onerror="this.style.opacity=.2">`:`<div class="thumb">${s.category==='Door'?'&#128682;':'&#128230;'}</div>`;
-    return `<div class="row">${thumb}<div class="meta"><div class="m1">${esc(s.item_name||s.category||'—')} <span style="color:var(--mint)">&times;${s.qty!=null?esc(s.qty):'—'}</span></div><div class="m2">${esc(s.category||'')} · by ${esc(s.logged_by||'—')} · ${t}</div><div class="tags">${s.customer?`<span class="tg cust">&#128100; ${esc(s.customer)}</span>`:''}${s.zone_name?`<span class="tg zone">&#128205; ${esc(s.zone_name)}</span>`:''}${s.source_godown?`<span class="tg src">${esc(s.source_godown)}</span>`:''}</div></div><button class="xdel" onclick="deleteStock('${s.id}')">&times;</button></div>`; }).join('');
+async function loadStock(){ stock=(await api("/rest/v1/nkg_stock?select=*&order=created_at.desc"))||[]; buildFilters(); updateStats(); renderOwner(); }
+function updateStats(){ let net=0; stock.forEach(s=>net+=(s.direction==='out'?-1:1)*(Number(s.qty)||0)); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>(s.created_at||'').slice(0,10)===today()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; }
+function setOwnerView(v){ ownerView=v; $('vwItems').classList.toggle('on',v==='items'); $('vwLog').classList.toggle('on',v==='log'); $('itemList').classList.toggle('hide',v!=='items'); $('stockList').classList.toggle('hide',v!=='log'); renderOwner(); }
+function renderOwner(){ ownerView==='items'?renderItems():renderStock(); }
+function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))];
+  $('filterChips').innerHTML=['<button class="fchip'+(!filter.category?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).join(''); }
+function clearFilter(){ filter={}; buildFilters(); renderOwner(); }
+function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderOwner(); }
+function matchF(s,q){ if(filter.category&&s.category!==filter.category)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; }
+function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m={};
+  stock.forEach(s=>{ if(!matchF(s,q))return; const k=[s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); if(!m[k])m[k]={name:s.item_name||s.category||'—',category:s.category,brand:s.brand,thickness:s.thickness,size:s.size,design:s.design,inq:0,outq:0}; const g=m[k]; if(s.direction==='out')g.outq+=Number(s.qty)||0; else g.inq+=Number(s.qty)||0; });
+  groups=Object.values(m).sort((a,b)=>a.name>b.name?1:-1);
+  if(!groups.length){ $('itemList').innerHTML='<div class="empty">No stock yet.</div>'; return; }
+  $('itemList').innerHTML=groups.map((g,i)=>{ const net=g.inq-g.outq; const ic=g.category==='Door'?'&#128682;':'&#128230;';
+    return '<div class="row"><div class="thumb">'+ic+'</div><div class="meta"><div class="m1">'+esc(g.name)+' <span style="color:'+(net>0?'var(--mint)':'var(--rose)')+'">'+net+' pcs</span></div><div class="m2">'+esc(g.category||'')+' &middot; in '+g.inq+(g.outq?' &middot; out '+g.outq:'')+'</div></div><button class="obtn" style="flex:0 0 auto;min-width:0;padding:9px 12px" onclick="openDeduct('+i+')">&#8722; Out</button></div>'; }).join('');
+}
+function openDeduct(i){ const g=groups[i]; if(!g)return; window.__dg=g; const net=g.inq-g.outq;
+  sheetHTML('<div class="grab"></div><h4>Give out to customer</h4><div style="font-size:16px;font-weight:700">'+esc(g.name)+'</div><div style="font-size:13px;color:var(--mut)">Available: <b style="color:var(--ink)">'+net+' pcs</b></div><div class="lab" style="margin-top:8px">Quantity out</div><div class="stepper"><button onclick="dStep(-1)">&#8722;</button><input id="dq" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty"><button onclick="dStep(1)">+</button></div><div class="lab" style="margin-top:10px">To customer <span class="opt">optional</span></div><input id="dcust" class="optin" placeholder="Customer name (optional)"><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmDeduct()">&#8722; Deduct from stock</button>'); openSheet();
+}
+function dStep(d){ const v=Math.max(0,(Number($('dq').value)||0)+d); $('dq').value=v||''; }
+async function confirmDeduct(){ const g=window.__dg; if(!g)return; const qty=Number($('dq').value); if(!qty||qty<=0){toast('Enter quantity','err');return;}
+  const row={category:g.category,brand:g.brand||null,thickness:g.thickness||null,size:g.size||null,design:g.design||null,item_name:g.name,customer:($('dcust').value.trim()||null),qty,unit:'pcs',direction:'out',logged_by:me_.name||'Owner'};
+  const r=await api("/rest/v1/nkg_stock",{method:'POST',headers:HJ,body:JSON.stringify(row)}); closeSheet(); if(r===null){toast('Failed — check signal','err');return;} toast('Given out ✓','ok'); await loadStock();
+}
+function renderStock(){ const q=($('searchIn').value||'').toLowerCase(); const list=stock.filter(s=>matchF(s,q));
+  if(!list.length){ $('stockList').innerHTML='<div class="empty">No entries yet.</div>'; return; }
+  $('stockList').innerHTML=list.map(s=>{ const t=s.created_at?new Date(s.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''; const out=s.direction==='out';
+    const thumb=s.photo_url?`<img class="thumb" src="${s.photo_url}" loading="lazy" onerror="this.style.opacity=.2">`:`<div class="thumb">${out?'&#128228;':(s.category==='Door'?'&#128682;':'&#128230;')}</div>`;
+    return '<div class="row">'+thumb+'<div class="meta"><div class="m1">'+esc(s.item_name||s.category||'—')+' <span style="color:'+(out?'var(--rose)':'var(--mint)')+'">'+(out?'&minus;':'+')+(s.qty!=null?esc(s.qty):'—')+'</span></div><div class="m2">'+(out?'given out':esc(s.category||''))+' &middot; by '+esc(s.logged_by||'—')+' &middot; '+t+'</div><div class="tags">'+(s.customer?'<span class="tg cust">&#128100; '+esc(s.customer)+'</span>':'')+(s.zone_name?'<span class="tg zone">&#128205; '+esc(s.zone_name)+'</span>':'')+((s.source_godown&&!out)?'<span class="tg src">'+esc(s.source_godown)+'</span>':'')+'</div></div><button class="xdel" onclick="deleteStock(\''+s.id+'\')">&times;</button></div>'; }).join('');
 }
 async function deleteStock(id){ if(!confirm('Remove this entry?'))return; await api("/rest/v1/nkg_stock?id=eq."+id,{method:'DELETE',headers:H}); await loadStock(); toast('Removed','ok'); }
 
 async function showManage(){ ['gate','add','owner'].forEach(i=>$(i).classList.add('hide')); $('manage').classList.remove('hide'); await Promise.all([loadStaff(),loadSources(),loadZones(),loadOpts()]); renderManage(); }
 function renderManage(){
   const oc=(arr,el)=>{ $(el).innerHTML=(arr||[]).length?(arr).map(o=>`<div class="mchip">${esc(o.name)}<button class="del" onclick="delItem('nkg_options','${o.id}')">&times;</button></div>`).join(''):'<div style="font-size:12px;color:var(--mut2)">None</div>'; };
-  oc(opts.brand,'mBrand'); oc(opts.thickness.plywood,'mPlyThick'); oc(opts.size.plywood,'mPlySize'); oc(opts.design.door,'mDesign'); oc(opts.size.door,'mDoorSize'); oc(opts.customer,'mCust');
+  const ocFav=(arr,el)=>{ $(el).innerHTML=(arr||[]).length?(arr).map(o=>`<div class="mchip">${esc(o.name)}<button class="fav" onclick="toggleFav('${o.id}',${o.favorite?'true':'false'})" title="Fast-mover (pin to top)">${o.favorite?'&#9733;':'&#9734;'}</button><button class="del" onclick="delItem('nkg_options','${o.id}')">&times;</button></div>`).join(''):'<div style="font-size:12px;color:var(--mut2)">None</div>'; };
+  ocFav(opts.brand,'mBrand'); oc(opts.thickness.plywood,'mPlyThick'); oc(opts.size.plywood,'mPlySize'); oc(opts.design.door,'mDesign'); oc(opts.size.door,'mDoorSize'); oc(opts.customer,'mCust');
   const ml=(arr,el,table)=>{ $(el).innerHTML=arr.length?arr.map(s=>`<div class="mitem"><span>${esc(s.name)}</span><button class="del" onclick="delItem('${table}','${s.id}')">&times;</button></div>`).join(''):'<div style="font-size:13px;color:var(--mut2)">None yet</div>'; };
   ml(staff,'mStaff','nkg_staff'); ml(sources,'mSources','nkg_sources'); ml(zones,'mZones','nkg_zones');
 }
 async function addOpt(kind,product,el){ const v=$(el).value.trim(); if(!v)return; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind,name:v,sort:99,product})}); $(el).value=''; await loadOpts(); renderManage(); toast('Added','ok'); }
+async function toggleFav(id,cur){ await api("/rest/v1/nkg_options?id=eq."+id,{method:'PATCH',headers:HJ,body:JSON.stringify({favorite:!cur})}); await loadOpts(); renderManage(); toast(cur?'Unpinned':'Pinned to top','ok'); }
 async function addStaff(){ const v=$('addStaffIn').value.trim(); if(!v)return; await api("/rest/v1/nkg_staff",{method:'POST',headers:HJ,body:JSON.stringify({name:v})}); $('addStaffIn').value=''; await loadStaff(); renderManage(); toast('Staff added','ok'); }
 async function addSource(){ const v=$('addSrcIn').value.trim(); if(!v)return; await api("/rest/v1/nkg_sources",{method:'POST',headers:HJ,body:JSON.stringify({name:v})}); $('addSrcIn').value=''; await loadSources(); renderManage(); toast('Source added','ok'); }
 async function addZone(){ const v=$('addZoneIn').value.trim(); if(!v)return; await api("/rest/v1/nkg_zones",{method:'POST',headers:HJ,body:JSON.stringify({name:v,created_by:'owner'})}); $('addZoneIn').value=''; await loadZones(); renderManage(); toast('Zone added','ok'); }
