@@ -42,9 +42,12 @@ button,input,select{font-family:inherit;font-size:16px}
 .modew button.on{background:var(--grad);color:#fff}
 .lab{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin-bottom:8px}
 .lab .opt{color:var(--mut2);font-weight:600;text-transform:none;letter-spacing:0}
+.gap8{height:6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:12px 15px;font-size:16px;font-weight:600}
 .chip.on{background:var(--grad);border-color:transparent;color:#fff}.chip.add{color:var(--sky);border-style:dashed;font-size:14px}
+.itembtn{width:100%;background:var(--panel2);border:1px solid var(--hair2);color:var(--ink);border-radius:14px;padding:15px;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left}
+.itembtn.ph{color:var(--mut);font-weight:600}
 .qtyrow{display:flex;gap:10px;align-items:stretch}
 .stepper{display:flex;flex:1;align-items:stretch;gap:8px}
 .stepper button{width:56px;background:var(--panel2);border:1px solid var(--hair2);color:var(--ink);border-radius:12px;font-size:28px;font-weight:700}.stepper button:active{transform:scale(.94)}
@@ -71,7 +74,7 @@ button,input,select{font-family:inherit;font-size:16px}
 .row .meta{flex:1;min-width:0}.row .m1{font-size:15px;font-weight:700}.row .m2{font-size:12.5px;color:var(--mut);margin-top:2px}
 .row .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
 .row .tg{font-size:11px;font-weight:600;background:var(--panel2);border:1px solid var(--hair);color:var(--mut);border-radius:8px;padding:3px 7px}
-.row .tg.zone{color:var(--sky)}.row .tg.src{color:var(--amber)}
+.row .tg.zone{color:var(--sky)}.row .tg.src{color:var(--amber)}.row .tg.cust{color:var(--violet)}
 .row .xdel{background:none;border:none;color:var(--mut2);font-size:20px;align-self:flex-start;padding:0 2px}
 .empty{text-align:center;color:var(--mut2);font-size:14px;padding:40px 10px}
 .msec{background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:14px;margin-bottom:12px}
@@ -82,7 +85,7 @@ button,input,select{font-family:inherit;font-size:16px}
 .mlist{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .mitem{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--hair);border-radius:11px;padding:10px 12px;font-size:15px;font-weight:600}
 .mitem .del{background:none;border:none;color:var(--rose);font-size:20px;line-height:1;padding:0 4px}
-.mrow2{display:flex;gap:10px}.mrow2 .msec{flex:1}
+.mrow2{display:flex;gap:10px}.mrow2 .msec{flex:1;min-width:0}
 .maddrow{display:flex;gap:8px}
 .maddrow input{flex:1;min-width:0;font-size:15px;padding:11px 12px;border-radius:11px;border:1px solid var(--hair2);background:#101016;color:var(--ink);outline:none}.maddrow input:focus{border-color:var(--indigo)}
 .maddrow button{background:var(--grad);color:#fff;border:none;border-radius:11px;padding:0 16px;font-size:15px;font-weight:700}
@@ -109,28 +112,25 @@ button,input,select{font-family:inherit;font-size:16px}
   <div class="card">
     <div class="modew"><button id="mPlywood" class="on" onclick="setMode('plywood')">Plywood</button><button id="mDoor" onclick="setMode('door')">Door</button><button id="mOther" onclick="setMode('other')">Other</button></div>
 
-    <div id="attrFlow">
-      <div><div class="lab">Brand</div><div class="chips" id="brandChips"></div></div>
-      <div><div class="lab">Thickness</div><div class="chips" id="thickChips"></div></div>
-      <div><div class="lab">Size</div><div class="chips" id="sizeChips"></div></div>
-    </div>
+    <div id="secBrand"><div class="lab">Brand</div><div class="chips" id="brandChips"></div></div>
+    <div id="secTS" class="hide"><div class="lab">Thickness</div><div class="chips" id="thickChips"></div><div class="gap8"></div><div class="lab">Size</div><div class="chips" id="sizeChips"></div></div>
 
-    <div id="otherFlow" class="hide">
-      <div><div class="lab">What is it?</div><div class="chips" id="catChips"></div></div>
-      <input id="descIn" class="optin" placeholder="Name / detail (optional)">
-    </div>
+    <div id="secDesign" class="hide"><div class="lab">Design</div><button class="itembtn ph" id="designBtn" onclick="pickDesign()">Tap to choose design <span>&#9662;</span></button></div>
+    <div id="secDsize" class="hide"><div class="lab">Size <span class="opt">(height × width)</span></div><div class="chips" id="dsizeChips"></div></div>
+    <div id="secCustomer" class="hide"><div class="lab">For a customer? <span class="opt">&mdash; optional</span></div><button class="itembtn ph" id="customerBtn" onclick="pickCustomer()">None (general stock) <span>&#9662;</span></button></div>
 
-    <div><div class="lab">Quantity <span class="opt">(pcs)</span></div>
+    <div id="secOther" class="hide"><div class="lab">What is it?</div><div class="chips" id="catChips"></div><div class="gap8"></div><input id="descIn" class="optin" placeholder="Name / detail (optional)"></div>
+
+    <div id="secQty" class="hide"><div class="lab">Quantity <span class="opt">(pcs)</span></div>
       <div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">&#8722;</button><input id="qtyIn" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty"><button onclick="stepQty(1)">+</button></div></div>
-      <div class="chips" id="qtyQuick" style="margin-top:9px"></div>
+      <div class="chips" id="qtyQuick" style="margin-top:9px"></div></div>
+
+    <div id="secTail" class="hide">
+      <div class="lab">Placed at <span class="opt">&mdash; optional</span></div><div class="chips" id="zoneChips"></div>
+      <div class="gap8"></div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">&#128247; Add photo</button><img id="pthumb" class="pthumb hide" alt=""></div>
     </div>
-
-    <div><div class="lab">Placed at <span class="opt">&mdash; optional</span></div><div class="chips" id="zoneChips"></div></div>
-
-    <div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">&#128247; Add photo</button><img id="pthumb" class="pthumb hide" alt=""></div>
     <input id="fileIn" type="file" accept="image/*" capture="environment" class="hide" onchange="onPhoto(event)">
-
-    <button class="save" id="saveBtn" onclick="saveEntry()">&#10003; Save entry</button>
+    <button class="save hide" id="saveBtn" onclick="saveEntry()">&#10003; Save entry</button>
   </div>
   <div class="subline"><span id="todayLbl">Today: 0 logged</span><span><button class="undo hide" id="undoBtn" onclick="undoLast()">&#8630; Undo last</button> <span id="pendLbl" class="pend hide"></span></span></div>
   <div class="recent" id="recentStrip"></div>
@@ -149,29 +149,24 @@ button,input,select{font-family:inherit;font-size:16px}
     <button class="obtn" onclick="showManage()">&#9881; Manage</button>
     <button class="obtn" onclick="loadStock()">&#8635; Refresh</button>
   </div>
-  <input id="searchIn" class="searchbar" placeholder="Search brand, size, zone&hellip;" oninput="renderStock()">
+  <input id="searchIn" class="searchbar" placeholder="Search brand, design, customer&hellip;" oninput="renderStock()">
   <div class="fchips" id="filterChips"></div>
   <div id="stockList"></div>
 </div>
 
 <div id="manage" class="wrap hide">
   <div class="top"><div class="who"><b>Manage</b> &middot; add or remove anytime</div><button class="iconlink" onclick="showOwner()">&#8592; Back</button></div>
-  <div class="msec"><h3>&#127981; Brands</h3><div class="hint">Shared by plywood &amp; doors. Add every brand you carry.</div>
-    <div class="mchips" id="mBrand"></div><div class="maddrow"><input id="addBrandIn" placeholder="New brand"><button onclick="addOpt('brand',null,'addBrandIn')">Add</button></div></div>
+  <div class="msec"><h3>&#127981; Ply brands</h3><div class="mchips" id="mBrand"></div><div class="maddrow"><input id="addBrandIn" placeholder="New brand"><button onclick="addOpt('brand',null,'addBrandIn')">Add</button></div></div>
   <div class="mrow2">
-    <div class="msec"><h3>&#128207; Ply thickness</h3><div class="mchips" id="mPlyThick"></div><div class="maddrow"><input id="addPlyThickIn" placeholder="e.g. 19mm"><button onclick="addOpt('thickness','plywood','addPlyThickIn')">+</button></div></div>
-    <div class="msec"><h3>&#128208; Ply sizes</h3><div class="mchips" id="mPlySize"></div><div class="maddrow"><input id="addPlySizeIn" placeholder="e.g. 8×4"><button onclick="addOpt('size','plywood','addPlySizeIn')">+</button></div></div>
+    <div class="msec"><h3>&#128207; Ply thickness</h3><div class="mchips" id="mPlyThick"></div><div class="maddrow"><input id="addPlyThickIn" placeholder="19mm"><button onclick="addOpt('thickness','plywood','addPlyThickIn')">+</button></div></div>
+    <div class="msec"><h3>&#128208; Ply sizes</h3><div class="mchips" id="mPlySize"></div><div class="maddrow"><input id="addPlySizeIn" placeholder="8×4"><button onclick="addOpt('size','plywood','addPlySizeIn')">+</button></div></div>
   </div>
-  <div class="mrow2">
-    <div class="msec"><h3>&#128682; Door thickness</h3><div class="mchips" id="mDoorThick"></div><div class="maddrow"><input id="addDoorThickIn" placeholder="e.g. 32mm"><button onclick="addOpt('thickness','door','addDoorThickIn')">+</button></div></div>
-    <div class="msec"><h3>&#128682; Door sizes</h3><div class="mchips" id="mDoorSize"></div><div class="maddrow"><input id="addDoorSizeIn" placeholder="e.g. 7×3"><button onclick="addOpt('size','door','addDoorSizeIn')">+</button></div></div>
-  </div>
-  <div class="msec"><h3>&#128100; Staff</h3><div class="hint">They log in by tapping their name.</div>
-    <div class="mlist" id="mStaff"></div><div class="maddrow"><input id="addStaffIn" placeholder="New staff name" onkeydown="if(event.key==='Enter')addStaff()"><button onclick="addStaff()">Add</button></div></div>
-  <div class="msec"><h3>&#128667; Sources (From)</h3><div class="hint">Where stock comes from (Ricemill1&hellip;). "Already in warehouse" is added for existing stock.</div>
-    <div class="mlist" id="mSources"></div><div class="maddrow"><input id="addSrcIn" placeholder="New source" onkeydown="if(event.key==='Enter')addSource()"><button onclick="addSource()">Add</button></div></div>
-  <div class="msec"><h3>&#128205; Zones / racks</h3><div class="hint">Placement spots. Optional; staff can add on the spot.</div>
-    <div class="mlist" id="mZones"></div><div class="maddrow"><input id="addZoneIn" placeholder="New zone" onkeydown="if(event.key==='Enter')addZone()"><button onclick="addZone()">Add</button></div></div>
+  <div class="msec"><h3>&#128682; Door designs</h3><div class="hint">Design codes staff pick (KP7098&hellip;). They can also add new ones on the spot.</div><div class="mchips" id="mDesign"></div><div class="maddrow"><input id="addDesignIn" placeholder="New design code"><button onclick="addOpt('design','door','addDesignIn')">Add</button></div></div>
+  <div class="msec"><h3>&#128682; Door sizes</h3><div class="mchips" id="mDoorSize"></div><div class="maddrow"><input id="addDoorSizeIn" placeholder="7×3"><button onclick="addOpt('size','door','addDoorSizeIn')">Add</button></div></div>
+  <div class="msec"><h3>&#128100; Customers</h3><div class="hint">Optional &mdash; tag a door to a customer. Add customers here or on the spot.</div><div class="mchips" id="mCust"></div><div class="maddrow"><input id="addCustIn" placeholder="New customer"><button onclick="addOpt('customer',null,'addCustIn')">Add</button></div></div>
+  <div class="msec"><h3>&#128100; Staff</h3><div class="hint">They log in by tapping their name.</div><div class="mlist" id="mStaff"></div><div class="maddrow"><input id="addStaffIn" placeholder="New staff name" onkeydown="if(event.key==='Enter')addStaff()"><button onclick="addStaff()">Add</button></div></div>
+  <div class="msec"><h3>&#128667; Sources / suppliers</h3><div class="hint">Where stock comes from (Ricemill1&hellip;). "Already in warehouse" = existing stock.</div><div class="mlist" id="mSources"></div><div class="maddrow"><input id="addSrcIn" placeholder="New source" onkeydown="if(event.key==='Enter')addSource()"><button onclick="addSource()">Add</button></div></div>
+  <div class="msec"><h3>&#128205; Zones / racks</h3><div class="hint">Placement spots. Optional.</div><div class="mlist" id="mZones"></div><div class="maddrow"><input id="addZoneIn" placeholder="New zone" onkeydown="if(event.key==='Enter')addZone()"><button onclick="addZone()">Add</button></div></div>
 </div>
 
 <div id="sheet" onclick="if(event.target.id==='sheet')closeSheet()"><div class="sheet" id="sheetInner"></div></div>
@@ -187,13 +182,14 @@ const HR={...HJ,Prefer:"return=representation"};
 const $=id=>document.getElementById(id);
 const today=()=>new Date().toISOString().slice(0,10);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
 const CATS=["Hardware","Laminate","Mica","Adhesive","Glass","Other"];
 const QTYQUICK=[5,10,25,50,100];
 
 let me_={name:''}, origin='gate', mode='plywood';
 let src=localStorage.getItem('nkg_src')||'';
-let zones=[], sources=[], staff=[], opts={brand:[],thickness:{plywood:[],door:[]},size:{plywood:[],door:[]}};
-let sel={brand:'',thickness:'',size:'',cat:'',zone:'',photo:null};
+let zones=[], sources=[], staff=[], opts={brand:[],customer:[],thickness:{},size:{},design:{}};
+let sel={brand:'',thickness:'',size:'',design:'',customer:'',cat:'',zone:'',photo:null};
 let stock=[], filter={}, lastId=null;
 
 async function api(path,o){ try{const r=await fetch(SB+path,{headers:H,...o}); if(!r.ok)throw 0; const t=await r.text(); return t?JSON.parse(t):[];}catch(e){return null;} }
@@ -211,30 +207,61 @@ function logAsOwner(){ me_={name:'Owner'}; origin='owner'; showAdd(); }
 async function showAdd(){
   ['gate','owner','manage'].forEach(i=>$(i).classList.add('hide')); $('add').classList.remove('hide');
   $('addBack').textContent=origin==='owner'?'← Owner':'Switch';
-  setMode('plywood'); resetSel(); buildStatic(); updateSrcLbl();
+  buildStatic(); resetQty(); updateSrcLbl();
   await Promise.all([loadZones(),loadSources(),loadOpts()]);
-  renderAttr(); renderZoneChips(); refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
+  setMode('plywood'); renderZoneChips(); refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
   if(!src) openSource();
 }
-function resetSel(){ sel={brand:sel.brand||'',thickness:'',size:'',cat:'',zone:'',photo:null}; $('qtyIn').value=''; $('descIn').value=''; $('pthumb').classList.add('hide'); $('photoBtn').classList.remove('on'); $('photoBtn').innerHTML='&#128247; Add photo'; }
-function setMode(m){ if(m!==mode){ sel.thickness=''; sel.size=''; } mode=m; ['plywood','door','other'].forEach(x=>$('m'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('on',x===m));
-  $('attrFlow').classList.toggle('hide',m==='other'); $('otherFlow').classList.toggle('hide',m!=='other'); if(m!=='other')renderAttr(); }
+function resetQty(){ $('qtyIn').value=''; $('descIn').value=''; sel.photo=null; $('pthumb').classList.add('hide'); $('photoBtn').classList.remove('on'); $('photoBtn').innerHTML='&#128247; Add photo'; sel.zone=''; }
 function buildStatic(){ $('catChips').innerHTML=CATS.map(c=>`<button class="chip" data-cat="${c}" onclick="setCat('${c}')">${c}</button>`).join(''); $('qtyQuick').innerHTML=QTYQUICK.map(q=>`<button class="chip" onclick="setQty(${q})">${q}</button>`).join(''); }
-function setCat(c){ sel.cat=c; document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.cat===c)); }
+function setCat(c){ sel.cat=c; document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.cat===c)); updateReveal(); }
 function setQty(q){ $('qtyIn').value=q; }
 function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); $('qtyIn').value=v||''; }
 
-async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,kind,name,sort,product&order=sort.asc,name.asc"))||[]; opts={brand:[],thickness:{plywood:[],door:[]},size:{plywood:[],door:[]}};
-  a.forEach(o=>{ if(o.kind==='brand')opts.brand.push(o); else { const p=o.product||'plywood'; if(!opts[o.kind][p])opts[o.kind][p]=[]; opts[o.kind][p].push(o); } }); }
-function renderAttr(){ const p=mode;
-  $('brandChips').innerHTML=(opts.brand||[]).map(o=>`<button class="chip${sel.brand===o.name?' on':''}" onclick="setBrand('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'brand\')">&#65291;</button>';
-  $('thickChips').innerHTML=((opts.thickness[p])||[]).map(o=>`<button class="chip${sel.thickness===o.name?' on':''}" onclick="setThick('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'thickness\')">&#65291;</button>';
-  $('sizeChips').innerHTML=((opts.size[p])||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
+async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,kind,name,sort,product&order=sort.asc,name.asc"))||[]; opts={brand:[],customer:[],thickness:{},size:{},design:{}};
+  a.forEach(o=>{ if(o.kind==='brand')opts.brand.push(o); else if(o.kind==='customer')opts.customer.push(o); else { const p=o.product||'plywood'; opts[o.kind]=opts[o.kind]||{}; (opts[o.kind][p]=opts[o.kind][p]||[]).push(o); } }); }
+
+function setMode(m){ mode=m; sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.customer='';sel.cat='';
+  ['plywood','door','other'].forEach(x=>$('m'+cap(x)).classList.toggle('on',x===m));
+  $('designBtn').innerHTML='Tap to choose design <span>&#9662;</span>'; $('designBtn').classList.add('ph');
+  $('customerBtn').innerHTML='None (general stock) <span>&#9662;</span>'; $('customerBtn').classList.add('ph');
+  document.querySelector('#catChips')&&document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.remove('on'));
+  document.querySelector('#srcBtn .lbl').textContent=(m==='door'?'Supplier':'From');
+  renderChips(); updateReveal();
 }
-function setBrand(v){ sel.brand=v; renderAttr(); }
-function setThick(v){ sel.thickness=v; renderAttr(); }
-function setSize(v){ sel.size=v; renderAttr(); }
-async function newOpt(kind){ const n=prompt("New "+kind+":"); if(!n)return; const v=n.trim(); if(!v)return; const product=kind==='brand'?null:mode; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind,name:v,sort:99,product})}); await loadOpts(); if(kind==='brand')sel.brand=v; if(kind==='thickness')sel.thickness=v; if(kind==='size')sel.size=v; renderAttr(); }
+function renderChips(){
+  $('brandChips').innerHTML=(opts.brand||[]).map(o=>`<button class="chip${sel.brand===o.name?' on':''}" onclick="setBrand('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'brand\')">&#65291;</button>';
+  $('thickChips').innerHTML=((opts.thickness.plywood)||[]).map(o=>`<button class="chip${sel.thickness===o.name?' on':''}" onclick="setThick('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'thickness\')">&#65291;</button>';
+  $('sizeChips').innerHTML=((opts.size.plywood)||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
+  $('dsizeChips').innerHTML=((opts.size.door)||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
+}
+function setBrand(v){ sel.brand=v; renderChips(); updateReveal(); }
+function setThick(v){ sel.thickness=v; renderChips(); updateReveal(); }
+function setSize(v){ sel.size=v; renderChips(); updateReveal(); }
+async function newOpt(kind){ const n=prompt("New "+kind+":"); if(!n)return; const v=n.trim(); if(!v)return; const product=(kind==='brand')?null:mode; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind,name:v,sort:99,product})}); await loadOpts(); if(kind==='brand')sel.brand=v; else if(kind==='thickness')sel.thickness=v; else if(kind==='size')sel.size=v; renderChips(); updateReveal(); }
+
+function updateReveal(){
+  const show=(id,v)=>$(id).classList.toggle('hide',!v);
+  show('secBrand',mode==='plywood'); show('secTS',mode==='plywood'&&!!sel.brand);
+  show('secDesign',mode==='door'); show('secDsize',mode==='door'&&!!sel.design); show('secCustomer',mode==='door'&&!!sel.size);
+  show('secOther',mode==='other');
+  const ready = mode==='plywood'?(sel.brand&&sel.thickness&&sel.size): mode==='door'?(sel.design&&sel.size): (sel.cat);
+  show('secQty',!!ready); show('secTail',!!ready); $('saveBtn').classList.toggle('hide',!ready);
+}
+
+/* pickers for design & customer */
+let _pk={};
+function openPicker(cfg){ _pk=cfg; _pk.q=''; renderPicker(); openSheet(); }
+function renderPicker(){ const list=(_pk.list||[]).filter(x=>!_pk.q||x.name.toLowerCase().includes(_pk.q));
+  const chips=(_pk.allowNone?'<button class="chip" onclick="pkPick(\'\')">None</button>':'')+list.map(x=>`<button class="chip" onclick="pkPick('${esc(x.name)}')">${esc(x.name)}</button>`).join('');
+  sheetHTML('<div class="grab"></div><h4>'+_pk.title+'</h4><input id="pkq" class="optin" placeholder="Search…" oninput="pkSearch(this.value)" value="'+esc(_pk.q)+'"><div class="chips">'+chips+'</div><button class="ghost" style="justify-content:center" onclick="pkAdd()">&#65291; Add new</button>');
+  const el=$('pkq'); if(el){el.focus();el.value=_pk.q;}
+}
+function pkSearch(v){ _pk.q=(v||'').toLowerCase(); renderPicker(); }
+function pkPick(v){ closeSheet(); _pk.onPick(v); }
+async function pkAdd(){ const n=prompt('New '+_pk.title+':'); if(!n)return; const v=n.trim(); if(!v)return; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:_pk.addKind,name:v,sort:99,product:_pk.addProduct})}); await loadOpts(); closeSheet(); _pk.onPick(v); }
+function pickDesign(){ openPicker({title:'Design',list:opts.design.door||[],addKind:'design',addProduct:'door',onPick:v=>{ sel.design=v; const b=$('designBtn'); b.classList.remove('ph'); b.innerHTML=esc(v)+' <span>&#9662;</span>'; updateReveal(); }}); }
+function pickCustomer(){ openPicker({title:'Customer',list:opts.customer||[],allowNone:true,addKind:'customer',addProduct:null,onPick:v=>{ sel.customer=v; const b=$('customerBtn'); b.classList.toggle('ph',!v); b.innerHTML=(v?esc(v):'None (general stock)')+' <span>&#9662;</span>'; }}); }
 
 function updateSrcLbl(){ $('srcLbl').textContent=src||'Pick source'; $('srcBtn').classList.toggle('need',!src); }
 function openSource(){ const b=sources.length?sources.map(s=>`<button class="chip${s.name===src?' on':''}" onclick="setSource('${esc(s.name)}')">${esc(s.name)}</button>`).join(''):'<div style="font-size:13px;color:var(--mut)">No sources yet &mdash; owner adds them in Manage.</div>';
@@ -255,16 +282,20 @@ function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=h.match(/:(.*?);/)
 async function saveEntry(){
   const qty=$('qtyIn').value?Number($('qtyIn').value):null;
   let item_name='', category='';
-  if(mode==='plywood'||mode==='door'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Tap brand, thickness & size','err');return;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category=mode==='door'?'Door':'Plywood'; }
+  if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Complete brand, thickness & size','err');return;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
+  else if(mode==='door'){ if(!sel.design||!sel.size){toast('Choose design & size','err');return;} item_name=sel.design+' '+sel.size; category='Door'; }
   else { if(!sel.cat){toast('Tap what it is','err');return;} category=sel.cat; item_name=($('descIn').value.trim()||sel.cat); }
   if(!qty){toast('Enter quantity','err');return;}
-  const attr=(mode==='plywood'||mode==='door');
-  const entry={brand:attr?sel.brand:null,thickness:attr?sel.thickness:null,size:attr?sel.size:null,item_name,category,item_desc:mode==='other'?($('descIn').value.trim()||null):null,qty,unit:'pcs',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photo:sel.photo,_ts:Date.now()};
+  const entry={brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,customer:mode==='door'?(sel.customer||null):null,item_name,category,item_desc:mode==='other'?($('descIn').value.trim()||null):null,qty,unit:'pcs',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photo:sel.photo,_ts:Date.now()};
   $('saveBtn').disabled=true; $('saveBtn').textContent='Saving…';
   const row=await pushEntry(entry);
-  $('saveBtn').disabled=false; $('saveBtn').textContent='✓ Save entry';
+  $('saveBtn').disabled=false; $('saveBtn').innerHTML='&#10003; Save entry';
   if(row){ toast('Saved ✓ '+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); } else { queue(entry); toast('No signal — saved on phone, will sync','err'); }
-  pushRecent(entry); const kb=sel.brand; resetSel(); sel.brand=kb; if(attr)renderAttr(); refreshToday();
+  pushRecent(entry);
+  const kb=sel.brand, kd=sel.design; resetQty();
+  sel.thickness='';sel.size='';
+  if(mode==='plywood'){ sel.brand=kb; } if(mode==='door'){ sel.design=kd; if(kd){const b=$('designBtn');b.classList.remove('ph');b.innerHTML=esc(kd)+' <span>&#9662;</span>';} }
+  renderChips(); renderZoneChips(); updateReveal(); refreshToday();
 }
 async function pushEntry(entry){
   try{
@@ -291,26 +322,26 @@ function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),
 
 async function showOwner(){ ['gate','add','manage'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
 async function loadStock(){ stock=(await api("/rest/v1/nkg_stock?select=*&order=created_at.desc"))||[]; buildFilters(); renderStock(); }
-function buildFilters(){ const brands=[...new Set(stock.map(s=>s.brand).filter(Boolean))],cats=[...new Set(stock.map(s=>s.category).filter(Boolean))],zs=[...new Set(stock.map(s=>s.zone_name).filter(Boolean))];
-  $('filterChips').innerHTML=['<button class="fchip'+(!filter.brand&&!filter.zone&&!filter.category?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).concat(brands.map(b=>`<button class="fchip${filter.brand===b?' on':''}" onclick="setFilter('brand','${esc(b)}')">${esc(b)}</button>`)).concat(zs.map(z=>`<button class="fchip${filter.zone===z?' on':''}" onclick="setFilter('zone','${esc(z)}')">&#128205; ${esc(z)}</button>`)).join(''); }
+function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))],zs=[...new Set(stock.map(s=>s.zone_name).filter(Boolean))];
+  $('filterChips').innerHTML=['<button class="fchip'+(!filter.category&&!filter.zone?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).concat(zs.map(z=>`<button class="fchip${filter.zone===z?' on':''}" onclick="setFilter('zone','${esc(z)}')">&#128205; ${esc(z)}</button>`)).join(''); }
 function clearFilter(){ filter={}; buildFilters(); renderStock(); }
 function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderStock(); }
 function renderStock(){
   const q=($('searchIn').value||'').toLowerCase();
-  const list=stock.filter(s=>{ if(filter.brand&&s.brand!==filter.brand)return false; if(filter.category&&s.category!==filter.category)return false; if(filter.zone&&s.zone_name!==filter.zone)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; });
+  const list=stock.filter(s=>{ if(filter.category&&s.category!==filter.category)return false; if(filter.zone&&s.zone_name!==filter.zone)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; });
   $('stEntries').textContent=stock.length; $('stQty').textContent=stock.reduce((a,s)=>a+(Number(s.qty)||0),0);
   $('stToday').textContent=stock.filter(s=>(s.created_at||'').slice(0,10)===today()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size;
   if(!list.length){ $('stockList').innerHTML='<div class="empty">No entries yet.<br>Stock appears here the moment staff start logging.</div>'; return; }
   $('stockList').innerHTML=list.map(s=>{ const t=s.created_at?new Date(s.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
     const thumb=s.photo_url?`<img class="thumb" src="${s.photo_url}" loading="lazy" onerror="this.style.opacity=.2">`:`<div class="thumb">${s.category==='Door'?'&#128682;':'&#128230;'}</div>`;
-    return `<div class="row">${thumb}<div class="meta"><div class="m1">${esc(s.item_name||s.category||'—')} <span style="color:var(--mint)">&times;${s.qty!=null?esc(s.qty):'—'}</span></div><div class="m2">${esc(s.category||'')} · by ${esc(s.logged_by||'—')} · ${t}</div><div class="tags">${s.zone_name?`<span class="tg zone">&#128205; ${esc(s.zone_name)}</span>`:''}${s.source_godown?`<span class="tg src">from ${esc(s.source_godown)}</span>`:''}</div></div><button class="xdel" onclick="deleteStock('${s.id}')">&times;</button></div>`; }).join('');
+    return `<div class="row">${thumb}<div class="meta"><div class="m1">${esc(s.item_name||s.category||'—')} <span style="color:var(--mint)">&times;${s.qty!=null?esc(s.qty):'—'}</span></div><div class="m2">${esc(s.category||'')} · by ${esc(s.logged_by||'—')} · ${t}</div><div class="tags">${s.customer?`<span class="tg cust">&#128100; ${esc(s.customer)}</span>`:''}${s.zone_name?`<span class="tg zone">&#128205; ${esc(s.zone_name)}</span>`:''}${s.source_godown?`<span class="tg src">${esc(s.source_godown)}</span>`:''}</div></div><button class="xdel" onclick="deleteStock('${s.id}')">&times;</button></div>`; }).join('');
 }
 async function deleteStock(id){ if(!confirm('Remove this entry?'))return; await api("/rest/v1/nkg_stock?id=eq."+id,{method:'DELETE',headers:H}); await loadStock(); toast('Removed','ok'); }
 
 async function showManage(){ ['gate','add','owner'].forEach(i=>$(i).classList.add('hide')); $('manage').classList.remove('hide'); await Promise.all([loadStaff(),loadSources(),loadZones(),loadOpts()]); renderManage(); }
 function renderManage(){
   const oc=(arr,el)=>{ $(el).innerHTML=(arr||[]).length?(arr).map(o=>`<div class="mchip">${esc(o.name)}<button class="del" onclick="delItem('nkg_options','${o.id}')">&times;</button></div>`).join(''):'<div style="font-size:12px;color:var(--mut2)">None</div>'; };
-  oc(opts.brand,'mBrand'); oc(opts.thickness.plywood,'mPlyThick'); oc(opts.size.plywood,'mPlySize'); oc(opts.thickness.door,'mDoorThick'); oc(opts.size.door,'mDoorSize');
+  oc(opts.brand,'mBrand'); oc(opts.thickness.plywood,'mPlyThick'); oc(opts.size.plywood,'mPlySize'); oc(opts.design.door,'mDesign'); oc(opts.size.door,'mDoorSize'); oc(opts.customer,'mCust');
   const ml=(arr,el,table)=>{ $(el).innerHTML=arr.length?arr.map(s=>`<div class="mitem"><span>${esc(s.name)}</span><button class="del" onclick="delItem('${table}','${s.id}')">&times;</button></div>`).join(''):'<div style="font-size:13px;color:var(--mut2)">None yet</div>'; };
   ml(staff,'mStaff','nkg_staff'); ml(sources,'mSources','nkg_sources'); ml(zones,'mZones','nkg_zones');
 }
