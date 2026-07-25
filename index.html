@@ -86,6 +86,7 @@ button,input,select{font-family:inherit;font-size:16px}
 .mchip{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:11px;padding:9px 12px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
 .mchip .del{background:none;border:none;color:var(--rose);font-size:17px;line-height:1;padding:0}
 .mchip .fav{background:none;border:none;color:#f5b301;font-size:16px;line-height:1;padding:0;cursor:pointer}
+.mchip .edb{background:none;border:none;color:var(--sky);font-size:14px;line-height:1;padding:0;cursor:pointer}
 .mlist{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .mitem{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--hair);border-radius:11px;padding:10px 12px;font-size:15px;font-weight:600}
 .mitem .del{background:none;border:none;color:var(--rose);font-size:20px;line-height:1;padding:0 4px}
@@ -379,13 +380,24 @@ async function deleteStock(id){ if(!confirm('Remove this entry?'))return; await 
 async function showManage(){ ['gate','add','owner'].forEach(i=>$(i).classList.add('hide')); $('manage').classList.remove('hide'); await Promise.all([loadStaff(),loadSources(),loadZones(),loadOpts()]); renderManage(); }
 function renderManage(){
   const oc=(arr,el)=>{ $(el).innerHTML=(arr||[]).length?(arr).map(o=>`<div class="mchip">${esc(o.name)}<button class="del" onclick="delItem('nkg_options','${o.id}')">&times;</button></div>`).join(''):'<div style="font-size:12px;color:var(--mut2)">None</div>'; };
-  const ocFav=(arr,el)=>{ $(el).innerHTML=(arr||[]).length?(arr).map(o=>`<div class="mchip">${esc(o.name)}<button class="fav" onclick="toggleFav('${o.id}',${o.favorite?'true':'false'})" title="Fast-mover (pin to top)">${o.favorite?'&#9733;':'&#9734;'}</button><button class="del" onclick="delItem('nkg_options','${o.id}')">&times;</button></div>`).join(''):'<div style="font-size:12px;color:var(--mut2)">None</div>'; };
+  const ocFav=(arr,el)=>{ $(el).innerHTML=(arr||[]).length?(arr).map(o=>`<div class="mchip">${esc(o.name)}<button class="edb" onclick="openBrandRename('${o.id}')" title="Edit name">&#9998;</button><button class="fav" onclick="toggleFav('${o.id}',${o.favorite?'true':'false'})" title="Fast-mover (pin to top)">${o.favorite?'&#9733;':'&#9734;'}</button><button class="del" onclick="delItem('nkg_options','${o.id}')">&times;</button></div>`).join(''):'<div style="font-size:12px;color:var(--mut2)">None</div>'; };
   ocFav(opts.brand,'mBrand'); oc(opts.thickness.plywood,'mPlyThick'); oc(opts.size.plywood,'mPlySize'); oc(opts.design.door,'mDesign'); oc(opts.size.door,'mDoorSize'); oc(opts.customer,'mCust');
   const ml=(arr,el,table)=>{ $(el).innerHTML=arr.length?arr.map(s=>`<div class="mitem"><span>${esc(s.name)}</span><button class="del" onclick="delItem('${table}','${s.id}')">&times;</button></div>`).join(''):'<div style="font-size:13px;color:var(--mut2)">None yet</div>'; };
   ml(staff,'mStaff','nkg_staff'); ml(sources,'mSources','nkg_sources'); ml(zones,'mZones','nkg_zones');
 }
 async function addOpt(kind,product,el){ const v=$(el).value.trim(); if(!v)return; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind,name:v,sort:99,product})}); $(el).value=''; await loadOpts(); renderManage(); toast('Added','ok'); }
 async function toggleFav(id,cur){ await api("/rest/v1/nkg_options?id=eq."+id,{method:'PATCH',headers:HJ,body:JSON.stringify({favorite:!cur})}); await loadOpts(); renderManage(); toast(cur?'Unpinned':'Pinned to top','ok'); }
+function openBrandRename(id){ const b=(opts.brand||[]).find(x=>x.id==id); if(!b)return; window.__bre={id:id,old:b.name};
+  sheetHTML('<div class="grab"></div><h4>Edit brand name</h4><div style="font-size:13px;color:var(--mut)">Fix a misspelled brand. Updates the brand list and every past entry that used it.</div><div class="lab" style="margin-top:10px">Brand name</div><input id="bn" class="optin" value="'+esc(b.name)+'" autocapitalize="characters" autocomplete="off"><button class="pri" style="max-width:none;margin-top:10px" onclick="renameBrand()">Save name</button>'); openSheet(); setTimeout(()=>{const el=$('bn'); if(el){el.focus();el.select&&el.select();}},100);
+}
+async function renameBrand(){ const st=window.__bre; if(!st)return; const nm=$('bn').value.trim(); if(!nm){toast('Enter a name','err');return;} if(nm===st.old){closeSheet();return;}
+  const r=await api("/rest/v1/nkg_options?id=eq."+st.id,{method:'PATCH',headers:HJ,body:JSON.stringify({name:nm})}); if(r===null){toast('Failed — check signal','err');return;}
+  const rows=await api("/rest/v1/nkg_stock?brand=eq."+encodeURIComponent(st.old)+"&select=id,item_name");
+  if(Array.isArray(rows)&&rows.length){ await api("/rest/v1/nkg_stock?brand=eq."+encodeURIComponent(st.old),{method:'PATCH',headers:HJ,body:JSON.stringify({brand:nm})});
+    const done={}; for(const rw of rows){ const old=rw.item_name||''; if(!old||done[old])continue; done[old]=1; const nn=old.split(st.old).join(nm); if(nn!==old){ await api("/rest/v1/nkg_stock?item_name=eq."+encodeURIComponent(old),{method:'PATCH',headers:HJ,body:JSON.stringify({item_name:nn})}); } }
+  }
+  closeSheet(); await loadOpts(); renderManage(); toast('Brand renamed ✓','ok');
+}
 async function addStaff(){ const v=$('addStaffIn').value.trim(); if(!v)return; await api("/rest/v1/nkg_staff",{method:'POST',headers:HJ,body:JSON.stringify({name:v})}); $('addStaffIn').value=''; await loadStaff(); renderManage(); toast('Staff added','ok'); }
 async function addSource(){ const v=$('addSrcIn').value.trim(); if(!v)return; await api("/rest/v1/nkg_sources",{method:'POST',headers:HJ,body:JSON.stringify({name:v})}); $('addSrcIn').value=''; await loadSources(); renderManage(); toast('Source added','ok'); }
 async function addZone(){ const v=$('addZoneIn').value.trim(); if(!v)return; await api("/rest/v1/nkg_zones",{method:'POST',headers:HJ,body:JSON.stringify({name:v,created_by:'owner'})}); $('addZoneIn').value=''; await loadZones(); renderManage(); toast('Zone added','ok'); }
