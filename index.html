@@ -45,13 +45,13 @@ button,input,select{font-family:inherit;font-size:16px}
 .gap8{height:6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:12px 15px;font-size:16px;font-weight:600}
-.chip.on{background:var(--grad);border-color:transparent;color:#fff}.chip.add{color:var(--sky);border-style:dashed;font-size:14px}
+.chip.on{background:var(--grad);border-color:transparent;color:#fff}.chip.add{color:var(--sky);border-style:dashed;font-size:14px}.chip.sm{padding:9px 12px;font-size:14px}
 .itembtn{width:100%;background:var(--panel2);border:1px solid var(--hair2);color:var(--ink);border-radius:14px;padding:15px;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left}
 .itembtn.ph{color:var(--mut);font-weight:600}
 .qtyrow{display:flex;gap:10px;align-items:stretch}
-.stepper{display:flex;flex:1;align-items:stretch;gap:8px}
+.stepper{display:flex;flex:1;min-width:0;align-items:stretch;gap:8px}
 .stepper button{width:56px;background:var(--panel2);border:1px solid var(--hair2);color:var(--ink);border-radius:12px;font-size:28px;font-weight:700}.stepper button:active{transform:scale(.94)}
-.qtyin{flex:1;font-size:26px;font-weight:800;text-align:center;padding:12px;border-radius:12px;border:1px solid var(--hair2);background:#101016;color:var(--ink);outline:none}.qtyin:focus{border-color:var(--indigo)}
+.qtyin{flex:1;min-width:0;width:100%;font-size:24px;font-weight:800;text-align:center;padding:12px;border-radius:12px;border:1px solid var(--hair2);background:#101016;color:var(--ink);outline:none}.qtyin:focus{border-color:var(--indigo)}
 .optin{width:100%;font-size:15px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);background:#101016;color:var(--ink);outline:none}.optin:focus{border-color:var(--indigo)}
 .ghost{background:var(--panel2);border:1px solid var(--hair);color:var(--mut);border-radius:12px;padding:11px 13px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
 .ghost.on{border-color:var(--mint);color:var(--mint)}
@@ -115,7 +115,7 @@ button,input,select{font-family:inherit;font-size:16px}
     <div id="secBrand"><div class="lab">Brand</div><div class="chips" id="brandChips"></div></div>
     <div id="secTS" class="hide"><div class="lab">Thickness</div><div class="chips" id="thickChips"></div><div class="gap8"></div><div class="lab">Size</div><div class="chips" id="sizeChips"></div></div>
 
-    <div id="secDesign" class="hide"><div class="lab">Design</div><button class="itembtn ph" id="designBtn" onclick="pickDesign()">Tap to choose design <span>&#9662;</span></button></div>
+    <div id="secDesign" class="hide"><div class="lab">Design</div><input id="designIn" class="optin" style="font-size:18px;font-weight:700;letter-spacing:.02em" placeholder="Type design code (e.g. KP7098)" autocapitalize="characters" autocomplete="off" oninput="onDesignInput(this.value)"><div class="gap8"></div><div class="chips" id="designRecent"></div></div>
     <div id="secDsize" class="hide"><div class="lab">Size <span class="opt">(height × width)</span></div><div class="chips" id="dsizeChips"></div></div>
     <div id="secCustomer" class="hide"><div class="lab">For a customer? <span class="opt">&mdash; optional</span></div><button class="itembtn ph" id="customerBtn" onclick="pickCustomer()">None (general stock) <span>&#9662;</span></button></div>
 
@@ -223,7 +223,7 @@ async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,ki
 
 function setMode(m){ mode=m; sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.customer='';sel.cat='';
   ['plywood','door','other'].forEach(x=>$('m'+cap(x)).classList.toggle('on',x===m));
-  $('designBtn').innerHTML='Tap to choose design <span>&#9662;</span>'; $('designBtn').classList.add('ph');
+  if($('designIn'))$('designIn').value=''; renderDesignRecent();
   $('customerBtn').innerHTML='None (general stock) <span>&#9662;</span>'; $('customerBtn').classList.add('ph');
   document.querySelector('#catChips')&&document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.remove('on'));
   document.querySelector('#srcBtn .lbl').textContent=(m==='door'?'Supplier':'From');
@@ -260,7 +260,9 @@ function renderPicker(){ const list=(_pk.list||[]).filter(x=>!_pk.q||x.name.toLo
 function pkSearch(v){ _pk.q=(v||'').toLowerCase(); renderPicker(); }
 function pkPick(v){ closeSheet(); _pk.onPick(v); }
 async function pkAdd(){ const n=prompt('New '+_pk.title+':'); if(!n)return; const v=n.trim(); if(!v)return; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:_pk.addKind,name:v,sort:99,product:_pk.addProduct})}); await loadOpts(); closeSheet(); _pk.onPick(v); }
-function pickDesign(){ openPicker({title:'Design',list:opts.design.door||[],addKind:'design',addProduct:'door',onPick:v=>{ sel.design=v; const b=$('designBtn'); b.classList.remove('ph'); b.innerHTML=esc(v)+' <span>&#9662;</span>'; updateReveal(); }}); }
+function onDesignInput(v){ sel.design=(v||'').trim(); updateReveal(); }
+function pickRecentDesign(v){ sel.design=v; if($('designIn'))$('designIn').value=v; renderDesignRecent(); updateReveal(); }
+function renderDesignRecent(){ const l=(opts.design&&opts.design.door)||[]; const el=$('designRecent'); if(el)el.innerHTML=l.map(o=>`<button class="chip sm${sel.design===o.name?' on':''}" onclick="pickRecentDesign('${esc(o.name)}')">${esc(o.name)}</button>`).join(''); }
 function pickCustomer(){ openPicker({title:'Customer',list:opts.customer||[],allowNone:true,addKind:'customer',addProduct:null,onPick:v=>{ sel.customer=v; const b=$('customerBtn'); b.classList.toggle('ph',!v); b.innerHTML=(v?esc(v):'None (general stock)')+' <span>&#9662;</span>'; }}); }
 
 function updateSrcLbl(){ $('srcLbl').textContent=src||'Pick source'; $('srcBtn').classList.toggle('need',!src); }
@@ -294,7 +296,10 @@ async function saveEntry(){
   pushRecent(entry);
   const kb=sel.brand, kd=sel.design; resetQty();
   sel.thickness='';sel.size='';
-  if(mode==='plywood'){ sel.brand=kb; } if(mode==='door'){ sel.design=kd; if(kd){const b=$('designBtn');b.classList.remove('ph');b.innerHTML=esc(kd)+' <span>&#9662;</span>';} }
+  if(mode==='plywood'){ sel.brand=kb; }
+  if(mode==='door'){ sel.design=kd; if($('designIn'))$('designIn').value=kd||'';
+    if(kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts().then(renderDesignRecent)); }
+    renderDesignRecent(); }
   renderChips(); renderZoneChips(); updateReveal(); refreshToday();
 }
 async function pushEntry(entry){
