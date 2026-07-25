@@ -319,6 +319,7 @@ function sheetHTML(h){ $('sheetInner').innerHTML=h; } function openSheet(){ $('s
 let tt; function toast(m,k){ const t=$('toast'); t.textContent=m; t.className=''; if(k)t.classList.add(k); t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2200); }
 
 loadStaff();
+if('serviceWorker' in navigator){ let _rf=false; navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_rf)return;_rf=true;location.reload();}); navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
 </body>
 </html>
