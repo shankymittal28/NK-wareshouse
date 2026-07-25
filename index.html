@@ -64,6 +64,11 @@ button,input,select{font-family:inherit;font-size:16px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .stat{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:12px 6px;text-align:center}
 .stat b{display:block;font-size:20px;font-weight:800}.stat span{display:block;font-size:9.5px;color:var(--mut2);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+.valcard{background:var(--grad);border-radius:16px;padding:14px 16px;margin-bottom:10px}
+.valcard .vlab{font-size:12px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.05em}
+.valcard .vlab span{display:inline;font-weight:500;text-transform:none;letter-spacing:0;color:rgba(255,255,255,.6);font-size:11px}
+.valcard .vnum{font-size:30px;font-weight:800;color:#fff;margin-top:3px;letter-spacing:-.01em}
+.rowbtns .obtn.rt{padding:9px 9px;color:var(--mint);font-size:14px}
 .obtns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .obtn{flex:1;min-width:44%;background:var(--panel);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:12px;font-size:14px;font-weight:700}.obtn.go{background:var(--grad);border-color:transparent;color:#fff}
 .rowbtns{display:flex;gap:5px;flex:0 0 auto;align-items:center}
@@ -143,6 +148,7 @@ button,input,select{font-family:inherit;font-size:16px}
 
 <div id="owner" class="wrap hide">
   <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><button class="iconlink" onclick="backToGate()">Exit</button></div>
+  <div class="valcard"><div class="vlab">Stock value <span>at your rates &middot; owner only</span></div><div class="vnum" id="stVal">&#8377;0</div></div>
   <div class="stats">
     <div class="stat"><b class="num" id="stEntries">0</b><span>Entries</span></div>
     <div class="stat"><b class="num" id="stQty">0</b><span>Total pcs</span></div>
@@ -337,10 +343,12 @@ let recent=[];
 function renderRecent(){ $('recentStrip').innerHTML=recent.map(r=>`<div class="r">${esc(r.name)} <span>&times;${r.qty}</span></div>`).join(''); }
 function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),todayCount); refreshToday(); recent.unshift({name:e.item_name,qty:e.qty}); recent=recent.slice(0,10); renderRecent(); }
 
-let ownerView='items', groups=[];
+let ownerView='items', groups=[], rates={};
+const inr=n=>'₹'+Math.round(Number(n)||0).toLocaleString('en-IN');
 async function showOwner(){ ['gate','add','manage'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
-async function loadStock(){ stock=(await api("/rest/v1/nkg_stock?select=*&order=created_at.desc"))||[]; buildFilters(); updateStats(); renderOwner(); }
-function updateStats(){ let net=0; stock.forEach(s=>net+=(s.direction==='out'?-1:1)*(Number(s.qty)||0)); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>(s.created_at||'').slice(0,10)===today()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; }
+async function loadStock(){ const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]); stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); buildFilters(); updateStats(); renderOwner(); }
+function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
+function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>(s.created_at||'').slice(0,10)===today()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; $('stVal').textContent=inr(val); }
 function setOwnerView(v){ ownerView=v; $('vwItems').classList.toggle('on',v==='items'); $('vwLog').classList.toggle('on',v==='log'); $('itemList').classList.toggle('hide',v!=='items'); $('stockList').classList.toggle('hide',v!=='log'); renderOwner(); }
 function renderOwner(){ ownerView==='items'?renderItems():renderStock(); }
 function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))];
@@ -349,11 +357,12 @@ function clearFilter(){ filter={}; buildFilters(); renderOwner(); }
 function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderOwner(); }
 function matchF(s,q){ if(filter.category&&s.category!==filter.category)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; }
 function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m={};
-  stock.forEach(s=>{ if(!matchF(s,q))return; const k=[s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); if(!m[k])m[k]={name:s.item_name||s.category||'—',category:s.category,brand:s.brand,thickness:s.thickness,size:s.size,design:s.design,inq:0,outq:0,ids:[]}; const g=m[k]; g.ids.push(s.id); if(s.direction==='out')g.outq+=Number(s.qty)||0; else g.inq+=Number(s.qty)||0; });
+  stock.forEach(s=>{ if(!matchF(s,q))return; const k=keyOf(s); if(!m[k])m[k]={k:k,name:s.item_name||s.category||'—',category:s.category,brand:s.brand,thickness:s.thickness,size:s.size,design:s.design,inq:0,outq:0,ids:[]}; const g=m[k]; g.ids.push(s.id); if(s.direction==='out')g.outq+=Number(s.qty)||0; else g.inq+=Number(s.qty)||0; });
   groups=Object.values(m).sort((a,b)=>a.name>b.name?1:-1);
   if(!groups.length){ $('itemList').innerHTML='<div class="empty">No stock yet.</div>'; return; }
-  $('itemList').innerHTML=groups.map((g,i)=>{ const net=g.inq-g.outq; const ic=g.category==='Door'?'&#128682;':'&#128230;';
-    return '<div class="row"><div class="thumb">'+ic+'</div><div class="meta"><div class="m1">'+esc(g.name)+' <span style="color:'+(net>0?'var(--mint)':'var(--rose)')+'">'+net+' pcs</span></div><div class="m2">'+esc(g.category||'')+' &middot; in '+g.inq+(g.outq?' &middot; out '+g.outq:'')+'</div></div><div class="rowbtns"><button class="obtn ed" onclick="openRename('+i+')" title="Edit name">&#9998;</button><button class="obtn" onclick="openDeduct('+i+')">&#8722; Out</button></div></div>'; }).join('');
+  $('itemList').innerHTML=groups.map((g,i)=>{ const net=g.inq-g.outq; const ic=g.category==='Door'?'&#128682;':'&#128230;'; const rate=rates[g.k]||0;
+    const line2=esc(g.category||'')+' &middot; in '+g.inq+(g.outq?' &middot; out '+g.outq:'')+(rate?' &middot; '+inr(rate)+'/pc &middot; <b style="color:var(--mint)">'+inr(net*rate)+'</b>':' &middot; <span style="color:var(--mut2)">no rate set</span>');
+    return '<div class="row"><div class="thumb">'+ic+'</div><div class="meta"><div class="m1">'+esc(g.name)+' <span style="color:'+(net>0?'var(--mint)':'var(--rose)')+'">'+net+' pcs</span></div><div class="m2">'+line2+'</div></div><div class="rowbtns"><button class="obtn rt" onclick="openRate('+i+')" title="Set rate">&#8377;</button><button class="obtn ed" onclick="openRename('+i+')" title="Edit name">&#9998;</button><button class="obtn" onclick="openDeduct('+i+')">&#8722; Out</button></div></div>'; }).join('');
 }
 function openDeduct(i){ const g=groups[i]; if(!g)return; window.__dg=g; const net=g.inq-g.outq;
   sheetHTML('<div class="grab"></div><h4>Give out to customer</h4><div style="font-size:16px;font-weight:700">'+esc(g.name)+'</div><div style="font-size:13px;color:var(--mut)">Available: <b style="color:var(--ink)">'+net+' pcs</b></div><div class="lab" style="margin-top:8px">Quantity out</div><div class="stepper"><button onclick="dStep(-1)">&#8722;</button><input id="dq" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty"><button onclick="dStep(1)">+</button></div><div class="lab" style="margin-top:10px">To customer <span class="opt">optional</span></div><input id="dcust" class="optin" placeholder="Customer name (optional)"><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmDeduct()">&#8722; Deduct from stock</button>'); openSheet();
@@ -363,6 +372,12 @@ function openRename(i){ const g=groups[i]; if(!g)return; window.__rg=g;
 }
 async function confirmRename(){ const g=window.__rg; if(!g)return; const nm=$('rn').value.trim(); if(!nm){toast('Enter a name','err');return;} const ids=g.ids||[]; if(!ids.length){closeSheet();return;}
   const r=await api("/rest/v1/nkg_stock?id=in.("+ids.join(',')+")",{method:'PATCH',headers:HJ,body:JSON.stringify({item_name:nm})}); closeSheet(); if(r===null){toast('Failed — check signal','err');return;} toast('Name updated ✓','ok'); await loadStock();
+}
+function openRate(i){ const g=groups[i]; if(!g)return; window.__rt=g; const net=g.inq-g.outq; const cur=rates[g.k]||0;
+  sheetHTML('<div class="grab"></div><h4>Set rate</h4><div style="font-size:16px;font-weight:700">'+esc(g.name)+'</div><div style="font-size:13px;color:var(--mut)">In stock: <b style="color:var(--ink)">'+net+' pcs</b>. This rate is used only to total your stock value &mdash; it is never shown to staff.</div><div class="lab" style="margin-top:10px">Rate per piece (&#8377;)</div><input id="rtv" class="qtyin num" type="number" inputmode="decimal" placeholder="e.g. 850" value="'+(cur||'')+'"><div id="rtPrev" style="font-size:13px;color:var(--mut);margin-top:6px"></div><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmRate()">Save rate</button>'); openSheet(); const upd=()=>{const r=Number($('rtv').value)||0; $('rtPrev').innerHTML=r?`This item &rarr; <b style="color:var(--mint)">${inr(net*r)}</b> (${net} &times; ${inr(r)})`:'';}; setTimeout(()=>{const el=$('rtv'); if(el){el.focus(); el.oninput=upd; upd();}},100);
+}
+async function confirmRate(){ const g=window.__rt; if(!g)return; const rate=Number($('rtv').value); if(rate<0||isNaN(rate)){toast('Enter a rate','err');return;}
+  const r=await api("/rest/v1/nkg_rates?on_conflict=k",{method:'POST',headers:{...HR,Prefer:"return=representation,resolution=merge-duplicates"},body:JSON.stringify({k:g.k,rate,updated_at:new Date().toISOString()})}); closeSheet(); if(r===null){toast('Failed — check signal','err');return;} toast('Rate saved ✓','ok'); await loadStock();
 }
 function dStep(d){ const v=Math.max(0,(Number($('dq').value)||0)+d); $('dq').value=v||''; }
 async function confirmDeduct(){ const g=window.__dg; if(!g)return; const qty=Number($('dq').value); if(!qty||qty<=0){toast('Enter quantity','err');return;}
