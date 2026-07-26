@@ -149,6 +149,24 @@ button,input,select{font-family:inherit;font-size:16px}
 .tdmeta{flex:1;min-width:0}
 .tdn{font-size:15px;font-weight:600;letter-spacing:-.01em}
 .tdsub{font-size:12px;color:var(--mut);margin-top:3px}
+.pstrip{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pth{position:relative;width:60px;height:60px;border-radius:10px;overflow:hidden;border:1px solid var(--hair2)}
+.pth img{width:100%;height:100%;object-fit:cover;display:block}
+.pth .x{position:absolute;top:2px;right:2px;width:20px;height:20px;line-height:1;text-align:center;border:none;border-radius:99px;background:rgba(0,0,0,.66);color:#fff;font-size:14px;font-weight:700;padding:0}
+.thumb.imgbtn,.tdth.imgbtn{padding:0;border:none;overflow:hidden;position:relative;cursor:pointer}
+.thumb.imgbtn img,.tdth.imgbtn img{width:100%;height:100%;object-fit:cover;display:block}
+.pcount{position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.72);color:#fff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:99px;line-height:1.4}
+.tdth.bad,.thumb.bad{background:var(--panel)}
+.tdth.bad img,.thumb.bad img{display:none}
+.tdth.bad::after,.thumb.bad::after{content:"📷";position:absolute;inset:0;display:grid;place-items:center;font-size:20px;opacity:.5}
+#lightbox{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;padding:8px}
+#lightbox.on{display:flex}
+#lbImg{max-width:100%;max-height:100%;object-fit:contain;transition:transform .2s ease-out}
+#lbImg.zoom{transform:scale(2.3);cursor:zoom-out}
+.lbx{position:fixed;top:calc(env(safe-area-inset-top) + 12px);right:14px;width:40px;height:40px;border:none;border-radius:99px;background:rgba(255,255,255,.15);color:#fff;font-size:24px;font-weight:700;z-index:81;display:grid;place-items:center}
+.lbnav{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:66px;border:none;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:30px;font-weight:700;z-index:81}
+#lbPrev{left:10px}#lbNext{right:10px}
+.lbcount{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 18px);left:50%;transform:translateX(-50%);color:#fff;font-size:13px;font-weight:700;background:rgba(0,0,0,.5);padding:5px 12px;border-radius:99px}
 </style></head>
 <body>
 
@@ -182,9 +200,9 @@ button,input,select{font-family:inherit;font-size:16px}
 
     <div id="secTail" class="hide">
       <div class="lab">Placed at <span class="opt">&mdash; optional</span></div><div class="chips" id="zoneChips"></div>
-      <div class="gap8"></div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">&#128247; Add photo</button><img id="pthumb" class="pthumb hide" alt=""></div>
+      <div class="gap8"></div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">&#128247; Add photo</button><span id="photoHint" class="opt" style="align-self:center"></span></div><div id="photoStrip" class="pstrip"></div>
     </div>
-    <input id="fileIn" type="file" accept="image/*" capture="environment" class="hide" onchange="onPhoto(event)">
+    <input id="fileIn" type="file" accept="image/*" multiple class="hide" onchange="onPhoto(event)">
     <button class="save hide" id="saveBtn" onclick="saveEntry()">&#10003; Save entry</button>
   </div>
   <div class="subline"><span id="todayLbl">Today: 0 logged</span><span><button class="undo hide" id="undoBtn" onclick="undoLast()">&#8630; Undo last</button> <span id="pendLbl" class="pend hide"></span></span></div>
@@ -232,6 +250,13 @@ button,input,select{font-family:inherit;font-size:16px}
 
 <div id="sheet" onclick="if(event.target.id==='sheet')closeSheet()"><div class="sheet" id="sheetInner"></div></div>
 <div id="toast"></div>
+<div id="lightbox" onclick="closeLb(event)">
+  <button class="lbx" onclick="closeLb()" aria-label="Close">&times;</button>
+  <button id="lbPrev" class="lbnav hide" onclick="lbGo(-1,event)" aria-label="Previous">&#8249;</button>
+  <img id="lbImg" alt="photo" onclick="lbZoom(event)">
+  <button id="lbNext" class="lbnav hide" onclick="lbGo(1,event)" aria-label="Next">&#8250;</button>
+  <div id="lbCount" class="lbcount"></div>
+</div>
 
 <script>
 const SB="https://enjlgflisuywkaorxetv.supabase.co";
@@ -252,7 +277,7 @@ const QTYQUICK=[5,10,25,50,100];
 let me_={name:''}, origin='gate', mode='plywood';
 let src=localStorage.getItem('nkg_src')||'';
 let zones=[], sources=[], staff=[], opts={brand:[],customer:[],thickness:{},size:{},design:{}};
-let sel={brand:'',thickness:'',size:'',design:'',customer:'',cat:'',zone:'',photo:null};
+let sel={brand:'',thickness:'',size:'',design:'',customer:'',cat:'',zone:'',photos:[]};
 let stock=[], filter={}, lastId=null;
 
 async function api(path,o){
@@ -319,7 +344,7 @@ async function showAdd(){
   setMode('plywood'); renderZoneChips(); refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
   if(!src) openSource();
 }
-function resetQty(){ $('qtyIn').value=''; $('descIn').value=''; sel.photo=null; $('pthumb').classList.add('hide'); $('photoBtn').classList.remove('on'); $('photoBtn').innerHTML='&#128247; Add photo'; sel.zone=''; }
+function resetQty(){ $('qtyIn').value=''; $('descIn').value=''; sel.photos=[]; renderPhotoStrip(); sel.zone=''; }
 function buildStatic(){ $('catChips').innerHTML=CATS.map(c=>`<button class="chip" data-cat="${c}" onclick="setCat('${c}')">${c}</button>`).join(''); $('qtyQuick').innerHTML=QTYQUICK.map(q=>`<button class="chip" onclick="setQty(${q})">${q}</button>`).join(''); }
 function setCat(c){ sel.cat=c; document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.cat===c)); updateReveal(); }
 function setQty(q){ $('qtyIn').value=q; }
@@ -389,8 +414,15 @@ async function newZoneInline(){ const n=prompt("New zone / rack:"); if(!n)return
 async function loadSources(){ sources=(await api("/rest/v1/nkg_sources?select=id,name&order=name.asc"))||[]; }
 
 function pickPhoto(){ $('fileIn').click(); }
-function onPhoto(e){ const f=e.target.files&&e.target.files[0]; if(!f)return; const img=new Image(),rd=new FileReader();
-  rd.onload=()=>{ img.onload=()=>{ const m=1280,s=Math.min(1,m/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height); sel.photo=c.toDataURL('image/jpeg',0.72); $('pthumb').src=sel.photo; $('pthumb').classList.remove('hide'); $('photoBtn').classList.add('on'); $('photoBtn').innerHTML='&#128247; Photo added ✓'; }; img.src=rd.result; }; rd.readAsDataURL(f); }
+function onPhoto(e){ const files=[...(e.target.files||[])]; if(!files.length)return;
+  files.forEach(f=>{ const img=new Image(),rd=new FileReader(); rd.onload=()=>{ img.onload=()=>{ const m=1280,s=Math.min(1,m/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height); (sel.photos=sel.photos||[]).push(c.toDataURL('image/jpeg',0.72)); renderPhotoStrip(); }; img.src=rd.result; }; rd.readAsDataURL(f); });
+  e.target.value=''; }
+function renderPhotoStrip(){ const el=$('photoStrip'); if(!el)return; const ps=sel.photos||[];
+  el.innerHTML=ps.map((p,i)=>'<div class="pth"><img src="'+p+'" onclick="viewSel('+i+')"><button class="x" onclick="rmPhoto('+i+')">&times;</button></div>').join('');
+  const b=$('photoBtn'); if(ps.length){ b.classList.add('on'); b.innerHTML='&#128247; Add more'; } else { b.classList.remove('on'); b.innerHTML='&#128247; Add photo'; }
+  const h=$('photoHint'); if(h)h.textContent=ps.length?(ps.length+' photo'+(ps.length>1?'s':'')+' attached'):''; }
+function rmPhoto(i){ (sel.photos||[]).splice(i,1); renderPhotoStrip(); }
+function viewSel(i){ openPhotos((sel.photos||[]).join('|'), i); }
 
 function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=h.match(/:(.*?);/)[1];const bin=atob(b);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:mime});}
 async function saveEntry(){
@@ -400,7 +432,7 @@ async function saveEntry(){
   else if(mode==='door'){ if(!sel.design||!sel.size){toast('Choose design & size','err');return;} item_name=sel.design+' '+sel.size; category='Door'; }
   else { if(!sel.cat){toast('Tap what it is','err');return;} category=sel.cat; item_name=($('descIn').value.trim()||sel.cat); }
   if(!qty){toast('Enter quantity','err');return;}
-  const entry={brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,customer:mode==='door'?(sel.customer||null):null,item_name,category,item_desc:mode==='other'?($('descIn').value.trim()||null):null,qty,unit:'pcs',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photo:sel.photo,_ts:Date.now()};
+  const entry={brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,customer:mode==='door'?(sel.customer||null):null,item_name,category,item_desc:mode==='other'?($('descIn').value.trim()||null):null,qty,unit:'pcs',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photos:(sel.photos||[]).slice(),_ts:Date.now()};
   $('saveBtn').disabled=true; $('saveBtn').textContent='Saving…';
   const row=await pushEntry(entry);
   $('saveBtn').disabled=false; $('saveBtn').innerHTML='&#10003; Save entry';
@@ -416,14 +448,16 @@ async function saveEntry(){
 }
 async function pushEntry(entry){
   try{
-    let photo_url=null;
-    // Photo is BEST-EFFORT: a failed photo upload must NEVER discard the stock entry.
-    if(entry._photo){ try{
-        const path=today()+'/'+(entry._ts||Date.now())+'-'+Math.floor(performance.now()%100000)+'.jpg';
-        const up=await fetch(SB+"/storage/v1/object/nkg-photos/"+path,{method:'POST',headers:{...H,"Content-Type":"image/jpeg","x-upsert":"true"},body:dataURLtoBlob(entry._photo)});
-        if(up.ok) photo_url=SB+"/storage/v1/object/public/nkg-photos/"+path;
+    // Photos are BEST-EFFORT: a failed upload must NEVER discard the stock entry.
+    const pics=(entry._photos&&entry._photos.length)?entry._photos:(entry._photo?[entry._photo]:[]);
+    const urls=[];
+    for(const p of pics){ try{
+        const path=today()+'/'+(entry._ts||Date.now())+'-'+Math.floor(performance.now()%100000)+'-'+urls.length+'.jpg';
+        const up=await fetch(SB+"/storage/v1/object/nkg-photos/"+path,{method:'POST',headers:{...H,"Content-Type":"image/jpeg","x-upsert":"true"},body:dataURLtoBlob(p)});
+        if(up.ok) urls.push(SB+"/storage/v1/object/public/nkg-photos/"+path);
       }catch(_){} }
-    const row={...entry}; delete row._photo; delete row._ts; row.photo_url=photo_url;
+    const row={...entry}; delete row._photo; delete row._photos; delete row._ts;
+    row.photos=urls; row.photo_url=urls[0]||null;
     row.id=row.id||uuid();
     const r=await fetch(SB+"/rest/v1/nkg_stock",{method:'POST',headers:{...HJ,Prefer:"return=minimal"},body:JSON.stringify(row)}); if(!r.ok)throw 0;
     return {id:row.id};
@@ -456,6 +490,16 @@ function setOwnerView(v){ ownerView=v;
   renderOwner(); }
 function renderOwner(){ ownerView==='items'?renderItems():ownerView==='today'?renderToday():renderStock(); }
 const IST=t=>{ const d=t?new Date(t):new Date(); return isNaN(d)?'':new Date(d.getTime()+19800000).toISOString().slice(0,10); };
+function photosOf(s){ return (Array.isArray(s.photos)&&s.photos.length)?s.photos:(s.photo_url?[s.photo_url]:[]); }
+let _lb=[], _lbi=0;
+function openPhotos(s,start){ _lb=(''+s).split('|').filter(Boolean); if(!_lb.length)return; _lbi=Math.max(0,Math.min(start||0,_lb.length-1)); showLb(); $('lightbox').classList.add('on'); }
+function showLb(){ const im=$('lbImg'); im.src=_lb[_lbi]; im.classList.remove('zoom'); $('lbCount').textContent=_lb.length>1?(_lbi+1)+' / '+_lb.length:''; $('lbPrev').classList.toggle('hide',_lb.length<2); $('lbNext').classList.toggle('hide',_lb.length<2); }
+function lbGo(d,ev){ if(ev)ev.stopPropagation(); _lbi=(_lbi+d+_lb.length)%_lb.length; showLb(); }
+function lbZoom(ev){ ev.stopPropagation(); $('lbImg').classList.toggle('zoom'); }
+function closeLb(ev){ if(ev&&ev.target&&ev.target.id==='lbImg')return; $('lightbox').classList.remove('on'); $('lbImg').src=''; }
+function thumbHTML(s,cls){ const p=photosOf(s); const emoji=(s.direction==='out')?'&#128228;':(s.category==='Door'?'&#128682;':'&#128230;');
+  if(!p.length) return '<div class="'+cls+' ph">'+emoji+'</div>';
+  return '<button class="'+cls+' imgbtn" onclick="openPhotos(\''+p.join('|')+'\')"><img src="'+esc(p[0])+'" loading="lazy" onerror="this.parentNode.classList.add(\'bad\')">'+(p.length>1?'<span class="pcount">'+p.length+'</span>':'')+'</button>'; }
 function renderToday(){
   const day=IST(); const list=stock.filter(s=>IST(s.created_at)===day).slice().sort((a,b)=>(a.created_at<b.created_at?1:-1));
   const inN=list.filter(s=>s.direction!=='out').reduce((x,s)=>x+(Number(s.qty)||0),0);
@@ -465,7 +509,7 @@ function renderToday(){
   let head='<div class="tdsum"><div><b>'+list.length+'</b><span>arrivals</span></div><div><b class="mint">'+inN+'</b><span>pcs in</span></div>'+(outN?'<div><b class="rose">'+outN+'</b><span>pcs out</span></div>':'')+'</div>'+(wholine?'<div class="tdwho">Logged by '+wholine+'</div>':'');
   if(!list.length){ $('todayList').innerHTML='<div class="empty">Nothing logged today yet.</div>'; return; }
   const rows=list.map(s=>{ const tm=s.created_at?new Date(s.created_at).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:true}):''; const out=s.direction==='out';
-    const th=s.photo_url?'<img class="tdth" src="'+esc(s.photo_url)+'" loading="lazy" onerror="this.classList.add(\'bad\')">':'<div class="tdth ph">'+(s.category==='Door'?'&#128682;':'&#128230;')+'</div>';
+    const th=thumbHTML(s,'tdth');
     const sub=[esc(s.thickness||''),esc(s.size||''),(s.source_godown&&!out?esc(s.source_godown):'')].filter(Boolean).join(' · ');
     return '<div class="tdrow">'+th+'<div class="tdmeta"><div class="tdn">'+esc(s.item_name||s.category||'—')+' <span class="'+(out?'rose':'mint')+'">'+(out?'&minus;':'+')+esc(s.qty)+'</span></div><div class="tdsub">'+(sub?sub+' &middot; ':'')+'by '+esc(s.logged_by||'—')+' &middot; '+tm+'</div></div></div>'; }).join('');
   $('todayList').innerHTML=head+rows;
@@ -539,7 +583,7 @@ async function confirmDeduct(){ const g=window.__dg; if(!g)return; const qty=Num
 function renderStock(){ const q=($('searchIn').value||'').toLowerCase(); const list=stock.filter(s=>matchF(s,q));
   if(!list.length){ $('stockList').innerHTML='<div class="empty">No entries yet.</div>'; return; }
   $('stockList').innerHTML=list.map(s=>{ const t=s.created_at?new Date(s.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''; const out=s.direction==='out';
-    const thumb=s.photo_url?`<img class="thumb" src="${s.photo_url}" loading="lazy" onerror="this.style.opacity=.2">`:`<div class="thumb">${out?'&#128228;':(s.category==='Door'?'&#128682;':'&#128230;')}</div>`;
+    const thumb=thumbHTML(s,'thumb');
     return '<div class="row">'+thumb+'<div class="meta"><div class="m1">'+esc(s.item_name||s.category||'—')+' <span style="color:'+(out?'var(--rose)':'var(--mint)')+'">'+(out?'&minus;':'+')+(s.qty!=null?esc(s.qty):'—')+'</span></div><div class="m2">'+(out?'given out':esc(s.category||''))+' &middot; by '+esc(s.logged_by||'—')+' &middot; '+t+'</div><div class="tags">'+(s.customer?'<span class="tg cust">&#128100; '+esc(s.customer)+'</span>':'')+(s.zone_name?'<span class="tg zone">&#128205; '+esc(s.zone_name)+'</span>':'')+((s.source_godown&&!out)?'<span class="tg src">'+esc(s.source_godown)+'</span>':'')+'</div></div><button class="xdel" onclick="deleteStock(\''+s.id+'\')">&times;</button></div>'; }).join('');
 }
 async function deleteStock(id){ if(!confirm('Remove this entry?'))return; await api("/rest/v1/nkg_stock?id=eq."+id,{method:'DELETE',headers:H}); await loadStock(); toast('Removed','ok'); }
