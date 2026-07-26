@@ -104,6 +104,17 @@ button,input,select{font-family:inherit;font-size:16px}
 .grab{width:38px;height:4px;border-radius:99px;background:var(--hair2);align-self:center}.sheet h4{margin:0;font-size:17px;font-weight:700}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 90px);transform:translateX(-50%) translateY(16px);background:#16161c;border:1px solid var(--hair2);color:var(--ink);padding:12px 18px;border-radius:99px;font-size:14px;font-weight:700;z-index:60;opacity:0;pointer-events:none;transition:.2s;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}#toast.ok{color:var(--mint)}#toast.err{color:var(--rose)}
+.gbrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.gblab{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin-right:2px}
+.gwrap{margin-bottom:9px;border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:var(--surface)}
+.ghead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;user-select:none;background:rgba(255,255,255,.035)}
+.ghead:active{background:rgba(255,255,255,.06)}
+.ghead .gh1{font-size:15.5px;font-weight:700;display:flex;align-items:center;gap:8px;min-width:0}
+.ghead .gh1 .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ghead .gcar{color:var(--mut);font-size:11px;width:11px;flex:0 0 auto}
+.ghead .gh2{font-size:11.5px;color:var(--mut);text-align:right;white-space:nowrap;flex:0 0 auto}
+.gsec{padding:3px 8px 8px}
+.gsec .row:last-child{border-bottom:none}
 </style></head>
 <body>
 
@@ -160,9 +171,10 @@ button,input,select{font-family:inherit;font-size:16px}
     <button class="obtn" onclick="showManage()">&#9881; Manage</button>
     <button class="obtn" onclick="loadStock()">&#8635; Refresh</button>
   </div>
-  <div class="modew" id="ownerView"><button id="vwItems" class="on" onclick="setOwnerView('items')">Stock (item-wise)</button><button id="vwLog" onclick="setOwnerView('log')">All entries</button></div>
+  <div class="modew" id="ownerView"><button id="vwItems" class="on" onclick="setOwnerView('items')">Stock</button><button id="vwLog" onclick="setOwnerView('log')">All entries</button></div>
   <input id="searchIn" class="searchbar" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
   <div class="fchips" id="filterChips"></div>
+  <div class="gbrow" id="groupChips"></div>
   <div id="itemList"></div>
   <div id="stockList" class="hide"></div>
 </div>
@@ -397,20 +409,35 @@ async function showOwner(){ ['gate','add','manage'].forEach(i=>$(i).classList.ad
 async function loadStock(){ const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]); stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); buildFilters(); updateStats(); renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
 function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>(s.created_at||'').slice(0,10)===today()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; $('stVal').textContent=inr(val); }
-function setOwnerView(v){ ownerView=v; $('vwItems').classList.toggle('on',v==='items'); $('vwLog').classList.toggle('on',v==='log'); $('itemList').classList.toggle('hide',v!=='items'); $('stockList').classList.toggle('hide',v!=='log'); renderOwner(); }
+function setOwnerView(v){ ownerView=v; $('vwItems').classList.toggle('on',v==='items'); $('vwLog').classList.toggle('on',v==='log'); $('itemList').classList.toggle('hide',v!=='items'); $('stockList').classList.toggle('hide',v!=='log'); $('groupChips').classList.toggle('hide',v!=='items'); renderOwner(); }
 function renderOwner(){ ownerView==='items'?renderItems():renderStock(); }
 function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))];
   $('filterChips').innerHTML=['<button class="fchip'+(!filter.category?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).join(''); }
 function clearFilter(){ filter={}; buildFilters(); renderOwner(); }
 function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderOwner(); }
 function matchF(s,q){ if(filter.category&&s.category!==filter.category)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; }
+let groupBy='brand';
+const GROUPERS=[{k:'brand',label:'Brand'},{k:'size',label:'Size'},{k:'thickness',label:'Thickness'},{k:'design',label:'Design'},{k:'category',label:'Type'},{k:'',label:'None'}];
+let collapsed={}, _buckets=[];
+function renderGroupChips(){ $('groupChips').innerHTML='<span class="gblab">Group by</span>'+GROUPERS.map(gr=>'<button class="fchip'+(groupBy===gr.k?' on':'')+'" onclick="setGroupBy(\''+gr.k+'\')">'+gr.label+'</button>').join(''); }
+function setGroupBy(k){ groupBy=k; renderItems(); }
+function toggleGroup(bi){ const key=_buckets[bi]; if(key==null)return; const cid=groupBy+'::'+key; collapsed[cid]=!collapsed[cid]; renderItems(); }
+function _itemRow(g){ const i=g._i, net=g.net, ic=g.category==='Door'?'&#128682;':'&#128230;', rate=rates[g.k]||0;
+  const line2=esc(g.category||'')+' &middot; in '+g.inq+(g.outq?' &middot; out '+g.outq:'')+(rate?' &middot; '+inr(rate)+'/pc &middot; <b style="color:var(--mint)">'+inr(net*rate)+'</b>':' &middot; <span style="color:var(--mut2)">no rate set</span>');
+  return '<div class="row"><div class="thumb">'+ic+'</div><div class="meta"><div class="m1">'+esc(g.name)+' <span style="color:'+(net>0?'var(--mint)':'var(--rose)')+'">'+net+' pcs</span></div><div class="m2">'+line2+'</div></div><div class="rowbtns"><button class="obtn rt" onclick="openRate('+i+')" title="Set rate">&#8377;</button><button class="obtn ed" onclick="openRename('+i+')" title="Edit name">&#9998;</button><button class="obtn" onclick="openDeduct('+i+')">&#8722; Out</button></div></div>'; }
 function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m={};
   stock.forEach(s=>{ if(!matchF(s,q))return; const k=keyOf(s); if(!m[k])m[k]={k:k,name:s.item_name||s.category||'—',category:s.category,brand:s.brand,thickness:s.thickness,size:s.size,design:s.design,inq:0,outq:0,ids:[]}; const g=m[k]; g.ids.push(s.id); if(s.direction==='out')g.outq+=Number(s.qty)||0; else g.inq+=Number(s.qty)||0; });
-  groups=Object.values(m).sort((a,b)=>a.name>b.name?1:-1);
-  if(!groups.length){ $('itemList').innerHTML='<div class="empty">No stock yet.</div>'; return; }
-  $('itemList').innerHTML=groups.map((g,i)=>{ const net=g.inq-g.outq; const ic=g.category==='Door'?'&#128682;':'&#128230;'; const rate=rates[g.k]||0;
-    const line2=esc(g.category||'')+' &middot; in '+g.inq+(g.outq?' &middot; out '+g.outq:'')+(rate?' &middot; '+inr(rate)+'/pc &middot; <b style="color:var(--mint)">'+inr(net*rate)+'</b>':' &middot; <span style="color:var(--mut2)">no rate set</span>');
-    return '<div class="row"><div class="thumb">'+ic+'</div><div class="meta"><div class="m1">'+esc(g.name)+' <span style="color:'+(net>0?'var(--mint)':'var(--rose)')+'">'+net+' pcs</span></div><div class="m2">'+line2+'</div></div><div class="rowbtns"><button class="obtn rt" onclick="openRate('+i+')" title="Set rate">&#8377;</button><button class="obtn ed" onclick="openRename('+i+')" title="Edit name">&#9998;</button><button class="obtn" onclick="openDeduct('+i+')">&#8722; Out</button></div></div>'; }).join('');
+  groups=Object.values(m); groups.forEach((g,idx)=>{ g._i=idx; g.net=g.inq-g.outq; g.val=g.net*(rates[g.k]||0); });
+  renderGroupChips();
+  if(!groups.length){ _buckets=[]; $('itemList').innerHTML='<div class="empty">No stock yet.</div>'; return; }
+  if(!groupBy){ _buckets=[]; $('itemList').innerHTML=groups.slice().sort((a,b)=>a.name>b.name?1:-1).map(_itemRow).join(''); return; }
+  const bk={}; groups.forEach(g=>{ const key=((g[groupBy]!=null?g[groupBy]:'')+'').trim()||'—'; (bk[key]=bk[key]||[]).push(g); });
+  const sum=(arr,f)=>arr.reduce((x,g)=>x+f(g),0);
+  const order=Object.keys(bk).sort((a,b)=>{ const vb=sum(bk[b],g=>g.val)-sum(bk[a],g=>g.val); if(vb)return vb; const pb=sum(bk[b],g=>g.net)-sum(bk[a],g=>g.net); if(pb)return pb; return a>b?1:-1; });
+  _buckets=order;
+  $('itemList').innerHTML=order.map((key,bi)=>{ const items=bk[key].slice().sort((a,b)=>a.name>b.name?1:-1), pcs=sum(items,g=>g.net), val=sum(items,g=>g.val), cid=groupBy+'::'+key, isC=!!collapsed[cid];
+    const head='<div class="ghead" onclick="toggleGroup('+bi+')"><div class="gh1"><span class="gcar">'+(isC?'&#9656;':'&#9662;')+'</span><span class="nm">'+esc(key)+'</span></div><div class="gh2">'+items.length+' item'+(items.length!==1?'s':'')+' &middot; '+pcs+' pcs'+(val?' &middot; <b style="color:var(--mint)">'+inr(val)+'</b>':'')+'</div></div>';
+    return '<div class="gwrap">'+head+(isC?'':'<div class="gsec">'+items.map(_itemRow).join('')+'</div>')+'</div>'; }).join('');
 }
 function openDeduct(i){ const g=groups[i]; if(!g)return; window.__dg=g; const net=g.inq-g.outq;
   sheetHTML('<div class="grab"></div><h4>Give out to customer</h4><div style="font-size:16px;font-weight:700">'+esc(g.name)+'</div><div style="font-size:13px;color:var(--mut)">Available: <b style="color:var(--ink)">'+net+' pcs</b></div><div class="lab" style="margin-top:8px">Quantity out</div><div class="stepper"><button onclick="dStep(-1)">&#8722;</button><input id="dq" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty"><button onclick="dStep(1)">+</button></div><div class="lab" style="margin-top:10px">To customer <span class="opt">optional</span></div><input id="dcust" class="optin" placeholder="Customer name (optional)"><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmDeduct()">&#8722; Deduct from stock</button>'); openSheet();
