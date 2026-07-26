@@ -457,15 +457,18 @@ function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m
   groups=Object.values(m); groups.forEach((g,idx)=>{ g._i=idx; g.net=g.inq-g.outq; g.val=g.net*(rates[g.k]||0); });
   renderGroupChips();
   if(!groups.length){ _buckets=[]; $('itemList').innerHTML='<div class="empty">No stock yet.</div>'; return; }
-  const byVal=(a,b)=>b.val-a.val||(a.name>b.name?1:-1);
-  if(!groupBy){ _buckets=[]; $('itemList').innerHTML='<div class="glist" style="border-top:none">'+groups.slice().sort(byVal).map(_itemRow).join('')+'</div>'; return; }
+  const _num=v=>{const n=parseFloat(String(v==null?'':v));return isNaN(n)?0:n;};
+  const _area=sz=>{const p=String(sz||'').split(/[x×X*]/);return p.length<2?0:_num(p[0])*_num(p[1]);};
+  const bySeq=(a,b)=>_num(a.thickness)-_num(b.thickness)||_area(a.size)-_area(b.size)||(String(a.name)>String(b.name)?1:-1);
+  const bySeqFlat=(a,b)=>String(a.brand||'~').localeCompare(String(b.brand||'~'))||bySeq(a,b);
+  if(!groupBy){ _buckets=[]; $('itemList').innerHTML='<div class="glist" style="border-top:none">'+groups.slice().sort(bySeqFlat).map(_itemRow).join('')+'</div>'; return; }
   const NONE={brand:'Doors / other',thickness:'No thickness',size:'No size',design:'Plywood / other',category:'Uncategorised'};
   const bk={}; groups.forEach(g=>{ const key=((g[groupBy]!=null?g[groupBy]:'')+'').trim()||(NONE[groupBy]||'Other'); (bk[key]=bk[key]||[]).push(g); });
   const sum=(arr,f)=>arr.reduce((x,g)=>x+f(g),0); const bv={},bp={};
   Object.keys(bk).forEach(k=>{ bv[k]=sum(bk[k],g=>g.val); bp[k]=sum(bk[k],g=>g.net); });
   const order=Object.keys(bk).sort((a,b)=>(bv[b]-bv[a])||(bp[b]-bp[a])||(a>b?1:-1));
   const maxv=Math.max(1,...order.map(k=>bv[k])); _buckets=order;
-  $('itemList').innerHTML=order.map((key,bi)=>{ const items=bk[key].slice().sort(byVal), pcs=bp[key], val=bv[key], isC=!!collapsed[groupBy+'::'+key];
+  $('itemList').innerHTML=order.map((key,bi)=>{ const items=bk[key].slice().sort(bySeq), pcs=bp[key], val=bv[key], isC=!!collapsed[groupBy+'::'+key];
     const rt=val?('<span class="gval">'+inr(val)+'</span>'):('<span class="gval pcs">'+pcs+' pcs</span>');
     const meta=items.length+' item'+(items.length!==1?'s':'')+(val?' &middot; '+pcs+' pcs':'');
     const head='<button class="ghd'+(isC?' col':'')+'" onclick="toggleGroup('+bi+')"><div class="ghd-l"><span class="gcar">&#9662;</span><span class="gname">'+esc(key)+'</span></div><div class="ghd-r">'+rt+'<span class="gmeta">'+meta+'</span></div></button>';
