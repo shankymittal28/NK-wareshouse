@@ -491,15 +491,27 @@ function setOwnerView(v){ ownerView=v;
 function renderOwner(){ ownerView==='items'?renderItems():ownerView==='today'?renderToday():renderStock(); }
 const IST=t=>{ const d=t?new Date(t):new Date(); return isNaN(d)?'':new Date(d.getTime()+19800000).toISOString().slice(0,10); };
 function photosOf(s){ return (Array.isArray(s.photos)&&s.photos.length)?s.photos:(s.photo_url?[s.photo_url]:[]); }
+function stPath(u){ const m=(''+u).split('/nkg-photos/')[1]; return m?m.split('?')[0]:(''+u); }
+const _pcache={};
+async function fetchPhoto(x){ if(!x) return '';
+  if(x.startsWith('data:')||x.startsWith('blob:')) return x;                         // local (not yet uploaded)
+  const path=stPath(x); if(_pcache[path]) return _pcache[path];
+  try{ const r=await fetch(SB+"/storage/v1/object/authenticated/nkg-photos/"+path,{headers:{apikey:KEY,Authorization:"Bearer "+TOKEN}});
+    if(!r.ok) return ''; const u=URL.createObjectURL(await r.blob()); _pcache[path]=u; return u; }catch(_){ return ''; } }
+async function hydratePhotos(root){ const imgs=(root||document).querySelectorAll('img[data-p]');
+  for(const im of imgs){ const p=im.getAttribute('data-p'); im.removeAttribute('data-p'); const u=await fetchPhoto(p); if(u){ im.src=u; } else if(im.parentNode&&im.parentNode.classList){ im.parentNode.classList.add('bad'); } } }
 let _lb=[], _lbi=0;
-function openPhotos(s,start){ _lb=(''+s).split('|').filter(Boolean); if(!_lb.length)return; _lbi=Math.max(0,Math.min(start||0,_lb.length-1)); showLb(); $('lightbox').classList.add('on'); }
-function showLb(){ const im=$('lbImg'); im.src=_lb[_lbi]; im.classList.remove('zoom'); $('lbCount').textContent=_lb.length>1?(_lbi+1)+' / '+_lb.length:''; $('lbPrev').classList.toggle('hide',_lb.length<2); $('lbNext').classList.toggle('hide',_lb.length<2); }
+function openPhotos(s,start){ _lb=(''+s).split('|').filter(Boolean); if(!_lb.length)return; _lbi=Math.max(0,Math.min(start||0,_lb.length-1)); $('lightbox').classList.add('on'); showLb(); }
+async function showLb(){ const im=$('lbImg'); im.classList.remove('zoom'); im.removeAttribute('src');
+  $('lbCount').textContent=_lb.length>1?(_lbi+1)+' / '+_lb.length:''; $('lbPrev').classList.toggle('hide',_lb.length<2); $('lbNext').classList.toggle('hide',_lb.length<2);
+  const want=_lbi, u=await fetchPhoto(_lb[_lbi]); if(want===_lbi) im.src=u||''; }
 function lbGo(d,ev){ if(ev)ev.stopPropagation(); _lbi=(_lbi+d+_lb.length)%_lb.length; showLb(); }
 function lbZoom(ev){ ev.stopPropagation(); $('lbImg').classList.toggle('zoom'); }
-function closeLb(ev){ if(ev&&ev.target&&ev.target.id==='lbImg')return; $('lightbox').classList.remove('on'); $('lbImg').src=''; }
+function closeLb(ev){ if(ev&&ev.target&&ev.target.id==='lbImg')return; $('lightbox').classList.remove('on'); $('lbImg').removeAttribute('src'); }
 function thumbHTML(s,cls){ const p=photosOf(s); const emoji=(s.direction==='out')?'&#128228;':(s.category==='Door'?'&#128682;':'&#128230;');
   if(!p.length) return '<div class="'+cls+' ph">'+emoji+'</div>';
-  return '<button class="'+cls+' imgbtn" onclick="openPhotos(\''+p.join('|')+'\')"><img src="'+esc(p[0])+'" loading="lazy" onerror="this.parentNode.classList.add(\'bad\')">'+(p.length>1?'<span class="pcount">'+p.length+'</span>':'')+'</button>'; }
+  const paths=p.map(stPath);
+  return '<button class="'+cls+' imgbtn" onclick="openPhotos(\''+paths.join('|')+'\')"><img data-p="'+esc(paths[0])+'" loading="lazy">'+(p.length>1?'<span class="pcount">'+p.length+'</span>':'')+'</button>'; }
 function renderToday(){
   const day=IST(); const list=stock.filter(s=>IST(s.created_at)===day).slice().sort((a,b)=>(a.created_at<b.created_at?1:-1));
   const inN=list.filter(s=>s.direction!=='out').reduce((x,s)=>x+(Number(s.qty)||0),0);
@@ -512,7 +524,7 @@ function renderToday(){
     const th=thumbHTML(s,'tdth');
     const sub=[esc(s.thickness||''),esc(s.size||''),(s.source_godown&&!out?esc(s.source_godown):'')].filter(Boolean).join(' · ');
     return '<div class="tdrow">'+th+'<div class="tdmeta"><div class="tdn">'+esc(s.item_name||s.category||'—')+' <span class="'+(out?'rose':'mint')+'">'+(out?'&minus;':'+')+esc(s.qty)+'</span></div><div class="tdsub">'+(sub?sub+' &middot; ':'')+'by '+esc(s.logged_by||'—')+' &middot; '+tm+'</div></div></div>'; }).join('');
-  $('todayList').innerHTML=head+rows;
+  $('todayList').innerHTML=head+rows; hydratePhotos($('todayList'));
 }
 function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))];
   $('filterChips').innerHTML=['<button class="fchip'+(!filter.category?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).join(''); }
@@ -584,7 +596,7 @@ function renderStock(){ const q=($('searchIn').value||'').toLowerCase(); const l
   if(!list.length){ $('stockList').innerHTML='<div class="empty">No entries yet.</div>'; return; }
   $('stockList').innerHTML=list.map(s=>{ const t=s.created_at?new Date(s.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''; const out=s.direction==='out';
     const thumb=thumbHTML(s,'thumb');
-    return '<div class="row">'+thumb+'<div class="meta"><div class="m1">'+esc(s.item_name||s.category||'—')+' <span style="color:'+(out?'var(--rose)':'var(--mint)')+'">'+(out?'&minus;':'+')+(s.qty!=null?esc(s.qty):'—')+'</span></div><div class="m2">'+(out?'given out':esc(s.category||''))+' &middot; by '+esc(s.logged_by||'—')+' &middot; '+t+'</div><div class="tags">'+(s.customer?'<span class="tg cust">&#128100; '+esc(s.customer)+'</span>':'')+(s.zone_name?'<span class="tg zone">&#128205; '+esc(s.zone_name)+'</span>':'')+((s.source_godown&&!out)?'<span class="tg src">'+esc(s.source_godown)+'</span>':'')+'</div></div><button class="xdel" onclick="deleteStock(\''+s.id+'\')">&times;</button></div>'; }).join('');
+    return '<div class="row">'+thumb+'<div class="meta"><div class="m1">'+esc(s.item_name||s.category||'—')+' <span style="color:'+(out?'var(--rose)':'var(--mint)')+'">'+(out?'&minus;':'+')+(s.qty!=null?esc(s.qty):'—')+'</span></div><div class="m2">'+(out?'given out':esc(s.category||''))+' &middot; by '+esc(s.logged_by||'—')+' &middot; '+t+'</div><div class="tags">'+(s.customer?'<span class="tg cust">&#128100; '+esc(s.customer)+'</span>':'')+(s.zone_name?'<span class="tg zone">&#128205; '+esc(s.zone_name)+'</span>':'')+((s.source_godown&&!out)?'<span class="tg src">'+esc(s.source_godown)+'</span>':'')+'</div></div><button class="xdel" onclick="deleteStock(\''+s.id+'\')">&times;</button></div>'; }).join(''); hydratePhotos($('stockList'));
 }
 async function deleteStock(id){ if(!confirm('Remove this entry?'))return; await api("/rest/v1/nkg_stock?id=eq."+id,{method:'DELETE',headers:H}); await loadStock(); toast('Removed','ok'); }
 
