@@ -104,17 +104,38 @@ button,input,select{font-family:inherit;font-size:16px}
 .grab{width:38px;height:4px;border-radius:99px;background:var(--hair2);align-self:center}.sheet h4{margin:0;font-size:17px;font-weight:700}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 90px);transform:translateX(-50%) translateY(16px);background:#16161c;border:1px solid var(--hair2);color:var(--ink);padding:12px 18px;border-radius:99px;font-size:14px;font-weight:700;z-index:60;opacity:0;pointer-events:none;transition:.2s;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}#toast.ok{color:var(--mint)}#toast.err{color:var(--rose)}
-.gbrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.gbrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:14px 0 2px}
 .gblab{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin-right:2px}
-.gwrap{margin-bottom:9px;border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:var(--surface)}
-.ghead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;user-select:none;background:rgba(255,255,255,.035)}
-.ghead:active{background:rgba(255,255,255,.06)}
-.ghead .gh1{font-size:15.5px;font-weight:700;display:flex;align-items:center;gap:8px;min-width:0}
-.ghead .gh1 .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ghead .gcar{color:var(--mut);font-size:11px;width:11px;flex:0 0 auto}
-.ghead .gh2{font-size:11.5px;color:var(--mut);text-align:right;white-space:nowrap;flex:0 0 auto}
-.gsec{padding:3px 8px 8px}
-.gsec .row:last-child{border-bottom:none}
+.gblock{margin-bottom:20px}
+.ghd{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;width:100%;background:none;border:none;padding:4px 2px 9px;cursor:pointer;text-align:left;color:var(--ink)}
+.ghd-l{display:flex;align-items:center;gap:9px;min-width:0}
+.ghd .gcar{color:var(--mut2);font-size:12px;flex:0 0 auto;transition:transform .2s}
+.ghd.col .gcar{transform:rotate(-90deg)}
+.gname{font-size:19px;font-weight:800;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ghd-r{text-align:right;flex:0 0 auto}
+.gval{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--mint)}
+.gval.pcs{color:var(--ink)}
+.gmeta{display:block;font-size:11.5px;color:var(--mut);margin-top:1px}
+.gbar{height:4px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin:0 2px 4px}
+.gbar>i{display:block;height:100%;background:var(--grad);border-radius:99px}
+.glist{margin-top:9px;display:flex;flex-direction:column;border-top:1px solid var(--hair)}
+.irow{display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;border-bottom:1px solid var(--hair);padding:12px 2px;cursor:pointer;text-align:left;color:var(--ink)}
+.irow:active{background:rgba(255,255,255,.035)}
+.irow-main{flex:1;min-width:0}
+.iname{font-size:15px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ispec{font-size:12.5px;color:var(--mut);margin-top:3px}
+.ispec .pc{color:var(--ink);font-weight:600}
+.ispec .setr{color:var(--amber);font-weight:600}
+.irow-r{display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.ival{font-size:15.5px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.ival.z{color:var(--amber);font-size:13px;font-weight:600}
+.irow .chev{color:var(--mut2);font-size:20px;flex:0 0 auto;line-height:1}
+.isum{display:flex;gap:9px;margin:2px 0 4px}
+.isum>div{flex:1;background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:11px 6px;text-align:center}
+.isum b{display:block;font-size:18px;font-weight:800;letter-spacing:-.02em}
+.isum span{display:block;font-size:10.5px;color:var(--mut);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.row2btn{display:flex;gap:10px}
+.row2btn .sec{flex:1;background:var(--panel);border:1px solid var(--hair2);color:var(--ink);border-radius:12px;padding:12px;font-weight:700;font-size:14px}
 </style></head>
 <body>
 
@@ -422,22 +443,34 @@ let collapsed={}, _buckets=[];
 function renderGroupChips(){ $('groupChips').innerHTML='<span class="gblab">Group by</span>'+GROUPERS.map(gr=>'<button class="fchip'+(groupBy===gr.k?' on':'')+'" onclick="setGroupBy(\''+gr.k+'\')">'+gr.label+'</button>').join(''); }
 function setGroupBy(k){ groupBy=k; renderItems(); }
 function toggleGroup(bi){ const key=_buckets[bi]; if(key==null)return; const cid=groupBy+'::'+key; collapsed[cid]=!collapsed[cid]; renderItems(); }
-function _itemRow(g){ const i=g._i, net=g.net, ic=g.category==='Door'?'&#128682;':'&#128230;', rate=rates[g.k]||0;
-  const line2=esc(g.category||'')+' &middot; in '+g.inq+(g.outq?' &middot; out '+g.outq:'')+(rate?' &middot; '+inr(rate)+'/pc &middot; <b style="color:var(--mint)">'+inr(net*rate)+'</b>':' &middot; <span style="color:var(--mut2)">no rate set</span>');
-  return '<div class="row"><div class="thumb">'+ic+'</div><div class="meta"><div class="m1">'+esc(g.name)+' <span style="color:'+(net>0?'var(--mint)':'var(--rose)')+'">'+net+' pcs</span></div><div class="m2">'+line2+'</div></div><div class="rowbtns"><button class="obtn rt" onclick="openRate('+i+')" title="Set rate">&#8377;</button><button class="obtn ed" onclick="openRename('+i+')" title="Edit name">&#9998;</button><button class="obtn" onclick="openDeduct('+i+')">&#8722; Out</button></div></div>'; }
+function _itemRow(g){ const i=g._i, net=g.net, rate=rates[g.k]||0, val=net*rate;
+  const spec='<span class="pc">'+net+' pcs</span>'+(rate?' &middot; '+inr(rate)+'/pc':'');
+  const right=rate?('<span class="ival">'+inr(val)+'</span>'):('<span class="ival z">Set rate</span>');
+  return '<button class="irow" onclick="openItem('+i+')"><div class="irow-main"><div class="iname">'+esc(g.name)+'</div><div class="ispec">'+spec+'</div></div><div class="irow-r">'+right+'<span class="chev">&rsaquo;</span></div></button>'; }
+function openItem(i){ const g=groups[i]; if(!g)return; const net=g.net, rate=rates[g.k]||0;
+  sheetHTML('<div class="grab"></div><h4>'+esc(g.name)+'</h4>'
+   +'<div class="isum"><div><b>'+net+'</b><span>in stock</span></div><div><b>'+(rate?inr(rate):'—')+'</b><span>per pc</span></div><div><b style="color:var(--mint)">'+(rate?inr(net*rate):'—')+'</b><span>value</span></div></div>'
+   +'<button class="pri" style="max-width:none" onclick="openDeduct('+i+')">&#8722; Give out to customer</button>'
+   +'<div class="row2btn"><button class="sec" onclick="openRate('+i+')">&#8377; '+(rate?'Change rate':'Set rate')+'</button><button class="sec" onclick="openRename('+i+')">&#9998; Edit name</button></div>'); openSheet(); }
 function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m={};
   stock.forEach(s=>{ if(!matchF(s,q))return; const k=keyOf(s); if(!m[k])m[k]={k:k,name:s.item_name||s.category||'—',category:s.category,brand:s.brand,thickness:s.thickness,size:s.size,design:s.design,inq:0,outq:0,ids:[]}; const g=m[k]; g.ids.push(s.id); if(s.direction==='out')g.outq+=Number(s.qty)||0; else g.inq+=Number(s.qty)||0; });
   groups=Object.values(m); groups.forEach((g,idx)=>{ g._i=idx; g.net=g.inq-g.outq; g.val=g.net*(rates[g.k]||0); });
   renderGroupChips();
   if(!groups.length){ _buckets=[]; $('itemList').innerHTML='<div class="empty">No stock yet.</div>'; return; }
-  if(!groupBy){ _buckets=[]; $('itemList').innerHTML=groups.slice().sort((a,b)=>a.name>b.name?1:-1).map(_itemRow).join(''); return; }
-  const bk={}; groups.forEach(g=>{ const key=((g[groupBy]!=null?g[groupBy]:'')+'').trim()||'—'; (bk[key]=bk[key]||[]).push(g); });
-  const sum=(arr,f)=>arr.reduce((x,g)=>x+f(g),0);
-  const order=Object.keys(bk).sort((a,b)=>{ const vb=sum(bk[b],g=>g.val)-sum(bk[a],g=>g.val); if(vb)return vb; const pb=sum(bk[b],g=>g.net)-sum(bk[a],g=>g.net); if(pb)return pb; return a>b?1:-1; });
-  _buckets=order;
-  $('itemList').innerHTML=order.map((key,bi)=>{ const items=bk[key].slice().sort((a,b)=>a.name>b.name?1:-1), pcs=sum(items,g=>g.net), val=sum(items,g=>g.val), cid=groupBy+'::'+key, isC=!!collapsed[cid];
-    const head='<div class="ghead" onclick="toggleGroup('+bi+')"><div class="gh1"><span class="gcar">'+(isC?'&#9656;':'&#9662;')+'</span><span class="nm">'+esc(key)+'</span></div><div class="gh2">'+items.length+' item'+(items.length!==1?'s':'')+' &middot; '+pcs+' pcs'+(val?' &middot; <b style="color:var(--mint)">'+inr(val)+'</b>':'')+'</div></div>';
-    return '<div class="gwrap">'+head+(isC?'':'<div class="gsec">'+items.map(_itemRow).join('')+'</div>')+'</div>'; }).join('');
+  const byVal=(a,b)=>b.val-a.val||(a.name>b.name?1:-1);
+  if(!groupBy){ _buckets=[]; $('itemList').innerHTML='<div class="glist" style="border-top:none">'+groups.slice().sort(byVal).map(_itemRow).join('')+'</div>'; return; }
+  const NONE={brand:'Doors / other',thickness:'No thickness',size:'No size',design:'Plywood / other',category:'Uncategorised'};
+  const bk={}; groups.forEach(g=>{ const key=((g[groupBy]!=null?g[groupBy]:'')+'').trim()||(NONE[groupBy]||'Other'); (bk[key]=bk[key]||[]).push(g); });
+  const sum=(arr,f)=>arr.reduce((x,g)=>x+f(g),0); const bv={},bp={};
+  Object.keys(bk).forEach(k=>{ bv[k]=sum(bk[k],g=>g.val); bp[k]=sum(bk[k],g=>g.net); });
+  const order=Object.keys(bk).sort((a,b)=>(bv[b]-bv[a])||(bp[b]-bp[a])||(a>b?1:-1));
+  const maxv=Math.max(1,...order.map(k=>bv[k])); _buckets=order;
+  $('itemList').innerHTML=order.map((key,bi)=>{ const items=bk[key].slice().sort(byVal), pcs=bp[key], val=bv[key], isC=!!collapsed[groupBy+'::'+key];
+    const rt=val?('<span class="gval">'+inr(val)+'</span>'):('<span class="gval pcs">'+pcs+' pcs</span>');
+    const meta=items.length+' item'+(items.length!==1?'s':'')+(val?' &middot; '+pcs+' pcs':'');
+    const head='<button class="ghd'+(isC?' col':'')+'" onclick="toggleGroup('+bi+')"><div class="ghd-l"><span class="gcar">&#9662;</span><span class="gname">'+esc(key)+'</span></div><div class="ghd-r">'+rt+'<span class="gmeta">'+meta+'</span></div></button>';
+    const bar=val?'<div class="gbar"><i style="width:'+Math.max(5,Math.round(val/maxv*100))+'%"></i></div>':'';
+    return '<div class="gblock">'+head+bar+(isC?'':'<div class="glist">'+items.map(_itemRow).join('')+'</div>')+'</div>'; }).join('');
 }
 function openDeduct(i){ const g=groups[i]; if(!g)return; window.__dg=g; const net=g.inq-g.outq;
   sheetHTML('<div class="grab"></div><h4>Give out to customer</h4><div style="font-size:16px;font-weight:700">'+esc(g.name)+'</div><div style="font-size:13px;color:var(--mut)">Available: <b style="color:var(--ink)">'+net+' pcs</b></div><div class="lab" style="margin-top:8px">Quantity out</div><div class="stepper"><button onclick="dStep(-1)">&#8722;</button><input id="dq" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty"><button onclick="dStep(1)">+</button></div><div class="lab" style="margin-top:10px">To customer <span class="opt">optional</span></div><input id="dcust" class="optin" placeholder="Customer name (optional)"><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmDeduct()">&#8722; Deduct from stock</button>'); openSheet();
