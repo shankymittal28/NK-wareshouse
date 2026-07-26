@@ -180,6 +180,7 @@ button,input,select{font-family:inherit;font-size:16px}
   <div class="msec"><h3>&#128100; Staff</h3><div class="hint">They log in by tapping their name.</div><div class="mlist" id="mStaff"></div><div class="maddrow"><input id="addStaffIn" placeholder="New staff name" onkeydown="if(event.key==='Enter')addStaff()"><button onclick="addStaff()">Add</button></div></div>
   <div class="msec"><h3>&#128667; Sources / suppliers</h3><div class="hint">Where stock comes from (Ricemill1&hellip;). "Already in warehouse" = existing stock.</div><div class="mlist" id="mSources"></div><div class="maddrow"><input id="addSrcIn" placeholder="New source" onkeydown="if(event.key==='Enter')addSource()"><button onclick="addSource()">Add</button></div></div>
   <div class="msec"><h3>&#128205; Zones / racks</h3><div class="hint">Placement spots. Optional.</div><div class="mlist" id="mZones"></div><div class="maddrow"><input id="addZoneIn" placeholder="New zone" onkeydown="if(event.key==='Enter')addZone()"><button onclick="addZone()">Add</button></div></div>
+  <div class="msec"><h3>&#128274; Owner access</h3><div class="hint">You're signed in on this phone &mdash; the app remembers you. Log out only if you want to require your secret again next time (or before handing this phone to someone else).</div><button onclick="ownerLogout()" style="width:100%;background:rgba(251,113,133,.14);border:1px solid rgba(251,113,133,.4);color:var(--rose);border-radius:12px;padding:13px;font-weight:700;font-size:15px;margin-top:4px">Log out</button></div>
 </div>
 
 <div id="sheet" onclick="if(event.target.id==='sheet')closeSheet()"><div class="sheet" id="sheetInner"></div></div>
@@ -188,7 +189,9 @@ button,input,select{font-family:inherit;font-size:16px}
 <script>
 const SB="https://enjlgflisuywkaorxetv.supabase.co";
 const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuamxnZmxpc3V5d2thb3J4ZXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5OTU3NjAsImV4cCI6MjA5ODU3MTc2MH0.qKoUBQonv1FYSSrIGfInqXzSWGZHRrGWWHtwgGfL9DQ";
-const OWNER_PIN="4321";
+const OWNER_EMAIL="shankymittal28@gmail.com";
+let TOKEN=KEY;          // anon key by default (staff); becomes the owner's login token after sign-in
+let SESSION=null;       // {access_token, refresh_token} when the owner is signed in on this device
 const H={apikey:KEY,Authorization:"Bearer "+KEY};
 const HJ={...H,"Content-Type":"application/json"};
 const HR={...HJ,Prefer:"return=representation"};
@@ -205,7 +208,41 @@ let zones=[], sources=[], staff=[], opts={brand:[],customer:[],thickness:{},size
 let sel={brand:'',thickness:'',size:'',design:'',customer:'',cat:'',zone:'',photo:null};
 let stock=[], filter={}, lastId=null;
 
-async function api(path,o){ try{const r=await fetch(SB+path,{headers:H,...o}); if(!r.ok)throw 0; const t=await r.text(); return t?JSON.parse(t):[];}catch(e){return null;} }
+async function api(path,o){
+  o=o||{};
+  const hdr={...(o.headers||H), apikey:KEY, Authorization:"Bearer "+TOKEN};
+  try{
+    let r=await fetch(SB+path,{...o,headers:hdr});
+    if(r.status===401 && SESSION){ if(await refreshSession()){ hdr.Authorization="Bearer "+TOKEN; r=await fetch(SB+path,{...o,headers:hdr}); } }
+    if(!r.ok)throw 0;
+    const t=await r.text(); return t?JSON.parse(t):[];
+  }catch(e){ return null; }
+}
+
+// ---- Owner sign-in (real, server-checked) ----
+function uuid(){ try{ if(self.crypto&&crypto.randomUUID)return crypto.randomUUID();
+    if(self.crypto&&crypto.getRandomValues)return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=crypto.getRandomValues(new Uint8Array(1))[0]%16,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }catch(e){}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);}); }
+function ownerLoggedIn(){ return !!SESSION; }
+function saveSession(s){ SESSION=s; TOKEN=s?s.access_token:KEY; try{ s?localStorage.setItem('nkg_sess',JSON.stringify(s)):localStorage.removeItem('nkg_sess'); }catch(e){} }
+function loadSession(){ try{ const s=JSON.parse(localStorage.getItem('nkg_sess')||'null'); if(s&&s.access_token){SESSION=s;TOKEN=s.access_token;} }catch(e){} }
+async function ownerSignIn(pw){ try{
+    const r=await fetch(SB+"/auth/v1/token?grant_type=password",{method:'POST',headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({email:OWNER_EMAIL,password:pw})});
+    if(!r.ok) return false; const j=await r.json(); if(!j.access_token) return false;
+    saveSession({access_token:j.access_token,refresh_token:j.refresh_token}); return true;
+  }catch(e){ return false; } }
+let _refreshing=null;
+async function refreshSession(){
+  if(!SESSION||!SESSION.refresh_token) return false;
+  if(_refreshing) return _refreshing;
+  _refreshing=(async()=>{ try{
+      const r=await fetch(SB+"/auth/v1/token?grant_type=refresh_token",{method:'POST',headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:SESSION.refresh_token})});
+      if(!r.ok){ saveSession(null); return false; } const j=await r.json();
+      if(!j.access_token){ saveSession(null); return false; } saveSession({access_token:j.access_token,refresh_token:j.refresh_token}); return true;
+    }catch(e){ return false; } })();
+  const ok=await _refreshing; _refreshing=null; return ok;
+}
+function ownerLogout(){ saveSession(null); backToGate(); toast('Logged out','ok'); }
 
 async function loadStaff(){ staff=(await api("/rest/v1/nkg_staff?select=id,name&active=eq.true&order=name.asc"))||[]; renderStaffBtns(); }
 function renderStaffBtns(){ if(!staff.length){$('staffBtns').innerHTML='';$('noStaff').classList.remove('hide');return;} $('noStaff').classList.add('hide');
@@ -213,8 +250,18 @@ function renderStaffBtns(){ if(!staff.length){$('staffBtns').innerHTML='';$('noS
 function pickStaff(n){ me_={name:n}; origin='gate'; showAdd(); }
 function backToGate(){ ['add','owner','manage'].forEach(i=>$(i).classList.add('hide')); $('gate').classList.remove('hide'); loadStaff(); }
 function addBack(){ origin==='owner'?showOwner():backToGate(); }
-function ownerLogin(){ sheetHTML('<div class="grab"></div><h4>Owner access</h4><input id="pinIn" class="field" type="password" inputmode="numeric" placeholder="PIN" style="max-width:none"><button class="pri" style="max-width:none" onclick="checkPin()">Enter</button>'); openSheet(); setTimeout(()=>$('pinIn')&&$('pinIn').focus(),100); }
-function checkPin(){ if($('pinIn').value===OWNER_PIN){closeSheet();showOwner();}else toast('Wrong PIN','err'); }
+function ownerLogin(){
+  if(ownerLoggedIn()){ showOwner(); return; }
+  sheetHTML('<div class="grab"></div><h4>Owner access</h4><div class="hint" style="margin:-2px 0 4px">Enter your secret. You stay signed in on this phone.</div><input id="pwIn" class="field" type="password" placeholder="Your secret" autocomplete="current-password" style="max-width:none" onkeydown="if(event.key===\'Enter\')doOwnerLogin()"><button class="pri" id="pwBtn" style="max-width:none" onclick="doOwnerLogin()">Enter</button>');
+  openSheet(); setTimeout(()=>$('pwIn')&&$('pwIn').focus(),100);
+}
+async function doOwnerLogin(){
+  const pw=$('pwIn')?$('pwIn').value:''; if(!pw)return;
+  const b=$('pwBtn'); if(b){b.disabled=true;b.textContent='Checking…';}
+  const ok=await ownerSignIn(pw);
+  if(ok){ closeSheet(); showOwner(); }
+  else{ if(b){b.disabled=false;b.textContent='Enter';} toast('Wrong secret — try again','err'); }
+}
 function logAsOwner(){ me_={name:'Owner'}; origin='owner'; showAdd(); }
 
 async function showAdd(){
@@ -325,8 +372,9 @@ async function pushEntry(entry){
     let photo_url=null;
     if(entry._photo){ const path=today()+'/'+entry._ts+'-'+Math.floor(performance.now()%100000)+'.jpg'; const up=await fetch(SB+"/storage/v1/object/nkg-photos/"+path,{method:'POST',headers:{...H,"Content-Type":"image/jpeg","x-upsert":"true"},body:dataURLtoBlob(entry._photo)}); if(!up.ok)throw 0; photo_url=SB+"/storage/v1/object/public/nkg-photos/"+path; }
     const row={...entry}; delete row._photo; delete row._ts; row.photo_url=photo_url;
-    const r=await fetch(SB+"/rest/v1/nkg_stock",{method:'POST',headers:HR,body:JSON.stringify(row)}); if(!r.ok)throw 0;
-    const j=await r.json(); return (Array.isArray(j)&&j[0])||{id:null};
+    row.id=uuid();
+    const r=await fetch(SB+"/rest/v1/nkg_stock",{method:'POST',headers:{...HJ,Prefer:"return=minimal"},body:JSON.stringify(row)}); if(!r.ok)throw 0;
+    return {id:row.id};
   }catch(e){ return null; }
 }
 async function undoLast(){ if(!lastId)return; await api("/rest/v1/nkg_stock?id=eq."+lastId,{method:'DELETE',headers:H}); lastId=null; $('undoBtn').classList.add('hide'); todayCount=Math.max(0,todayCount-1); localStorage.setItem('nkg_today_'+today(),todayCount); recent.shift(); renderRecent(); refreshToday(); toast('Removed','ok'); }
@@ -421,6 +469,7 @@ async function delItem(table,id){ await api("/rest/v1/"+table+"?id=eq."+id,{meth
 function sheetHTML(h){ $('sheetInner').innerHTML=h; } function openSheet(){ $('sheet').classList.add('on'); } function closeSheet(){ $('sheet').classList.remove('on'); }
 let tt; function toast(m,k){ const t=$('toast'); t.textContent=m; t.className=''; if(k)t.classList.add(k); t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),2200); }
 
+loadSession();
 loadStaff();
 if('serviceWorker' in navigator){ let _rf=false; navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_rf)return;_rf=true;location.reload();}); navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
