@@ -36,16 +36,20 @@ button,input,select{font-family:inherit;font-size:16px}
 .srcbtn{background:var(--panel);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:9px 12px;font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center}
 .srcbtn.need{border-color:var(--amber);color:var(--amber)}.srcbtn .lbl{color:var(--mut2);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
 .iconlink{background:var(--panel);border:1px solid var(--hair);color:var(--mut);border-radius:12px;padding:9px 11px;font-size:13px;font-weight:600}
-.card{background:var(--panel);border:1px solid var(--hair);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:15px}
+.card{background:transparent;border:none;padding:0;display:flex;flex-direction:column;gap:22px}
+.buildbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:14px 16px}
+.buildbar .bt{font-size:18px;font-weight:800;letter-spacing:-.015em;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.buildbar .bt.empty{color:var(--mut);font-weight:600;font-size:15px}
+.buildbar .bq{font-size:16px;font-weight:800;color:var(--violet);flex:0 0 auto;white-space:nowrap}
 .modew{display:flex;background:var(--panel2);border:1px solid var(--hair);border-radius:13px;padding:4px}
 .modew button{flex:1;background:none;border:none;color:var(--mut);font-size:15px;font-weight:700;padding:11px 6px;border-radius:9px}
 .modew button.on{background:var(--grad);color:#fff}
-.lab{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin-bottom:8px}
+.lab{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);margin-bottom:11px}
 .lab .opt{color:var(--mut2);font-weight:600;text-transform:none;letter-spacing:0}
 .gap8{height:6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:12px 15px;font-size:16px;font-weight:600}
-.chip.on{background:var(--grad);border-color:transparent;color:#fff}.chip.add{color:var(--sky);border-style:dashed;font-size:14px}.chip.sm{padding:9px 12px;font-size:14px}
+.chip.on{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 6px 16px -8px rgba(124,109,242,.7)}.chip.add{color:var(--mut);border-style:dashed;border-color:var(--hair2);font-size:14px;font-weight:600}.chip.sm{padding:9px 12px;font-size:14px}
 .itembtn{width:100%;background:var(--panel2);border:1px solid var(--hair2);color:var(--ink);border-radius:14px;padding:15px;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left}
 .itembtn.ph{color:var(--mut);font-weight:600}
 .qtyrow{display:flex;gap:10px;align-items:stretch}
@@ -199,6 +203,7 @@ button,input,select{font-family:inherit;font-size:16px}
     <button class="iconlink" id="addBack" onclick="addBack()">Switch</button>
   </div>
   <div class="card">
+    <div class="buildbar" id="buildBar"><div class="bt empty" id="buildText">Pick below to start</div><div class="bq" id="buildQty"></div></div>
     <div class="modew"><button id="mPlywood" class="on" onclick="setMode('plywood')">Plywood</button><button id="mDoor" onclick="setMode('door')">Door</button><button id="mOther" onclick="setMode('other')">Other</button></div>
 
     <div id="secBrand"><div class="lab">Brand</div><div class="chips" id="brandChips"></div></div>
@@ -211,7 +216,7 @@ button,input,select{font-family:inherit;font-size:16px}
     <div id="secOther" class="hide"><div class="lab">What is it?</div><div class="chips" id="catChips"></div><div class="gap8"></div><input id="descIn" class="optin" placeholder="Name / detail (optional)"></div>
 
     <div id="secQty" class="hide"><div class="lab">Quantity <span class="opt">(pcs)</span></div>
-      <div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">&#8722;</button><input id="qtyIn" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty"><button onclick="stepQty(1)">+</button></div></div>
+      <div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">&#8722;</button><input id="qtyIn" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty" oninput="renderBuild()"><button onclick="stepQty(1)">+</button></div></div>
       <div class="chips" id="qtyQuick" style="margin-top:9px"></div></div>
 
     <div id="secTail" class="hide">
@@ -373,8 +378,8 @@ async function showAdd(){
 function resetQty(){ $('qtyIn').value=''; $('descIn').value=''; sel.photos=[]; renderPhotoStrip(); sel.zone=''; }
 function buildStatic(){ $('catChips').innerHTML=CATS.map(c=>`<button class="chip" data-cat="${c}" onclick="setCat('${c}')">${c}</button>`).join(''); $('qtyQuick').innerHTML=QTYQUICK.map(q=>`<button class="chip" onclick="setQty(${q})">${q}</button>`).join(''); }
 function setCat(c){ sel.cat=c; document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.cat===c)); updateReveal(); }
-function setQty(q){ $('qtyIn').value=q; }
-function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); $('qtyIn').value=v||''; }
+function setQty(q){ $('qtyIn').value=q; renderBuild(); }
+function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); $('qtyIn').value=v||''; renderBuild(); }
 
 async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,kind,name,sort,product,favorite&order=favorite.desc,sort.asc,name.asc"))||[]; opts={brand:[],customer:[],thickness:{},size:{},design:{}};
   a.forEach(o=>{ if(o.kind==='brand')opts.brand.push(o); else if(o.kind==='customer')opts.customer.push(o); else { const p=o.product||'plywood'; opts[o.kind]=opts[o.kind]||{}; (opts[o.kind][p]=opts[o.kind][p]||[]).push(o); } }); }
@@ -391,8 +396,7 @@ function renderChips(){
   { const all=opts.brand||[]; const favs=all.filter(b=>b.favorite); const list=favs.length?favs:all;
     let h=list.map(o=>`<button class="chip${sel.brand===o.name?' on':''}" onclick="setBrand('${esc(o.name)}')">${esc(o.name)}</button>`).join('');
     if(sel.brand&&!list.some(b=>b.name===sel.brand)) h+=`<button class="chip on" onclick="setBrand('${esc(sel.brand)}')">${esc(sel.brand)}</button>`;
-    if(all.length>list.length) h+='<button class="chip add" onclick="pickBrand()">&#128269; Search brands</button>';
-    h+='<button class="chip add" onclick="newOpt(\'brand\')">&#65291;</button>'; $('brandChips').innerHTML=h; }
+    h+=(all.length>list.length)?'<button class="chip add" onclick="pickBrand()">&#128269; More brands</button>':'<button class="chip add" onclick="pickBrand()">&#65291; Add brand</button>'; $('brandChips').innerHTML=h; }
   $('thickChips').innerHTML=((opts.thickness.plywood)||[]).map(o=>`<button class="chip${sel.thickness===o.name?' on':''}" onclick="setThick('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'thickness\')">&#65291;</button>';
   $('sizeChips').innerHTML=((opts.size.plywood)||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
   $('dsizeChips').innerHTML=((opts.size.door)||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
@@ -409,7 +413,16 @@ function updateReveal(){
   show('secOther',mode==='other');
   const ready = mode==='plywood'?(sel.brand&&sel.thickness&&sel.size): mode==='door'?(sel.design&&sel.size): (sel.cat);
   show('secQty',!!ready); show('secTail',!!ready); $('saveBtn').classList.toggle('hide',!ready);
+  renderBuild();
 }
+function renderBuild(){ const bt=$('buildText'), bq=$('buildQty'), bb=$('buildBar'); if(!bt)return;
+  let t=''; if(mode==='plywood')t=[sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
+  else if(mode==='door')t=[sel.design,sel.size].filter(Boolean).join(' ');
+  else t=sel.cat||'';
+  const q=Number($('qtyIn')&&$('qtyIn').value)||0;
+  if(bb)bb.classList.toggle('hide',!t && !q);
+  bt.textContent=t||'Pick below to start'; bt.classList.toggle('empty',!t);
+  bq.textContent=q?(q+' pcs'):''; }
 
 /* pickers for design & customer */
 let _pk={};
@@ -599,10 +612,13 @@ function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m
     return '<div class="gblock">'+head+bar+(isC?'':'<div class="glist">'+items.map(_itemRow).join('')+'</div>')+'</div>'; }).join('');
 }
 function openDeduct(i){ const g=groups[i]; if(!g)return; window.__dg=g; const net=g.inq-g.outq;
-  sheetHTML('<div class="grab"></div><h4>Give out to customer</h4><div style="font-size:16px;font-weight:700">'+esc(g.name)+'</div><div style="font-size:13px;color:var(--mut)">Available: <b style="color:var(--ink)">'+net+' pcs</b></div><div class="lab" style="margin-top:8px">Quantity out</div><div class="stepper"><button onclick="dStep(-1)">&#8722;</button><input id="dq" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty" oninput="dPrev()"><button onclick="dStep(1)">+</button></div><div class="lab" style="margin-top:10px">To customer <span class="opt">for khata</span></div><input id="dcust" class="optin" placeholder="Customer name" oninput="dPrev()"><div class="lab" style="margin-top:10px">Sale rate &#8377;/pc <span class="opt">optional &mdash; adds to khata</span></div><input id="dsale" class="qtyin num" type="number" inputmode="decimal" placeholder="Selling price per pc" oninput="dPrev()"><div id="dPrevBox" style="font-size:13px;color:var(--mut);margin-top:8px"></div><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmDeduct()">&#8722; Give out</button>'); openSheet();
+  const quick=[5,10,25,50,100].filter(q=>q<net).map(q=>'<button class="chip sm" onclick="dSetQty('+q+')">'+q+'</button>').join('')+(net>0?'<button class="chip sm" onclick="dSetQty('+net+')">All ('+net+')</button>':'');
+  sheetHTML('<div class="grab"></div><h4>Give out to customer</h4><div style="font-size:17px;font-weight:800;letter-spacing:-.01em">'+esc(g.name)+'</div><div style="font-size:13px;color:var(--mut);margin-top:2px">In stock: <b style="color:var(--mint)">'+net+' pcs</b></div><div class="lab" style="margin-top:14px">Quantity to give out</div><div class="stepper"><button onclick="dStep(-1)">&#8722;</button><input id="dq" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty" oninput="dPrev()"><button onclick="dStep(1)">+</button></div><div class="chips" style="margin-top:9px">'+quick+'</div><div id="dLeft" style="font-size:12.5px;color:var(--mut);margin-top:9px"></div><div class="lab" style="margin-top:16px">To customer <span class="opt">for khata</span></div><input id="dcust" class="optin" placeholder="Customer name" oninput="dPrev()"><div class="lab" style="margin-top:14px">Sale rate &#8377;/pc <span class="opt">optional &mdash; adds to khata</span></div><input id="dsale" class="qtyin num" type="number" inputmode="decimal" placeholder="Selling price per pc" oninput="dPrev()"><div id="dPrevBox" style="font-size:14px;color:var(--mint);font-weight:700;margin-top:10px"></div><button class="pri" style="max-width:none;margin-top:14px" onclick="confirmDeduct()">&#8722; Give out</button>'); openSheet();
 }
-function dPrev(){ const el=$('dPrevBox'); if(!el)return; const q=Number($('dq')&&$('dq').value)||0, r=Number($('dsale')&&$('dsale').value)||0, c=($('dcust')&&$('dcust').value||'').trim();
-  el.innerHTML=(q&&r)?('Bill: <b style="color:var(--mint)">'+q+' &times; '+inr(r)+' = '+inr(q*r)+'</b> &rarr; added to '+esc(c||'customer')+'’s khata'):''; }
+function dSetQty(q){ $('dq').value=q; dPrev(); }
+function dPrev(){ const g=window.__dg, net=g?(g.inq-g.outq):0; const q=Number($('dq')&&$('dq').value)||0, r=Number($('dsale')&&$('dsale').value)||0, c=($('dcust')&&$('dcust').value||'').trim();
+  const dl=$('dLeft'); if(dl){ const left=net-q; dl.innerHTML=q?('Leaves <b style="color:'+(left<0?'var(--rose)':'var(--ink)')+'">'+left+' pcs</b>'+(left<0?' &mdash; more than in stock!':' in stock')):''; }
+  const el=$('dPrevBox'); if(el) el.innerHTML=(q&&r)?('Bill: '+q+' &times; '+inr(r)+' = <b>'+inr(q*r)+'</b> &rarr; '+esc(c||'customer')+'’s khata'):''; }
 function openRename(i){ const g=groups[i]; if(!g)return; window.__rg=g;
   sheetHTML('<div class="grab"></div><h4>Edit item name</h4><div style="font-size:13px;color:var(--mut)">Fix a misspelled or unclear name. This updates every entry for this item.</div><div class="lab" style="margin-top:10px">Item name</div><input id="rn" class="optin" value="'+esc(g.name)+'"><button class="pri" style="max-width:none;margin-top:10px" onclick="confirmRename()">Save name</button>'); openSheet(); setTimeout(()=>{const el=$('rn'); if(el){el.focus();el.select&&el.select();}},100);
 }
