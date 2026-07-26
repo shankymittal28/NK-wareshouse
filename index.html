@@ -136,6 +136,19 @@ button,input,select{font-family:inherit;font-size:16px}
 .isum span{display:block;font-size:10.5px;color:var(--mut);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
 .row2btn{display:flex;gap:10px}
 .row2btn .sec{flex:1;background:var(--panel);border:1px solid var(--hair2);color:var(--ink);border-radius:12px;padding:12px;font-weight:700;font-size:14px}
+.mint{color:var(--mint)}.rose{color:var(--rose)}
+.tdsum{display:flex;gap:9px;margin:14px 0 8px}
+.tdsum>div{flex:1;background:var(--surface);border:1px solid var(--hair);border-radius:13px;padding:12px 6px;text-align:center}
+.tdsum b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.tdsum span{display:block;font-size:10.5px;color:var(--mut);margin-top:3px;text-transform:uppercase;letter-spacing:.04em}
+.tdwho{font-size:12.5px;color:var(--mut);margin:0 2px 8px}
+.tdrow{display:flex;gap:11px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--hair)}
+.tdth{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:0 0 auto;background:var(--panel)}
+.tdth.ph{display:grid;place-items:center;font-size:22px}
+.tdth.bad{background:var(--panel);position:relative}.tdth.bad::after{content:"📷";position:absolute;inset:0;display:grid;place-items:center;font-size:18px;opacity:.4}
+.tdmeta{flex:1;min-width:0}
+.tdn{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.tdsub{font-size:12px;color:var(--mut);margin-top:3px}
 </style></head>
 <body>
 
@@ -192,12 +205,13 @@ button,input,select{font-family:inherit;font-size:16px}
     <button class="obtn" onclick="showManage()">&#9881; Manage</button>
     <button class="obtn" onclick="loadStock()">&#8635; Refresh</button>
   </div>
-  <div class="modew" id="ownerView"><button id="vwItems" class="on" onclick="setOwnerView('items')">Stock</button><button id="vwLog" onclick="setOwnerView('log')">All entries</button></div>
+  <div class="modew" id="ownerView"><button id="vwItems" class="on" onclick="setOwnerView('items')">Stock</button><button id="vwToday" onclick="setOwnerView('today')">Today</button><button id="vwLog" onclick="setOwnerView('log')">All entries</button></div>
   <input id="searchIn" class="searchbar" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
   <div class="fchips" id="filterChips"></div>
   <div class="gbrow" id="groupChips"></div>
   <div id="itemList"></div>
   <div id="stockList" class="hide"></div>
+  <div id="todayList" class="hide"></div>
 </div>
 
 <div id="manage" class="wrap hide">
@@ -403,9 +417,14 @@ async function saveEntry(){
 async function pushEntry(entry){
   try{
     let photo_url=null;
-    if(entry._photo){ const path=today()+'/'+entry._ts+'-'+Math.floor(performance.now()%100000)+'.jpg'; const up=await fetch(SB+"/storage/v1/object/nkg-photos/"+path,{method:'POST',headers:{...H,"Content-Type":"image/jpeg","x-upsert":"true"},body:dataURLtoBlob(entry._photo)}); if(!up.ok)throw 0; photo_url=SB+"/storage/v1/object/public/nkg-photos/"+path; }
+    // Photo is BEST-EFFORT: a failed photo upload must NEVER discard the stock entry.
+    if(entry._photo){ try{
+        const path=today()+'/'+(entry._ts||Date.now())+'-'+Math.floor(performance.now()%100000)+'.jpg';
+        const up=await fetch(SB+"/storage/v1/object/nkg-photos/"+path,{method:'POST',headers:{...H,"Content-Type":"image/jpeg","x-upsert":"true"},body:dataURLtoBlob(entry._photo)});
+        if(up.ok) photo_url=SB+"/storage/v1/object/public/nkg-photos/"+path;
+      }catch(_){} }
     const row={...entry}; delete row._photo; delete row._ts; row.photo_url=photo_url;
-    row.id=uuid();
+    row.id=row.id||uuid();
     const r=await fetch(SB+"/rest/v1/nkg_stock",{method:'POST',headers:{...HJ,Prefer:"return=minimal"},body:JSON.stringify(row)}); if(!r.ok)throw 0;
     return {id:row.id};
   }catch(e){ return null; }
@@ -429,9 +448,28 @@ const inr=n=>'₹'+Math.round(Number(n)||0).toLocaleString('en-IN');
 async function showOwner(){ ['gate','add','manage'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
 async function loadStock(){ const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]); stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); buildFilters(); updateStats(); renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
-function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>(s.created_at||'').slice(0,10)===today()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; $('stVal').textContent=inr(val); }
-function setOwnerView(v){ ownerView=v; $('vwItems').classList.toggle('on',v==='items'); $('vwLog').classList.toggle('on',v==='log'); $('itemList').classList.toggle('hide',v!=='items'); $('stockList').classList.toggle('hide',v!=='log'); $('groupChips').classList.toggle('hide',v!=='items'); renderOwner(); }
-function renderOwner(){ ownerView==='items'?renderItems():renderStock(); }
+function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>IST(s.created_at)===IST()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; $('stVal').textContent=inr(val); }
+function setOwnerView(v){ ownerView=v;
+  $('vwItems').classList.toggle('on',v==='items'); $('vwToday').classList.toggle('on',v==='today'); $('vwLog').classList.toggle('on',v==='log');
+  $('itemList').classList.toggle('hide',v!=='items'); $('todayList').classList.toggle('hide',v!=='today'); $('stockList').classList.toggle('hide',v!=='log');
+  $('groupChips').classList.toggle('hide',v!=='items'); $('filterChips').classList.toggle('hide',v==='today'); $('searchIn').classList.toggle('hide',v==='today');
+  renderOwner(); }
+function renderOwner(){ ownerView==='items'?renderItems():ownerView==='today'?renderToday():renderStock(); }
+const IST=t=>{ const d=t?new Date(t):new Date(); return isNaN(d)?'':new Date(d.getTime()+19800000).toISOString().slice(0,10); };
+function renderToday(){
+  const day=IST(); const list=stock.filter(s=>IST(s.created_at)===day).slice().sort((a,b)=>(a.created_at<b.created_at?1:-1));
+  const inN=list.filter(s=>s.direction!=='out').reduce((x,s)=>x+(Number(s.qty)||0),0);
+  const outN=list.filter(s=>s.direction==='out').reduce((x,s)=>x+(Number(s.qty)||0),0);
+  const who={}; list.forEach(s=>{ const n=s.logged_by||'—'; who[n]=(who[n]||0)+1; });
+  const wholine=Object.keys(who).sort((a,b)=>who[b]-who[a]).map(n=>esc(n)+' '+who[n]).join(' · ');
+  let head='<div class="tdsum"><div><b>'+list.length+'</b><span>arrivals</span></div><div><b class="mint">'+inN+'</b><span>pcs in</span></div>'+(outN?'<div><b class="rose">'+outN+'</b><span>pcs out</span></div>':'')+'</div>'+(wholine?'<div class="tdwho">Logged by '+wholine+'</div>':'');
+  if(!list.length){ $('todayList').innerHTML='<div class="empty">Nothing logged today yet.</div>'; return; }
+  const rows=list.map(s=>{ const tm=s.created_at?new Date(s.created_at).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:true}):''; const out=s.direction==='out';
+    const th=s.photo_url?'<img class="tdth" src="'+esc(s.photo_url)+'" loading="lazy" onerror="this.classList.add(\'bad\')">':'<div class="tdth ph">'+(s.category==='Door'?'&#128682;':'&#128230;')+'</div>';
+    const sub=[esc(s.thickness||''),esc(s.size||''),(s.source_godown&&!out?esc(s.source_godown):'')].filter(Boolean).join(' · ');
+    return '<div class="tdrow">'+th+'<div class="tdmeta"><div class="tdn">'+esc(s.item_name||s.category||'—')+' <span class="'+(out?'rose':'mint')+'">'+(out?'&minus;':'+')+esc(s.qty)+'</span></div><div class="tdsub">'+(sub?sub+' &middot; ':'')+'by '+esc(s.logged_by||'—')+' &middot; '+tm+'</div></div></div>'; }).join('');
+  $('todayList').innerHTML=head+rows;
+}
 function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))];
   $('filterChips').innerHTML=['<button class="fchip'+(!filter.category?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).join(''); }
 function clearFilter(){ filter={}; buildFilters(); renderOwner(); }
