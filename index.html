@@ -258,6 +258,7 @@ button,input,select{font-family:inherit;font-size:16px}
 <div id="add" class="wrap hide">
   <div class="top">
     <button class="srcbtn" id="srcBtn" onclick="openSource()"><span class="lbl">From</span> <span id="srcLbl">Pick source</span> &#9662;</button>
+    <button class="iconlink" id="dsBtn" onclick="showDoorStock()">&#128682; डोर स्टॉक</button>
     <button class="iconlink" id="addBack" onclick="addBack()">Switch</button>
   </div>
   <div class="card">
@@ -274,6 +275,17 @@ button,input,select{font-family:inherit;font-size:16px}
   </div>
   <div class="subline"><span id="todayLbl">Today: 0 logged</span><span><button class="undo hide" id="undoBtn" onclick="undoLast()">&#8630; वापस लें</button> <span id="pendLbl" class="pend hide"></span></span></div>
   <div class="recent" id="recentStrip"></div>
+</div>
+
+<div id="dstock" class="wrap hide">
+  <div class="top">
+    <button class="iconlink" onclick="backFromDoorStock()">&#8249; वापस</button>
+    <div class="who"><b>डोर स्टॉक</b> &middot; Door stock</div>
+    <button class="iconlink" onclick="loadDoorStock()">&#8635;</button>
+  </div>
+  <input id="dsSearch" class="searchbar" placeholder="डिज़ाइन / साइज़ / टाइप खोजें…" oninput="renderDoorStock()">
+  <div class="tdsum"><div><b id="dsTotal">0</b><span>डोर पीस</span></div><div><b id="dsKinds">0</b><span>तरह</span></div></div>
+  <div id="dsList"></div>
 </div>
 
 <div id="owner" class="wrap hide">
@@ -667,6 +679,33 @@ async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(
   outCart=[]; sel.photos=[]; sel.customer=''; if($('outCust'))$('outCust').value=''; resetItemAll(); refreshToday();
   toast(queued?('फ़ोन में सेव ('+queued+') — बाद में'):('दे दिया ✓ '+lines.length+' आइटम'),queued?'err':'ok');
   wizRestart(); }
+let _doorStock=[];
+async function showDoorStock(){ ['gate','add','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('dstock').classList.remove('hide'); if($('dsSearch'))$('dsSearch').value=''; $('dsList').innerHTML='<div class="empty">लोड हो रहा है…</div>'; await loadDoorStock(); }
+function backFromDoorStock(){ $('dstock').classList.add('hide'); $('add').classList.remove('hide'); }
+async function loadDoorStock(){ try{ _doorStock=(await api("/rest/v1/nkg_door_stock?select=door_type,design,size,item_name,qty,direction,zone_name,source_godown&order=created_at.desc"))||[]; }catch(e){ _doorStock=[]; $('dsList').innerHTML='<div class="empty">लोड नहीं हुआ — दोबारा कोशिश करें</div>'; } renderDoorStock(); }
+function renderDoorStock(){
+  const q=(($('dsSearch')&&$('dsSearch').value)||'').toLowerCase();
+  const m={};
+  _doorStock.forEach(r=>{ const key=[r.door_type||'',r.design||'',r.size||''].join('|');
+    if(!m[key])m[key]={type:r.door_type||'',design:r.design||'',size:r.size||'',net:0,locs:{}};
+    const d=(r.direction==='out'?-1:1)*(Number(r.qty)||0); m[key].net+=d;
+    const loc=r.source_godown||r.zone_name||''; if(r.direction!=='out'&&loc){ m[key].locs[loc]=(m[key].locs[loc]||0)+(Number(r.qty)||0); } });
+  let items=Object.values(m).filter(x=>x.net>0);
+  if(q) items=items.filter(x=>((x.type+' '+x.design+' '+x.size).toLowerCase().includes(q)));
+  if($('dsTotal'))$('dsTotal').textContent=items.reduce((a,x)=>a+x.net,0);
+  if($('dsKinds'))$('dsKinds').textContent=items.length;
+  if(!items.length){ $('dsList').innerHTML='<div class="empty">कोई डोर स्टॉक नहीं'+(q?' — search बदलें':'')+'</div>'; return; }
+  const byType={}; items.forEach(x=>{ const t=x.type||'बिना टाइप'; (byType[t]=byType[t]||[]).push(x); });
+  const order=Object.keys(byType).sort();
+  let h='';
+  order.forEach(t=>{ const list=byType[t].sort((a,b)=>(a.design+a.size).localeCompare(b.design+b.size));
+    const tnet=list.reduce((a,x)=>a+x.net,0);
+    h+='<div class="gblock"><div class="ghd" style="cursor:default"><div class="ghd-l"><span class="gname">'+esc(t)+'</span></div><div class="ghd-r"><span class="gval pcs">'+tnet+' pcs</span></div></div><div class="glist">';
+    list.forEach(x=>{ const locs=Object.keys(x.locs); const locStr=locs.length?locs.map(l=>esc(l)+(locs.length>1?(' '+x.locs[l]):'')).join(', '):'—';
+      h+='<div class="irow" style="cursor:default"><div class="irow-main"><div class="iname">'+esc(x.design)+' <span style="color:var(--mut);font-weight:600">'+esc(x.size)+'</span></div><div class="ispec">📍 '+locStr+'</div></div><div class="irow-r"><span class="ival">'+x.net+' pcs</span></div></div>'; });
+    h+='</div></div>'; });
+  $('dsList').innerHTML=h;
+}
 async function pushEntry(entry){
   try{
     // Photos are BEST-EFFORT: a failed upload must NEVER discard the stock entry.
