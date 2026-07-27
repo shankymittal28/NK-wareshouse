@@ -244,6 +244,8 @@ button,input,select{font-family:inherit;font-size:16px}
       <div class="gap8"></div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">&#128247; Add photo</button><span id="photoHint" class="opt" style="align-self:center"></span></div><div id="photoStrip" class="pstrip"></div>
     </div>
     <input id="fileIn" type="file" accept="image/*" multiple class="hide" onchange="onPhoto(event)">
+    <div id="outCart" class="hide"></div>
+    <button class="obtn addln hide" id="addAnotherBtn" onclick="addAnother()">&#65291; Add another item</button>
     <button class="save hide" id="saveBtn" onclick="saveEntry()">&#10003; Save entry</button>
   </div>
   <div class="subline"><span id="todayLbl">Today: 0 logged</span><span><button class="undo hide" id="undoBtn" onclick="undoLast()">&#8630; Undo last</button> <span id="pendLbl" class="pend hide"></span></span></div>
@@ -435,8 +437,8 @@ function setDir(d){ dir=d;
   const sb=$('srcBtn'); if(sb)sb.classList.toggle('hide',out);
   const sz=$('secZone'); if(sz)sz.classList.toggle('hide',out);
   const oc=$('secOutCust'); if(oc)oc.classList.toggle('hide',!out);
-  const b=$('saveBtn'); if(b){ b.innerHTML=out?'&#128228; Give out':'&#10003; Save entry'; b.classList.toggle('outbtn',out); }
-  renderBuild();
+  if(!out) outCart=[];
+  renderOutCart(); updateReveal();
 }
 function setMode(m){ mode=m; sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.customer='';sel.cat='';
   ['plywood','door','other'].forEach(x=>$('m'+cap(x)).classList.toggle('on',x===m));
@@ -466,7 +468,12 @@ function updateReveal(){
   show('secDesign',mode==='door'); show('secDsize',mode==='door'&&!!sel.design); show('secCustomer',mode==='door'&&!!sel.size);
   show('secOther',mode==='other');
   const ready = mode==='plywood'?(sel.brand&&sel.thickness&&sel.size): mode==='door'?(sel.design&&sel.size): (sel.cat);
-  show('secQty',!!ready); show('secTail',!!ready); $('saveBtn').classList.toggle('hide',!ready);
+  show('secQty',!!ready); show('secTail',!!ready);
+  const out=(dir==='out'), n=(outCart.length+(ready?1:0));
+  $('saveBtn').classList.toggle('hide', !(ready || (out && outCart.length>0)));
+  $('saveBtn').innerHTML = out ? ('&#128228; Give out'+(n>1?' ('+n+')':'')) : '&#10003; Save entry';
+  $('saveBtn').classList.toggle('outbtn', out);
+  const aab=$('addAnotherBtn'); if(aab) aab.classList.toggle('hide', !(out && ready));
   renderBuild();
 }
 function renderBuild(){ const bt=$('buildText'), bq=$('buildQty'), bb=$('buildBar'); if(!bt)return;
@@ -518,7 +525,33 @@ function rmPhoto(i){ (sel.photos||[]).splice(i,1); renderPhotoStrip(); }
 function viewSel(i){ openPhotos((sel.photos||[]).join('|'), i); }
 
 function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=h.match(/:(.*?);/)[1];const bin=atob(b);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:mime});}
+let outCart=[];
+function _itemStarted(){ return !!(sel.brand||sel.thickness||sel.size||sel.design||sel.cat||($('qtyIn')&&$('qtyIn').value)); }
+function _currentItem(){ const qty=$('qtyIn').value?Number($('qtyIn').value):null; let item_name='',category='';
+  if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Complete brand, thickness & size','err');return null;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
+  else if(mode==='door'){ if(!sel.design||!sel.size){toast('Choose design & size','err');return null;} item_name=sel.design+' '+sel.size; category='Door'; }
+  else { if(!sel.cat){toast('Tap what it is','err');return null;} category=sel.cat; item_name=($('descIn').value.trim()||sel.cat); }
+  if(!qty){toast('Enter quantity','err');return null;}
+  return {mode:mode,brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,cat:mode==='other'?category:null,item_desc:mode==='other'?($('descIn').value.trim()||null):null,item_name:item_name,category:category,qty:qty}; }
+function resetItemOnly(){ $('qtyIn').value=''; if($('descIn'))$('descIn').value=''; sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat=''; if($('designIn'))$('designIn').value=''; document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.remove('on')); renderChips(); renderDesignRecent(); updateReveal(); }
+function renderOutCart(){ const el=$('outCart'); if(!el)return; if(!outCart.length){ el.classList.add('hide'); el.innerHTML=''; return; }
+  el.classList.remove('hide'); el.innerHTML='<div class="lab">Giving out &middot; '+outCart.length+' item'+(outCart.length>1?'s':'')+'</div>'+outCart.map((L,i)=>'<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc(L.item_name)+'</div><div class="bl-s">'+L.qty+' pcs</div></div><button class="bl-x" onclick="rmOutCart('+i+')">&times;</button></div>').join(''); }
+function rmOutCart(i){ outCart.splice(i,1); renderOutCart(); updateReveal(); }
+function addAnother(){ const it=_currentItem(); if(!it)return; outCart.push(it); pushRecentItem({mode:it.mode,brand:it.brand,thickness:it.thickness,size:it.size,design:it.design,cat:it.cat,name:it.item_name}); renderRecentPick(); renderOutCart(); resetItemOnly(); toast('Added ✓ — pick the next item','ok'); }
+async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(); if(!cur)return; }
+  const lines=outCart.slice(); if(cur)lines.push(cur);
+  if(!lines.length){ toast('Add an item first','err'); return; }
+  const cust=($('outCust')&&$('outCust').value.trim())||null; const photos=(sel.photos||[]).slice();
+  const b=$('saveBtn'); if(b){b.disabled=true;b.textContent='Saving…';}
+  let queued=0;
+  for(let i=0;i<lines.length;i++){ const L=lines[i];
+    const entry={brand:L.brand,thickness:L.thickness,size:L.size,design:L.design,customer:cust,item_name:L.item_name,category:L.category,item_desc:L.item_desc||null,qty:L.qty,unit:'pcs',direction:'out',source_godown:null,zone_name:null,logged_by:me_.name,_photos:(i===0?photos:[]),_ts:Date.now()+i};
+    const row=await pushEntry(entry); if(!row){ queue(entry); queued++; } pushRecent(entry); }
+  if(b)b.disabled=false;
+  outCart=[]; renderOutCart(); sel.photos=[]; renderPhotoStrip(); if($('outCust'))$('outCust').value=''; resetItemOnly(); refreshToday();
+  toast(queued?('Saved on phone ('+queued+') — will sync'):('Given out ✓ '+lines.length+' item'+(lines.length>1?'s':'')),queued?'err':'ok'); }
 async function saveEntry(){
+  if(dir==='out') return giveOutAll();
   const qty=$('qtyIn').value?Number($('qtyIn').value):null;
   let item_name='', category='';
   if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Complete brand, thickness & size','err');return;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
