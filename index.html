@@ -245,6 +245,20 @@ button,input,select{font-family:inherit;font-size:16px}
 .szin{flex:1;min-width:0;padding:16px 8px}
 .szx{font-size:24px;font-weight:800;color:var(--mut);flex:0 0 auto}
 .dbadd{flex:0 0 auto;background:var(--grad);color:#fff;border:none;border-radius:12px;padding:0 16px;font-size:15px;font-weight:800}
+.dtbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--hair);border-radius:14px;margin-top:10px}
+.dtbl{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}
+.dtbl th{background:var(--panel2);color:var(--mut2);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:10px 12px;border-bottom:1px solid var(--hair2)}
+.dtbl th.num{text-align:right}
+.dtbl td{padding:11px 10px;border-bottom:1px solid var(--hair);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtbl tbody tr:last-child td{border-bottom:none}
+.dtbl .num{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.dtbl .qc{color:var(--mint)}
+.dtbl .tt{font-weight:700}
+.dtbl .dz{color:var(--mut)}
+.dtbl .lc{color:var(--sky);font-size:12.5px;white-space:normal;line-height:1.35;word-break:break-word}
+.dtbl col.c-d{width:32%}.dtbl col.c-s{width:22%}.dtbl col.c-q{width:16%}.dtbl col.c-l{width:30%}
+.dtbl tr.sec td{background:var(--panel);font-weight:800;font-size:13px;color:var(--ink);padding:9px 12px;border-bottom:1px solid var(--hair2)}
+.dtbl tr.sec .stot{color:var(--mint);float:right;font-weight:800}
 </style></head>
 <body>
 
@@ -697,14 +711,14 @@ function renderDoorStock(){
   if(!items.length){ $('dsList').innerHTML='<div class="empty">कोई डोर स्टॉक नहीं'+(q?' — search बदलें':'')+'</div>'; return; }
   const byType={}; items.forEach(x=>{ const t=x.type||'बिना टाइप'; (byType[t]=byType[t]||[]).push(x); });
   const order=Object.keys(byType).sort();
-  let h='';
+  let rows='';
   order.forEach(t=>{ const list=byType[t].sort((a,b)=>(a.design+a.size).localeCompare(b.design+b.size));
     const tnet=list.reduce((a,x)=>a+x.net,0);
-    h+='<div class="gblock"><div class="ghd" style="cursor:default"><div class="ghd-l"><span class="gname">'+esc(t)+'</span></div><div class="ghd-r"><span class="gval pcs">'+tnet+' pcs</span></div></div><div class="glist">';
+    rows+='<tr class="sec"><td colspan="4">'+esc(t)+'<span class="stot">'+tnet+' pcs</span></td></tr>';
     list.forEach(x=>{ const locs=Object.keys(x.locs); const locStr=locs.length?locs.map(l=>esc(l)+(locs.length>1?(' '+x.locs[l]):'')).join(', '):'—';
-      h+='<div class="irow" style="cursor:default"><div class="irow-main"><div class="iname">'+esc(x.design)+' <span style="color:var(--mut);font-weight:600">'+esc(x.size)+'</span></div><div class="ispec">📍 '+locStr+'</div></div><div class="irow-r"><span class="ival">'+x.net+' pcs</span></div></div>'; });
-    h+='</div></div>'; });
-  $('dsList').innerHTML=h;
+      rows+='<tr><td class="tt">'+esc(x.design)+'</td><td class="dz">'+esc(x.size)+'</td><td class="num qc">'+x.net+'</td><td class="lc">📍 '+locStr+'</td></tr>'; });
+  });
+  $('dsList').innerHTML='<div class="dtbl-wrap"><table class="dtbl"><colgroup><col class="c-d"><col class="c-s"><col class="c-q"><col class="c-l"></colgroup><thead><tr><th>डिज़ाइन</th><th>साइज़</th><th class="num">पीस</th><th>कहाँ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 async function pushEntry(entry){
   try{
