@@ -259,6 +259,7 @@ button,input,select{font-family:inherit;font-size:16px}
 .dtbl col.c-d{width:32%}.dtbl col.c-s{width:22%}.dtbl col.c-q{width:16%}.dtbl col.c-l{width:30%}
 .dtbl tr.sec td{background:var(--panel);font-weight:800;font-size:13px;color:var(--ink);padding:9px 12px;border-bottom:1px solid var(--hair2)}
 .dtbl tr.sec .stot{color:var(--mint);float:right;font-weight:800}
+.dtbl .cust{color:var(--violet);font-size:11.5px;font-weight:600;white-space:normal;margin-top:3px}
 </style></head>
 <body>
 
@@ -297,7 +298,7 @@ button,input,select{font-family:inherit;font-size:16px}
     <div class="who"><b>डोर स्टॉक</b> &middot; Door stock</div>
     <button class="iconlink" onclick="loadDoorStock()">&#8635;</button>
   </div>
-  <input id="dsSearch" class="searchbar" placeholder="डिज़ाइन / साइज़ / टाइप खोजें…" oninput="renderDoorStock()">
+  <input id="dsSearch" class="searchbar" placeholder="डिज़ाइन / साइज़ / ग्राहक खोजें…" oninput="renderDoorStock()">
   <div class="tdsum"><div><b id="dsTotal">0</b><span>डोर पीस</span></div><div><b id="dsKinds">0</b><span>तरह</span></div></div>
   <div id="dsList"></div>
 </div>
@@ -395,7 +396,7 @@ const QTYQUICK=[5,10,25,50,100];
 let me_={name:''}, origin='gate', mode='plywood';
 let src=localStorage.getItem('nkg_src')||'';
 let zones=[], sources=[], staff=[], opts={brand:[],customer:[],thickness:{},size:{},design:{}};
-let sel={brand:'',thickness:'',size:'',design:'',customer:'',cat:'',zone:'',photos:[],doortype:''};
+let sel={brand:'',thickness:'',size:'',design:'',customer:'',cat:'',zone:'',photos:[],doortype:'',doorcust:''};
 let stock=[], filter={}, lastId=null;
 
 async function api(path,o){
@@ -519,8 +520,8 @@ function _currentItem(){ const qty=$('qtyIn').value?Number($('qtyIn').value):nul
   else { if(!sel.cat){toast('क्या चीज़ है चुनें','err');return null;} category=sel.cat; item_name=(($('descIn')&&$('descIn').value.trim())||sel.cat); }
   if(!qty){toast('कितने? भरें','err');return null;}
   return {mode:mode,brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,cat:mode==='other'?category:null,item_desc:mode==='other'?(($('descIn')&&$('descIn').value.trim())||null):null,item_name:item_name,category:category,qty:qty}; }
-function resetItemOnly(){ sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat='';sel.doortype=''; if($('qtyIn'))$('qtyIn').value=''; if($('descIn'))$('descIn').value=''; if($('designIn'))$('designIn').value=''; }
-function resetItemAll(){ sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat='';sel.doortype='';sel.zone='';sel.photos=[]; if($('qtyIn'))$('qtyIn').value=''; if($('descIn'))$('descIn').value=''; if($('designIn'))$('designIn').value=''; }
+function resetItemOnly(){ sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat='';sel.doortype='';sel.doorcust=''; if($('qtyIn'))$('qtyIn').value=''; if($('descIn'))$('descIn').value=''; if($('designIn'))$('designIn').value=''; }
+function resetItemAll(){ sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat='';sel.doortype='';sel.doorcust='';sel.zone='';sel.photos=[]; if($('qtyIn'))$('qtyIn').value=''; if($('descIn'))$('descIn').value=''; if($('designIn'))$('designIn').value=''; }
 
 /* ---- new-option prompts ---- */
 async function newOpt(kind){ const n=prompt("New "+kind+":"); if(!n)return; const v=n.trim(); if(!v)return; const product=(kind==='brand')?null:mode; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind,name:v,sort:99,product})}); await loadOpts(); if(kind==='brand')sel.brand=v; else if(kind==='thickness')sel.thickness=v; else if(kind==='size')sel.size=v; wizNext(); }
@@ -554,7 +555,7 @@ function wizPrev(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>0)wizGo(f[i-1]);
 function wizRestart(){ dir='in'; mode='plywood'; outCart=[]; doorBatch=[]; sel.customer=''; resetItemAll(); if($('outCust'))$('outCust').value=''; wizGo('dir'); }
 
 function doorPresetHTML(){ const l=(opts.size&&opts.size.door)||[]; return l.length?l.map(o=>'<button class="chip sm" onclick="doorPreset(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2);font-size:13px">कोई नहीं</span>'; }
-function doorRowsHTML(){ return '<div class="revcart">'+doorBatch.map((d,i)=>'<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc([d.doortype,d.design,d.size].filter(Boolean).join(' '))+'</div><div class="bl-s">'+d.qty+' pcs</div></div><button class="bl-x" onclick="rmDoor('+i+')">×</button></div>').join('')+'</div>'; }
+function doorRowsHTML(){ return '<div class="revcart">'+doorBatch.map((d,i)=>'<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc([d.doortype,d.design,d.size].filter(Boolean).join(' '))+'</div><div class="bl-s">'+d.qty+' pcs'+(d.customer?(' · 👤 '+esc(d.customer)):'')+'</div></div><button class="bl-x" onclick="rmDoor('+i+')">×</button></div>').join('')+'</div>'; }
 function doorPreset(sz){ const p=(''+sz).split(/[x×X*]/); if($('dH'))$('dH').value=(p[0]||'').trim(); if($('dW'))$('dW').value=(p[1]||'').trim(); const q=$('dQ'); if(q){try{q.focus();}catch(e){}} }
 function dbStep(d){ const el=$('dQ'); if(!el)return; const v=Math.max(0,(Number(el.value)||0)+d); el.value=v||''; }
 function doorPendingHasInput(){ return !!($('dH')&&$('dH').value.trim()&&$('dW')&&$('dW').value.trim()&&Number($('dQ')&&$('dQ').value)>0); }
@@ -562,11 +563,12 @@ function doorAdd(){ if(!sel.design){ toast('पहले डिज़ाइन �
   const H=($('dH')&&$('dH').value.trim())||'', W=($('dW')&&$('dW').value.trim())||'', Q=Number($('dQ')&&$('dQ').value)||0;
   if(!H||!W){ toast('ऊँचाई और चौड़ाई भरें','err'); return; }
   if(!Q){ toast('कितने? भरें','err'); return; }
-  const size=H+'x'+W; doorBatch.push({design:sel.design,size:size,qty:Q,doortype:sel.doortype||null});
+  const size=H+'x'+W; doorBatch.push({design:sel.design,size:size,qty:Q,doortype:sel.doortype||null,customer:sel.doorcust||null});
   if(!((opts.size&&opts.size.door)||[]).some(o=>o.name===size)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'size',name:size,sort:99,product:'door'})}).then(()=>loadOpts()).catch(()=>{}); }
   renderWiz(); toast('जोड़ा ✓ '+size,'ok'); }
 function rmDoor(i){ doorBatch.splice(i,1); renderWiz(); }
 function setDoorType(v){ sel.doortype=v; wizNext(); }
+function pickDoorCust(){ openPicker({title:'ग्राहक / Customer',list:opts.customer||[],allowNone:true,addKind:'customer',addProduct:null,onPick:v=>{ sel.doorcust=v||''; renderWiz(); }}); }
 async function newDoorType(){ const n=prompt('नया दरवाज़ा टाइप / New door type:'); if(!n)return; const v=n.trim(); if(!v)return; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'doortype',name:v,sort:99,product:'door'})}); await loadOpts(); sel.doortype=v; wizNext(); }
 function doorNext(){ if(doorPendingHasInput())doorAdd();
   if(!doorBatch.length){ toast('कम से कम एक साइज़ जोड़ें','err'); return; }
@@ -576,7 +578,7 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   const b=$('saveBtn'); if(b){b.disabled=true;b.textContent='Saving…';}
   const photos=(sel.photos||[]).slice(); let queued=0,last=null;
   for(let i=0;i<doorBatch.length;i++){ const d=doorBatch[i];
-    const entry={brand:d.doortype||null,thickness:null,size:d.size,design:d.design,customer:null,item_name:[d.doortype,d.design,d.size].filter(Boolean).join(' '),category:'Door',item_desc:null,qty:d.qty,unit:'pcs',direction:'in',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photos:(i===0?photos:[]),_ts:Date.now()+i};
+    const entry={brand:d.doortype||null,thickness:null,size:d.size,design:d.design,customer:(d.customer||null),item_name:[d.doortype,d.design,d.size].filter(Boolean).join(' '),category:'Door',item_desc:null,qty:d.qty,unit:'pcs',direction:'in',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photos:(i===0?photos:[]),_ts:Date.now()+i};
     const row=await pushEntry(entry); if(!row){ queue(entry); queued++; } else { last=row.id; } pushRecent(entry); }
   if(last){ lastId=last; $('undoBtn').classList.remove('hide'); }
   const kd=doorBatch[0].design; if(kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts()); }
@@ -632,6 +634,7 @@ function stepHTML(k){
   if(k==='design') return '<div class="wq">डिज़ाइन कोड</div><div class="wqs">टाइप करें या नीचे से चुनें · Design</div><input id="designVis" class="wqbig" placeholder="जैसे KP7098" autocapitalize="characters" autocomplete="off" value="'+esc(sel.design||'')+'" oninput="onDesignType(this.value)">'
     +'<div class="wsub">पुराने डिज़ाइन · Recent</div><div class="chips">'+designRecentHTML()+'</div><button class="wnext" id="designNext" onclick="wizNext()"'+(sel.design?'':' disabled')+'>आगे ›</button>';
   if(k==='doorsizes') return '<div class="wq">साइज़ भरें</div><div class="wqs">ऊँचाई × चौड़ाई · Height × width</div>'
+    +(dir==='in'?'<div class="wsub">किसका है? · Belongs to (optional)</div><div class="optrow" style="flex-wrap:nowrap"><input id="dCust" class="optin" placeholder="ग्राहक / पार्टी" value="'+esc(sel.doorcust||'')+'" oninput="sel.doorcust=this.value;renderCtx()"><button class="ghost" onclick="pickDoorCust()">📇</button></div><div class="gap8"></div>':'')
     +'<div class="dsz"><input id="dH" class="wqbig szin" inputmode="decimal" placeholder="ऊँचाई"><span class="szx">×</span><input id="dW" class="wqbig szin" inputmode="decimal" placeholder="चौड़ाई"></div>'
     +'<div class="qtyrow" style="margin-top:10px"><div class="stepper"><button onclick="dbStep(-1)">−</button><input id="dQ" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने" onkeydown="if(event.key===\'Enter\')doorAdd()"><button onclick="dbStep(1)">＋</button></div><button class="dbadd" onclick="doorAdd()">＋ जोड़ें</button></div>'
     +'<div class="wsub">आम साइज़ · Common</div><div class="chips">'+doorPresetHTML()+'</div>'
@@ -696,16 +699,17 @@ async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(
 let _doorStock=[];
 async function showDoorStock(){ ['gate','add','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('dstock').classList.remove('hide'); if($('dsSearch'))$('dsSearch').value=''; $('dsList').innerHTML='<div class="empty">लोड हो रहा है…</div>'; await loadDoorStock(); }
 function backFromDoorStock(){ $('dstock').classList.add('hide'); $('add').classList.remove('hide'); }
-async function loadDoorStock(){ try{ _doorStock=(await api("/rest/v1/nkg_door_stock?select=door_type,design,size,item_name,qty,direction,zone_name,source_godown&order=created_at.desc"))||[]; }catch(e){ _doorStock=[]; $('dsList').innerHTML='<div class="empty">लोड नहीं हुआ — दोबारा कोशिश करें</div>'; } renderDoorStock(); }
+async function loadDoorStock(){ try{ _doorStock=(await api("/rest/v1/nkg_door_stock?select=door_type,design,size,item_name,customer,qty,direction,zone_name,source_godown&order=created_at.desc"))||[]; }catch(e){ _doorStock=[]; $('dsList').innerHTML='<div class="empty">लोड नहीं हुआ — दोबारा कोशिश करें</div>'; } renderDoorStock(); }
 function renderDoorStock(){
   const q=(($('dsSearch')&&$('dsSearch').value)||'').toLowerCase();
   const m={};
   _doorStock.forEach(r=>{ const key=[r.door_type||'',r.design||'',r.size||''].join('|');
-    if(!m[key])m[key]={type:r.door_type||'',design:r.design||'',size:r.size||'',net:0,locs:{}};
+    if(!m[key])m[key]={type:r.door_type||'',design:r.design||'',size:r.size||'',net:0,locs:{},custs:{}};
     const d=(r.direction==='out'?-1:1)*(Number(r.qty)||0); m[key].net+=d;
-    const loc=r.source_godown||r.zone_name||''; if(r.direction!=='out'&&loc){ m[key].locs[loc]=(m[key].locs[loc]||0)+(Number(r.qty)||0); } });
+    const loc=r.source_godown||r.zone_name||''; if(r.direction!=='out'&&loc){ m[key].locs[loc]=(m[key].locs[loc]||0)+(Number(r.qty)||0); }
+    if(r.direction!=='out'&&r.customer){ m[key].custs[r.customer]=true; } });
   let items=Object.values(m).filter(x=>x.net>0);
-  if(q) items=items.filter(x=>((x.type+' '+x.design+' '+x.size).toLowerCase().includes(q)));
+  if(q) items=items.filter(x=>((x.type+' '+x.design+' '+x.size+' '+Object.keys(x.custs).join(' ')).toLowerCase().includes(q)));
   if($('dsTotal'))$('dsTotal').textContent=items.reduce((a,x)=>a+x.net,0);
   if($('dsKinds'))$('dsKinds').textContent=items.length;
   if(!items.length){ $('dsList').innerHTML='<div class="empty">कोई डोर स्टॉक नहीं'+(q?' — search बदलें':'')+'</div>'; return; }
@@ -716,7 +720,7 @@ function renderDoorStock(){
     const tnet=list.reduce((a,x)=>a+x.net,0);
     rows+='<tr class="sec"><td colspan="4">'+esc(t)+'<span class="stot">'+tnet+' pcs</span></td></tr>';
     list.forEach(x=>{ const locs=Object.keys(x.locs); const locStr=locs.length?locs.map(l=>esc(l)+(locs.length>1?(' '+x.locs[l]):'')).join(', '):'—';
-      rows+='<tr><td class="tt">'+esc(x.design)+'</td><td class="dz">'+esc(x.size)+'</td><td class="num qc">'+x.net+'</td><td class="lc">📍 '+locStr+'</td></tr>'; });
+      const cs=Object.keys(x.custs); const custHTML=cs.length?('<div class="cust">👤 '+esc(cs.join(', '))+'</div>'):''; rows+='<tr><td class="tt">'+esc(x.design)+custHTML+'</td><td class="dz">'+esc(x.size)+'</td><td class="num qc">'+x.net+'</td><td class="lc">📍 '+locStr+'</td></tr>'; });
   });
   $('dsList').innerHTML='<div class="dtbl-wrap"><table class="dtbl"><colgroup><col class="c-d"><col class="c-s"><col class="c-q"><col class="c-l"></colgroup><thead><tr><th>डिज़ाइन</th><th>साइज़</th><th class="num">पीस</th><th>कहाँ</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
