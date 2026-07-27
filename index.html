@@ -204,6 +204,43 @@ button,input,select{font-family:inherit;font-size:16px}
 .pkrow span{color:var(--mut);font-size:13px;font-weight:600;flex:0 0 auto}
 .pkrow:active{background:rgba(255,255,255,.04)}
 .khphoto{margin-top:7px;background:var(--panel);border:1px solid var(--hair2);color:var(--sky);border-radius:8px;font-size:12px;font-weight:600;padding:5px 10px}
+/* ---- staff wizard ---- */
+.wizbar{display:flex;align-items:center;gap:10px;min-height:22px}
+.wizback{background:none;border:none;color:var(--sky);font-size:15px;font-weight:700;padding:4px 2px}
+.wizback:active{opacity:.6}
+.wizx{margin-left:auto;background:none;border:none;color:var(--mut2);font-size:13px;font-weight:600}
+.wizdots{display:flex;gap:5px;flex:1;justify-content:center;flex-wrap:wrap}
+.wizdots i{width:7px;height:7px;border-radius:99px;background:var(--hair2);transition:.2s}
+.wizdots i.on{background:var(--violet);width:22px}
+.wizdots i.done{background:var(--mint)}
+.wizctx{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:8px}
+.wctag{font-size:12.5px;font-weight:700;color:var(--mut);background:var(--panel2);border:1px solid var(--hair);border-radius:9px;padding:5px 10px;white-space:nowrap}
+.wctag.din{color:var(--mint);border-color:rgba(52,211,153,.4)}
+.wctag.dout{color:var(--rose);border-color:rgba(251,113,133,.4)}
+.wctag.item{color:var(--ink)}
+.wq{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:2px 0 3px}
+.wqs{font-size:13.5px;color:var(--mut);margin-bottom:14px}
+.bigwrap{display:flex;flex-direction:column;gap:11px}
+.bigopt{display:flex;align-items:center;gap:15px;width:100%;background:var(--panel2);border:1px solid var(--hair2);color:var(--ink);border-radius:17px;padding:19px 17px;font-size:19px;font-weight:800;text-align:left;letter-spacing:-.01em}
+.bigopt:active{transform:scale(.98);border-color:var(--indigo)}
+.bigopt .ic{font-size:26px;flex:0 0 auto;width:30px;text-align:center}
+.bigopt .tx{min-width:0}
+.bigopt .sub{display:block;font-size:12.5px;color:var(--mut);font-weight:600;margin-top:3px;letter-spacing:0}
+.bigopt.din:active,.bigopt.din.sel{border-color:rgba(52,211,153,.6);background:rgba(52,211,153,.12)}
+.bigopt.dout:active,.bigopt.dout.sel{border-color:rgba(251,113,133,.6);background:rgba(251,113,133,.12)}
+.chips.big{gap:10px}
+.chips.big .chip{padding:15px 18px;font-size:17px;border-radius:14px}
+.chips.big .chip.add{font-size:15px}
+.wqbig{font-size:26px;font-weight:800;text-align:center;padding:16px;border-radius:14px;border:1px solid var(--hair2);background:#101016;color:var(--ink);outline:none;width:100%}.wqbig:focus{border-color:var(--indigo)}
+.wsub{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);margin:16px 0 9px}
+.wnext{width:100%;background:var(--grad);color:#fff;border:none;border-radius:15px;padding:17px;font-size:17px;font-weight:800;box-shadow:0 10px 24px -8px rgba(99,102,241,.55);margin-top:16px}.wnext:active{transform:scale(.985)}.wnext:disabled{opacity:.45;box-shadow:none}
+.wskip{width:100%;background:none;border:none;color:var(--mut);font-size:14px;font-weight:600;padding:12px;margin-top:2px}
+.qbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.qbtns .chip{flex:1;min-width:60px;text-align:center;padding:14px 6px;font-size:18px;font-weight:800}
+.revcart{display:flex;flex-direction:column;gap:8px;margin:4px 0 8px}
+.blrow{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--hair);border-radius:13px;padding:12px 14px}
+.blrow .bl-m{flex:1;min-width:0}.blrow .bl-n{font-size:15.5px;font-weight:700;letter-spacing:-.01em}.blrow .bl-s{font-size:12.5px;color:var(--mut);margin-top:2px}
+.blrow .bl-x{background:none;border:none;color:var(--mut2);font-size:22px;line-height:1;padding:0 2px}
 </style></head>
 <body>
 
@@ -220,33 +257,16 @@ button,input,select{font-family:inherit;font-size:16px}
     <button class="iconlink" id="addBack" onclick="addBack()">Switch</button>
   </div>
   <div class="card">
-    <div class="dirw"><button id="dirIn" class="on" onclick="setDir('in')">&#128229; Coming in</button><button id="dirOut" onclick="setDir('out')">&#128228; Giving out</button></div>
-    <div id="recentPick" class="hide"></div>
-    <div class="buildbar" id="buildBar"><div class="bt empty" id="buildText">Pick below to start</div><div class="bq" id="buildQty"></div></div>
-    <div class="modew"><button id="mPlywood" class="on" onclick="setMode('plywood')">Plywood</button><button id="mDoor" onclick="setMode('door')">Door</button><button id="mOther" onclick="setMode('other')">Other</button></div>
-
-    <div id="secBrand"><div class="lab">Brand</div><div class="chips" id="brandChips"></div></div>
-    <div id="secTS" class="hide"><div class="lab">Thickness</div><div class="chips" id="thickChips"></div><div class="gap8"></div><div class="lab">Size</div><div class="chips" id="sizeChips"></div></div>
-
-    <div id="secDesign" class="hide"><div class="lab">Design</div><input id="designIn" class="optin" style="font-size:18px;font-weight:700;letter-spacing:.02em" placeholder="Type design code (e.g. KP7098)" autocapitalize="characters" autocomplete="off" oninput="onDesignInput(this.value)"><div class="gap8"></div><div class="chips" id="designRecent"></div></div>
-    <div id="secDsize" class="hide"><div class="lab">Size <span class="opt">(height × width)</span></div><div class="chips" id="dsizeChips"></div></div>
-    <div id="secCustomer" class="hide"><div class="lab">For a customer? <span class="opt">&mdash; optional</span></div><button class="itembtn ph" id="customerBtn" onclick="pickCustomer()">None (general stock) <span>&#9662;</span></button></div>
-
-    <div id="secOther" class="hide"><div class="lab">What is it?</div><div class="chips" id="catChips"></div><div class="gap8"></div><input id="descIn" class="optin" placeholder="Name / detail (optional)"></div>
-
-    <div id="secQty" class="hide"><div class="lab">Quantity <span class="opt">(pcs)</span></div>
-      <div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">&#8722;</button><input id="qtyIn" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty" oninput="renderBuild()"><button onclick="stepQty(1)">+</button></div></div>
-      <div class="chips" id="qtyQuick" style="margin-top:9px"></div></div>
-
-    <div id="secTail" class="hide">
-      <div id="secOutCust" class="hide"><div class="lab">To customer / party</div><input id="outCust" class="optin" placeholder="Who is taking it? (optional)"></div>
-      <div id="secZone"><div class="lab">Placed at <span class="opt">&mdash; optional</span></div><div class="chips" id="zoneChips"></div></div>
-      <div class="gap8"></div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">&#128247; Add photo</button><span id="photoHint" class="opt" style="align-self:center"></span></div><div id="photoStrip" class="pstrip"></div>
+    <div class="wizbar">
+      <button class="wizback hide" id="wizBack" onclick="wizPrev()">&#8249; Back</button>
+      <div class="wizdots" id="wizDots"></div>
+      <button class="wizx hide" id="wizX" onclick="wizRestart()">Start over</button>
     </div>
+    <div class="wizctx" id="wizCtx"></div>
+    <div id="wizBody"></div>
+    <!-- persistent hidden fields reused by the save logic -->
+    <input id="qtyIn" type="hidden"><input id="descIn" type="hidden"><input id="outCust" type="hidden"><input id="designIn" type="hidden">
     <input id="fileIn" type="file" accept="image/*" multiple class="hide" onchange="onPhoto(event)">
-    <div id="outCart" class="hide"></div>
-    <button class="obtn addln hide" id="addAnotherBtn" onclick="addAnother()">&#65291; Add another item</button>
-    <button class="save hide" id="saveBtn" onclick="saveEntry()">&#10003; Save entry</button>
   </div>
   <div class="subline"><span id="todayLbl">Today: 0 logged</span><span><button class="undo hide" id="undoBtn" onclick="undoLast()">&#8630; Undo last</button> <span id="pendLbl" class="pend hide"></span></span></div>
   <div class="recent" id="recentStrip"></div>
@@ -404,140 +424,191 @@ async function doOwnerLogin(){
 }
 function logAsOwner(){ me_={name:'Owner'}; origin='owner'; showAdd(); }
 
+/* ===== Staff entry — step-by-step wizard ===== */
+let dir='in', outCart=[], _pk={}, wizKey='dir';
+
 async function showAdd(){
   ['gate','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('add').classList.remove('hide');
   $('addBack').textContent=origin==='owner'?'← Owner':'Switch';
-  buildStatic(); resetQty(); updateSrcLbl();
+  const sb=$('srcBtn'); if(sb)sb.classList.add('hide'); // source is asked inside the wizard now
   await Promise.all([loadZones(),loadSources(),loadOpts()]);
-  setMode('plywood'); setDir('in'); renderRecentPick(); renderZoneChips(); refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
-  if(!src) openSource();
+  dir='in'; mode='plywood'; outCart=[]; sel.customer=''; resetItemAll(); if($('outCust'))$('outCust').value='';
+  refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
+  wizGo('dir');
 }
-function resetQty(){ $('qtyIn').value=''; $('descIn').value=''; sel.photos=[]; renderPhotoStrip(); sel.zone=''; }
-function buildStatic(){ $('catChips').innerHTML=CATS.map(c=>`<button class="chip" data-cat="${c}" onclick="setCat('${c}')">${c}</button>`).join(''); $('qtyQuick').innerHTML=QTYQUICK.map(q=>`<button class="chip" onclick="setQty(${q})">${q}</button>`).join(''); }
-function setCat(c){ sel.cat=c; document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.cat===c)); updateReveal(); }
-function setQty(q){ $('qtyIn').value=q; renderBuild(); }
-function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); $('qtyIn').value=v||''; renderBuild(); }
 
+/* ---- data loaders (kept) ---- */
 async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,kind,name,sort,product,favorite&order=favorite.desc,sort.asc,name.asc"))||[]; opts={brand:[],customer:[],thickness:{},size:{},design:{}};
   a.forEach(o=>{ if(o.kind==='brand')opts.brand.push(o); else if(o.kind==='customer')opts.customer.push(o); else { const p=o.product||'plywood'; opts[o.kind]=opts[o.kind]||{}; (opts[o.kind][p]=opts[o.kind][p]||[]).push(o); } }); }
+async function loadZones(){ zones=(await api("/rest/v1/nkg_zones?select=id,name&order=created_at.asc"))||[]; }
+async function loadSources(){ sources=(await api("/rest/v1/nkg_sources?select=id,name&order=name.asc"))||[]; }
 
+/* ---- recent items (quick reuse) ---- */
 function recentItems(){ try{ return JSON.parse(localStorage.getItem('nkg_recent_items')||'[]'); }catch(e){ return []; } }
 function pushRecentItem(it){ if(!it||!it.name)return; let r=recentItems().filter(x=>x.name!==it.name); r.unshift(it); r=r.slice(0,6); try{localStorage.setItem('nkg_recent_items',JSON.stringify(r));}catch(e){} }
-function renderRecentPick(){ const el=$('recentPick'); if(!el)return; const r=recentItems(); if(!r.length){ el.classList.add('hide'); el.innerHTML=''; return; }
-  el.classList.remove('hide'); el.innerHTML='<div class="lab">Quick pick <span class="opt">tap to reuse</span></div><div class="chips">'+r.map((it,i)=>'<button class="chip rp" onclick="applyRecent('+i+')">'+esc(it.name)+'</button>').join('')+'</div>'; }
-function applyRecent(i){ const it=recentItems()[i]; if(!it)return; setMode(it.mode||'plywood');
+function applyRecent(i){ const it=recentItems()[i]; if(!it)return; mode=it.mode||'plywood';
   sel.brand=it.brand||''; sel.thickness=it.thickness||''; sel.size=it.size||''; sel.design=it.design||''; sel.cat=it.cat||'';
-  if(it.mode==='door'&&$('designIn'))$('designIn').value=it.design||'';
-  if(it.mode==='other')document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.cat===it.cat));
-  renderChips(); renderDesignRecent(); updateReveal(); const q=$('qtyIn'); if(q&&q.focus){try{q.focus();}catch(e){}} }
-let dir='in';
-function setDir(d){ dir=d;
-  $('dirIn').classList.toggle('on',d==='in'); $('dirOut').classList.toggle('on',d==='out');
-  const out=(d==='out');
-  const sb=$('srcBtn'); if(sb)sb.classList.toggle('hide',out);
-  const sz=$('secZone'); if(sz)sz.classList.toggle('hide',out);
-  const oc=$('secOutCust'); if(oc)oc.classList.toggle('hide',!out);
-  if(!out) outCart=[];
-  renderOutCart(); updateReveal();
-}
-function setMode(m){ mode=m; sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.customer='';sel.cat='';
-  ['plywood','door','other'].forEach(x=>$('m'+cap(x)).classList.toggle('on',x===m));
-  if($('designIn'))$('designIn').value=''; renderDesignRecent();
-  $('customerBtn').innerHTML='None (general stock) <span>&#9662;</span>'; $('customerBtn').classList.add('ph');
-  document.querySelector('#catChips')&&document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.remove('on'));
-  document.querySelector('#srcBtn .lbl').textContent=(m==='door'?'Supplier':'From');
-  renderChips(); updateReveal();
-}
-function renderChips(){
-  { const all=opts.brand||[]; const favs=all.filter(b=>b.favorite); const list=favs.length?favs:all;
-    let h=list.map(o=>`<button class="chip${sel.brand===o.name?' on':''}" onclick="setBrand('${esc(o.name)}')">${esc(o.name)}</button>`).join('');
-    if(sel.brand&&!list.some(b=>b.name===sel.brand)) h+=`<button class="chip on" onclick="setBrand('${esc(sel.brand)}')">${esc(sel.brand)}</button>`;
-    h+=(all.length>list.length)?'<button class="chip add" onclick="pickBrand()">&#128269; More brands</button>':'<button class="chip add" onclick="pickBrand()">&#65291; Add brand</button>'; $('brandChips').innerHTML=h; }
-  $('thickChips').innerHTML=((opts.thickness.plywood)||[]).map(o=>`<button class="chip${sel.thickness===o.name?' on':''}" onclick="setThick('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'thickness\')">&#65291;</button>';
-  $('sizeChips').innerHTML=((opts.size.plywood)||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
-  $('dsizeChips').innerHTML=((opts.size.door)||[]).map(o=>`<button class="chip${sel.size===o.name?' on':''}" onclick="setSize('${esc(o.name)}')">${esc(o.name)}</button>`).join('')+'<button class="chip add" onclick="newOpt(\'size\')">&#65291;</button>';
-}
-function setBrand(v){ sel.brand=v; renderChips(); updateReveal(); }
-function setThick(v){ sel.thickness=v; renderChips(); updateReveal(); }
-function setSize(v){ sel.size=v; renderChips(); updateReveal(); }
-async function newOpt(kind){ const n=prompt("New "+kind+":"); if(!n)return; const v=n.trim(); if(!v)return; const product=(kind==='brand')?null:mode; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind,name:v,sort:99,product})}); await loadOpts(); if(kind==='brand')sel.brand=v; else if(kind==='thickness')sel.thickness=v; else if(kind==='size')sel.size=v; renderChips(); updateReveal(); }
+  if($('designIn'))$('designIn').value=sel.design||''; wizGo('qty'); }
 
-function updateReveal(){
-  const show=(id,v)=>$(id).classList.toggle('hide',!v);
-  show('secBrand',mode==='plywood'); show('secTS',mode==='plywood'&&!!sel.brand);
-  show('secDesign',mode==='door'); show('secDsize',mode==='door'&&!!sel.design); show('secCustomer',mode==='door'&&!!sel.size);
-  show('secOther',mode==='other');
-  const ready = mode==='plywood'?(sel.brand&&sel.thickness&&sel.size): mode==='door'?(sel.design&&sel.size): (sel.cat);
-  show('secQty',!!ready); show('secTail',!!ready);
-  const out=(dir==='out'), n=(outCart.length+(ready?1:0));
-  $('saveBtn').classList.toggle('hide', !(ready || (out && outCart.length>0)));
-  $('saveBtn').innerHTML = out ? ('&#128228; Give out'+(n>1?' ('+n+')':'')) : '&#10003; Save entry';
-  $('saveBtn').classList.toggle('outbtn', out);
-  const aab=$('addAnotherBtn'); if(aab) aab.classList.toggle('hide', !(out && ready));
-  renderBuild();
-}
-function renderBuild(){ const bt=$('buildText'), bq=$('buildQty'), bb=$('buildBar'); if(!bt)return;
-  let t=''; if(mode==='plywood')t=[sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
-  else if(mode==='door')t=[sel.design,sel.size].filter(Boolean).join(' ');
-  else t=sel.cat||'';
-  const q=Number($('qtyIn')&&$('qtyIn').value)||0;
-  if(bb)bb.classList.toggle('hide',!t && !q);
-  bt.textContent=t||'Pick below to start'; bt.classList.toggle('empty',!t);
-  bq.textContent=q?(q+' pcs'):''; }
+/* ---- source (kept + top-bar shortcut) ---- */
+function updateSrcLbl(){ const l=$('srcLbl'); if(l)l.textContent=src||'Pick source'; const b=$('srcBtn'); if(b)b.classList.toggle('need',!src); }
+function openSource(){ const b=sources.length?sources.map(s=>`<button class="chip${s.name===src?' on':''}" onclick="setSource('${esc(s.name)}')">${esc(s.name)}</button>`).join(''):'<div style="font-size:13px;color:var(--mut)">No sources yet.</div>';
+  sheetHTML('<div class="grab"></div><h4>Where is this from?</h4><div class="chips">'+b+'</div>'); openSheet(); }
+function setSource(s){ src=s; localStorage.setItem('nkg_src',s); updateSrcLbl(); closeSheet(); }
 
-/* pickers for design & customer */
-let _pk={};
+/* ---- generic picker sheet (brand) ---- */
 function openPicker(cfg){ _pk=cfg; _pk.q=''; renderPicker(); openSheet(); }
 function renderPicker(){ const list=(_pk.list||[]).filter(x=>!_pk.q||x.name.toLowerCase().includes(_pk.q));
   const chips=(_pk.allowNone?'<button class="chip" onclick="pkPick(\'\')">None</button>':'')+list.map(x=>`<button class="chip" onclick="pkPick('${esc(x.name)}')">${esc(x.name)}</button>`).join('');
-  sheetHTML('<div class="grab"></div><h4>'+_pk.title+'</h4><input id="pkq" class="optin" placeholder="Search…" oninput="pkSearch(this.value)" value="'+esc(_pk.q)+'"><div class="chips">'+chips+'</div><button class="ghost" style="justify-content:center" onclick="pkAdd()">&#65291; Add new</button>');
-  const el=$('pkq'); if(el){el.focus();el.value=_pk.q;}
-}
+  sheetHTML('<div class="grab"></div><h4>'+_pk.title+'</h4><input id="pkq" class="optin" placeholder="Search…" oninput="pkSearch(this.value)" value="'+esc(_pk.q)+'"><div class="chips">'+chips+'</div><button class="ghost" style="justify-content:center" onclick="pkAdd()">＋ Add new</button>');
+  const el=$('pkq'); if(el){el.focus();el.value=_pk.q;} }
 function pkSearch(v){ _pk.q=(v||'').toLowerCase(); renderPicker(); }
 function pkPick(v){ closeSheet(); _pk.onPick(v); }
 async function pkAdd(){ const n=prompt('New '+_pk.title+':'); if(!n)return; const v=n.trim(); if(!v)return; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:_pk.addKind,name:v,sort:99,product:_pk.addProduct})}); await loadOpts(); closeSheet(); _pk.onPick(v); }
-function onDesignInput(v){ sel.design=(v||'').trim(); updateReveal(); }
-function pickRecentDesign(v){ sel.design=v; if($('designIn'))$('designIn').value=v; renderDesignRecent(); updateReveal(); }
-function renderDesignRecent(){ const l=(opts.design&&opts.design.door)||[]; const el=$('designRecent'); if(el)el.innerHTML=l.map(o=>`<button class="chip sm${sel.design===o.name?' on':''}" onclick="pickRecentDesign('${esc(o.name)}')">${esc(o.name)}</button>`).join(''); }
-function pickCustomer(){ openPicker({title:'Customer',list:opts.customer||[],allowNone:true,addKind:'customer',addProduct:null,onPick:v=>{ sel.customer=v; const b=$('customerBtn'); b.classList.toggle('ph',!v); b.innerHTML=(v?esc(v):'None (general stock)')+' <span>&#9662;</span>'; }}); }
-function pickBrand(){ openPicker({title:'Brand',list:opts.brand||[],addKind:'brand',addProduct:null,onPick:v=>{ if(v){sel.brand=v; renderChips(); updateReveal();} }}); }
+function pickBrand(){ openPicker({title:'Brand',list:opts.brand||[],addKind:'brand',addProduct:null,onPick:v=>{ if(v){ sel.brand=v; wizNext(); } }}); }
 
-function updateSrcLbl(){ $('srcLbl').textContent=src||'Pick source'; $('srcBtn').classList.toggle('need',!src); }
-function openSource(){ const b=sources.length?sources.map(s=>`<button class="chip${s.name===src?' on':''}" onclick="setSource('${esc(s.name)}')">${esc(s.name)}</button>`).join(''):'<div style="font-size:13px;color:var(--mut)">No sources yet &mdash; owner adds them in Manage.</div>';
-  sheetHTML('<div class="grab"></div><h4>Where is this from?</h4><div style="font-size:13px;color:var(--mut)">Tap once &mdash; the whole truck is tagged to it.</div><div class="chips">'+b+'</div>'); openSheet(); }
-function setSource(s){ src=s; localStorage.setItem('nkg_src',s); updateSrcLbl(); closeSheet(); }
-
-async function loadZones(){ zones=(await api("/rest/v1/nkg_zones?select=id,name&order=created_at.asc"))||[]; }
-function renderZoneChips(){ $('zoneChips').innerHTML=zones.map(z=>`<button class="chip${z.name===sel.zone?' on':''}" onclick="setZone('${esc(z.name)}')">${esc(z.name)}</button>`).join('')+'<button class="chip add" onclick="newZoneInline()">&#65291;</button>'; }
-function setZone(z){ sel.zone=(sel.zone===z?'':z); renderZoneChips(); }
-async function newZoneInline(){ const n=prompt("New zone / rack:"); if(!n)return; const z=n.trim(); if(!z)return; if(!zones.find(x=>x.name===z)){ await api("/rest/v1/nkg_zones",{method:'POST',headers:HJ,body:JSON.stringify({name:z,created_by:me_.name})}); zones.push({name:z}); } sel.zone=z; renderZoneChips(); }
-async function loadSources(){ sources=(await api("/rest/v1/nkg_sources?select=id,name&order=name.asc"))||[]; }
-
+/* ---- photos (kept, guarded) ---- */
+function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=h.match(/:(.*?);/)[1];const bin=atob(b);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:mime});}
 function pickPhoto(){ $('fileIn').click(); }
 function onPhoto(e){ const files=[...(e.target.files||[])]; if(!files.length)return;
   files.forEach(f=>{ const img=new Image(),rd=new FileReader(); rd.onload=()=>{ img.onload=()=>{ const m=1280,s=Math.min(1,m/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height); (sel.photos=sel.photos||[]).push(c.toDataURL('image/jpeg',0.72)); renderPhotoStrip(); }; img.src=rd.result; }; rd.readAsDataURL(f); });
   e.target.value=''; }
-function renderPhotoStrip(){ const el=$('photoStrip'); if(!el)return; const ps=sel.photos||[];
-  el.innerHTML=ps.map((p,i)=>'<div class="pth"><img src="'+p+'" onclick="viewSel('+i+')"><button class="x" onclick="rmPhoto('+i+')">&times;</button></div>').join('');
-  const b=$('photoBtn'); if(ps.length){ b.classList.add('on'); b.innerHTML='&#128247; Add more'; } else { b.classList.remove('on'); b.innerHTML='&#128247; Add photo'; }
-  const h=$('photoHint'); if(h)h.textContent=ps.length?(ps.length+' photo'+(ps.length>1?'s':'')+' attached'):''; }
+function photoStripHTML(){ return (sel.photos||[]).map((p,i)=>'<div class="pth"><img src="'+p+'" onclick="viewSel('+i+')"><button class="x" onclick="rmPhoto('+i+')">×</button></div>').join(''); }
+function photoHintText(){ const n=(sel.photos||[]).length; return n?(n+' photo'+(n>1?'s':'')+' attached'):''; }
+function renderPhotoStrip(){ const el=$('photoStrip'); if(el)el.innerHTML=photoStripHTML();
+  const b=$('photoBtn'); if(b){ if((sel.photos||[]).length){b.classList.add('on');b.innerHTML='📷 Add more';}else{b.classList.remove('on');b.innerHTML='📷 Add photo';} }
+  const h=$('photoHint'); if(h)h.textContent=photoHintText(); }
 function rmPhoto(i){ (sel.photos||[]).splice(i,1); renderPhotoStrip(); }
 function viewSel(i){ openPhotos((sel.photos||[]).join('|'), i); }
 
-function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=h.match(/:(.*?);/)[1];const bin=atob(b);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:mime});}
-let outCart=[];
+/* ---- item helpers (kept) ---- */
 function _itemStarted(){ return !!(sel.brand||sel.thickness||sel.size||sel.design||sel.cat||($('qtyIn')&&$('qtyIn').value)); }
 function _currentItem(){ const qty=$('qtyIn').value?Number($('qtyIn').value):null; let item_name='',category='';
   if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Complete brand, thickness & size','err');return null;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
   else if(mode==='door'){ if(!sel.design||!sel.size){toast('Choose design & size','err');return null;} item_name=sel.design+' '+sel.size; category='Door'; }
-  else { if(!sel.cat){toast('Tap what it is','err');return null;} category=sel.cat; item_name=($('descIn').value.trim()||sel.cat); }
+  else { if(!sel.cat){toast('Tap what it is','err');return null;} category=sel.cat; item_name=(($('descIn')&&$('descIn').value.trim())||sel.cat); }
   if(!qty){toast('Enter quantity','err');return null;}
-  return {mode:mode,brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,cat:mode==='other'?category:null,item_desc:mode==='other'?($('descIn').value.trim()||null):null,item_name:item_name,category:category,qty:qty}; }
-function resetItemOnly(){ $('qtyIn').value=''; if($('descIn'))$('descIn').value=''; sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat=''; if($('designIn'))$('designIn').value=''; document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.remove('on')); renderChips(); renderDesignRecent(); updateReveal(); }
-function renderOutCart(){ const el=$('outCart'); if(!el)return; if(!outCart.length){ el.classList.add('hide'); el.innerHTML=''; return; }
-  el.classList.remove('hide'); el.innerHTML='<div class="lab">Giving out &middot; '+outCart.length+' item'+(outCart.length>1?'s':'')+'</div>'+outCart.map((L,i)=>'<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc(L.item_name)+'</div><div class="bl-s">'+L.qty+' pcs</div></div><button class="bl-x" onclick="rmOutCart('+i+')">&times;</button></div>').join(''); }
-function rmOutCart(i){ outCart.splice(i,1); renderOutCart(); updateReveal(); }
-function addAnother(){ const it=_currentItem(); if(!it)return; outCart.push(it); pushRecentItem({mode:it.mode,brand:it.brand,thickness:it.thickness,size:it.size,design:it.design,cat:it.cat,name:it.item_name}); renderRecentPick(); renderOutCart(); resetItemOnly(); toast('Added ✓ — pick the next item','ok'); }
+  return {mode:mode,brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,cat:mode==='other'?category:null,item_desc:mode==='other'?(($('descIn')&&$('descIn').value.trim())||null):null,item_name:item_name,category:category,qty:qty}; }
+function resetItemOnly(){ sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat=''; if($('qtyIn'))$('qtyIn').value=''; if($('descIn'))$('descIn').value=''; if($('designIn'))$('designIn').value=''; }
+function resetItemAll(){ sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat='';sel.zone='';sel.photos=[]; if($('qtyIn'))$('qtyIn').value=''; if($('descIn'))$('descIn').value=''; if($('designIn'))$('designIn').value=''; }
+
+/* ---- new-option prompts ---- */
+async function newOpt(kind){ const n=prompt("New "+kind+":"); if(!n)return; const v=n.trim(); if(!v)return; const product=(kind==='brand')?null:mode; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind,name:v,sort:99,product})}); await loadOpts(); if(kind==='brand')sel.brand=v; else if(kind==='thickness')sel.thickness=v; else if(kind==='size')sel.size=v; wizNext(); }
+async function newSrcWiz(){ const n=prompt('New source (truck / supplier):'); if(!n)return; const v=n.trim(); if(!v)return; await api("/rest/v1/nkg_sources",{method:'POST',headers:HJ,body:JSON.stringify({name:v})}); await loadSources(); src=v; localStorage.setItem('nkg_src',v); updateSrcLbl(); wizNext(); }
+async function newZoneInline(){ const n=prompt("New zone / rack:"); if(!n)return; const z=n.trim(); if(!z)return; if(!zones.find(x=>x.name===z)){ await api("/rest/v1/nkg_zones",{method:'POST',headers:HJ,body:JSON.stringify({name:z,created_by:me_.name})}); zones.push({name:z}); } sel.zone=z; renderWiz(); }
+
+/* ---- step selections (auto-advance) ---- */
+function setDir(d){ dir=d; if(d==='out')outCart=[]; wizNext(); }
+function setMode(m){ mode=m; resetItemOnly(); wizNext(); }
+function setBrand(v){ sel.brand=v; wizNext(); }
+function setThick(v){ sel.thickness=v; wizNext(); }
+function setSize(v){ sel.size=v; wizNext(); }
+function setCat(c){ sel.cat=c; wizNext(); }
+function setSrc(s){ src=s; localStorage.setItem('nkg_src',s); updateSrcLbl(); wizNext(); }
+function onDesignType(v){ sel.design=(v||'').trim(); if($('designIn'))$('designIn').value=sel.design; const nx=$('designNext'); if(nx)nx.disabled=!sel.design; renderCtx(); }
+function pickRecentDesign(v){ sel.design=v; if($('designIn'))$('designIn').value=v; wizNext(); }
+function onQtyType(v){ if($('qtyIn'))$('qtyIn').value=v; renderCtx(); }
+function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); if($('qtyIn'))$('qtyIn').value=v||''; const el=$('qtyVis'); if(el)el.value=v||''; renderCtx(); }
+function setQtyQuick(q){ if($('qtyIn'))$('qtyIn').value=q; const el=$('qtyVis'); if(el)el.value=q; renderCtx(); qtyNext(); }
+function qtyNext(){ if(!(Number($('qtyIn').value)>0)){ toast('Enter quantity','err'); return; } wizNext(); }
+function setZoneWiz(z){ sel.zone=(sel.zone===z?'':z); renderWiz(); }
+
+/* ---- wizard engine ---- */
+function flowFor(){ let attrs = mode==='plywood'?['brand','thick','size'] : mode==='door'?['design','dsize'] : ['cat'];
+  if(dir==='in') return ['dir','source','mode'].concat(attrs).concat(['qty','place']);
+  return ['dir','mode'].concat(attrs).concat(['qty','review']); }
+function wizGo(k){ wizKey=k; renderWiz(); }
+function wizNext(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>=0&&i<f.length-1)wizGo(f[i+1]); }
+function wizPrev(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>0)wizGo(f[i-1]); else wizGo('dir'); }
+function wizRestart(){ dir='in'; mode='plywood'; outCart=[]; sel.customer=''; resetItemAll(); if($('outCust'))$('outCust').value=''; wizGo('dir'); }
+
+function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
+  if(mode==='door')return [sel.design,sel.size].filter(Boolean).join(' ');
+  return [sel.cat,($('descIn')&&$('descIn').value)].filter(Boolean).join(' '); }
+function renderCtx(){ const c=$('wizCtx'); if(!c)return; if(wizKey==='dir'){c.innerHTML='';return;} let t='';
+  t+='<span class="wctag '+(dir==='out'?'dout':'din')+'">'+(dir==='out'?'Giving out':'Coming in')+'</span>';
+  if(dir==='in'&&src)t+='<span class="wctag">From '+esc(src)+'</span>';
+  const it=itemText(); if(it)t+='<span class="wctag item">'+esc(it)+'</span>';
+  const q=Number($('qtyIn')&&$('qtyIn').value)||0; if(q)t+='<span class="wctag item">'+q+' pcs</span>';
+  if(dir==='out'&&outCart.length)t+='<span class="wctag">+'+outCart.length+' in list</span>';
+  c.innerHTML=t; }
+function renderDots(){ const f=flowFor(),i=f.indexOf(wizKey),d=$('wizDots'); if(d)d.innerHTML=f.map((k,x)=>'<i class="'+(x===i?'on':(x<i?'done':''))+'"></i>').join('');
+  const bk=$('wizBack'); if(bk)bk.classList.toggle('hide',i<=0); const wx=$('wizX'); if(wx)wx.classList.toggle('hide',i<=0); }
+
+function brandChipsHTML(){ const all=opts.brand||[]; const favs=all.filter(b=>b.favorite); const list=favs.length?favs:all;
+  let h=list.map(o=>'<button class="chip'+(sel.brand===o.name?' on':'')+'" onclick="setBrand(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join('');
+  if(sel.brand&&!list.some(b=>b.name===sel.brand)) h+='<button class="chip on" onclick="setBrand(\''+esc(sel.brand)+'\')">'+esc(sel.brand)+'</button>';
+  if(all.length>list.length) h+='<button class="chip add" onclick="pickBrand()">🔍 More</button>';
+  h+='<button class="chip add" onclick="pickBrand()">＋ Add brand</button>'; return h; }
+function optChips(list,setter){ return (list||[]).map(o=>'<button class="chip'+(sel[setter.key]===o.name?' on':'')+'" onclick="'+setter.fn+'(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join(''); }
+function designRecentHTML(){ const l=(opts.design&&opts.design.door)||[]; return l.length?l.map(o=>'<button class="chip sm'+(sel.design===o.name?' on':'')+'" onclick="pickRecentDesign(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2);font-size:13px">none yet</span>'; }
+function zoneHTML(){ return zones.map(z=>'<button class="chip'+(z.name===sel.zone?' on':'')+'" onclick="setZoneWiz(\''+esc(z.name)+'\')">'+esc(z.name)+'</button>').join('')+'<button class="chip add" onclick="newZoneInline()">＋</button>'; }
+function recentQuickHTML(){ const r=recentItems(); if(!r.length)return ''; return '<div class="wsub">Or reuse a recent item</div><div class="chips">'+r.map((it,i)=>'<button class="chip rp" onclick="applyRecent('+i+')">'+esc(it.name)+'</button>').join('')+'</div>'; }
+
+function cartRow(name,qty,rm){ return '<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc(name)+'</div><div class="bl-s">'+qty+' pcs</div></div>'+(rm!=null?'<button class="bl-x" onclick="rmOutCart('+rm+')">×</button>':'')+'</div>'; }
+function cartHTML(){ let h='<div class="revcart">'; outCart.forEach((L,i)=>h+=cartRow(L.item_name,L.qty,i));
+  if(_itemStarted()){ const q=Number($('qtyIn').value)||0; const t=itemText(); if(t&&q)h+=cartRow(t,q,null); } h+='</div>'; return h; }
+function giveCount(){ return outCart.length+(_itemStarted()&&(Number($('qtyIn').value)||0)?1:0); }
+function rmOutCart(i){ outCart.splice(i,1); renderWiz(); }
+
+function stepHTML(k){
+  if(k==='dir') return '<div class="wq">What are you doing?</div><div class="wqs">Tap one to begin.</div><div class="bigwrap">'
+    +'<button class="bigopt din" onclick="setDir(\'in\')"><span class="ic">📥</span><span class="tx">Coming in<span class="sub">Stock received from a truck / supplier</span></span></button>'
+    +'<button class="bigopt dout" onclick="setDir(\'out\')"><span class="ic">📤</span><span class="tx">Giving out<span class="sub">Material leaving to a customer / party</span></span></button></div>';
+  if(k==='source'){ const chips=sources.length?sources.map(s=>'<button class="chip'+(s.name===src?' on':'')+'" onclick="setSrc(\''+esc(s.name)+'\')">'+esc(s.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2)">No sources yet.</span>';
+    return '<div class="wq">Where is it from?</div><div class="wqs">Tap once — the whole load is tagged to it.</div><div class="chips big">'+chips+'<button class="chip add" onclick="newSrcWiz()">＋ Add source</button></div>'+(src?'<button class="wnext" onclick="wizNext()">Next ›</button>':''); }
+  if(k==='mode') return '<div class="wq">What kind of item?</div><div class="bigwrap">'
+    +'<button class="bigopt" onclick="setMode(\'plywood\')"><span class="ic">🪵</span><span class="tx">Plywood<span class="sub">Brand · thickness · size</span></span></button>'
+    +'<button class="bigopt" onclick="setMode(\'door\')"><span class="ic">🚪</span><span class="tx">Door<span class="sub">Design code · size</span></span></button>'
+    +'<button class="bigopt" onclick="setMode(\'other\')"><span class="ic">📦</span><span class="tx">Other<span class="sub">Hardware, laminate, glass…</span></span></button></div>'+recentQuickHTML();
+  if(k==='brand') return '<div class="wq">Which brand?</div><div class="chips big">'+brandChipsHTML()+'</div>';
+  if(k==='thick') return '<div class="wq">Thickness?</div><div class="chips big">'+optChips((opts.thickness&&opts.thickness.plywood),{key:'thickness',fn:'setThick'})+'<button class="chip add" onclick="newOpt(\'thickness\')">＋</button></div>';
+  if(k==='size') return '<div class="wq">Size?</div><div class="chips big">'+optChips((opts.size&&opts.size.plywood),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
+  if(k==='design') return '<div class="wq">Design code</div><div class="wqs">Type it, or tap a recent one.</div><input id="designVis" class="wqbig" placeholder="e.g. KP7098" autocapitalize="characters" autocomplete="off" value="'+esc(sel.design||'')+'" oninput="onDesignType(this.value)">'
+    +'<div class="wsub">Recent designs</div><div class="chips">'+designRecentHTML()+'</div><button class="wnext" id="designNext" onclick="wizNext()"'+(sel.design?'':' disabled')+'>Next ›</button>';
+  if(k==='dsize') return '<div class="wq">Size?</div><div class="wqs">Height × width</div><div class="chips big">'+optChips((opts.size&&opts.size.door),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
+  if(k==='cat') return '<div class="wq">What is it?</div><div class="chips big">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
+  if(k==='qty') return '<div class="wq">How many?</div><div class="wqs">Pieces.</div>'
+    +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:12px" placeholder="Name / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx()">':'')
+    +'<div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">−</button><input id="qtyVis" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty" value="'+(Number($('qtyIn').value)||'')+'" oninput="onQtyType(this.value)" onkeydown="if(event.key===\'Enter\')qtyNext()"><button onclick="stepQty(1)">＋</button></div></div>'
+    +'<div class="qbtns">'+QTYQUICK.map(q=>'<button class="chip" onclick="setQtyQuick('+q+')">'+q+'</button>').join('')+'</div><button class="wnext" onclick="qtyNext()">Next ›</button>';
+  if(k==='place') return '<div class="wq">Anything to add?</div><div class="wqs">Optional — then save.</div>'
+    +'<div class="wsub">Placed at (rack / zone)</div><div class="chips">'+zoneHTML()+'</div>'
+    +'<div class="wsub">Photo</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 Add photo</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
+    +'<button class="save" id="saveBtn" onclick="saveIn()">✓ Save entry</button>';
+  if(k==='review') return '<div class="wq">Review &amp; give out</div>'+cartHTML()
+    +'<div class="wsub">To customer / party (optional)</div><input id="outCustVis" class="optin" placeholder="Who is taking it?" value="'+esc(($('outCust')&&$('outCust').value)||'')+'" oninput="if($(\'outCust\'))$(\'outCust\').value=this.value">'
+    +'<div class="wsub">Photo (optional)</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 Add photo</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
+    +'<button class="wnext" style="background:var(--panel2);color:var(--ink);box-shadow:none;border:1px dashed var(--hair2)" onclick="addAnother()">＋ Add another item</button>'
+    +'<button class="save outbtn" id="saveBtn" onclick="giveOutAll()">📤 Give out'+(giveCount()>1?' ('+giveCount()+')':'')+'</button>';
+  return '';
+}
+function renderWiz(){ renderDots(); renderCtx(); const b=$('wizBody'); if(b)b.innerHTML=stepHTML(wizKey);
+  if(wizKey==='design'){ const el=$('designVis'); if(el){try{el.focus();}catch(e){}} }
+}
+
+/* ---- add another (OUT) ---- */
+function addAnother(){ const it=_currentItem(); if(!it)return; outCart.push(it); pushRecentItem({mode:it.mode,brand:it.brand,thickness:it.thickness,size:it.size,design:it.design,cat:it.cat,name:it.item_name}); resetItemOnly(); toast('Added ✓ — pick the next item','ok'); wizGo('mode'); }
+
+/* ---- save (IN) ---- */
+async function saveIn(){
+  const qty=$('qtyIn').value?Number($('qtyIn').value):null; let item_name='',category='';
+  if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Item incomplete','err');return;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
+  else if(mode==='door'){ if(!sel.design||!sel.size){toast('Item incomplete','err');return;} item_name=sel.design+' '+sel.size; category='Door'; }
+  else { if(!sel.cat){toast('Item incomplete','err');return;} category=sel.cat; item_name=(($('descIn')&&$('descIn').value.trim())||sel.cat); }
+  if(!qty){toast('Enter quantity','err');return;}
+  const entry={brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,customer:mode==='door'?(sel.customer||null):null,item_name,category,item_desc:mode==='other'?(($('descIn')&&$('descIn').value.trim())||null):null,qty,unit:'pcs',direction:'in',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photos:(sel.photos||[]).slice(),_ts:Date.now()};
+  const b=$('saveBtn'); if(b){b.disabled=true;b.textContent='Saving…';}
+  const row=await pushEntry(entry);
+  if(row){ toast('Saved ✓ '+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); }
+  else { queue(entry); toast('No signal — saved on phone, will sync','err'); }
+  pushRecent(entry); pushRecentItem({mode:mode,brand:sel.brand||null,thickness:sel.thickness||null,size:sel.size||null,design:sel.design||null,cat:(mode==='other'?category:null),name:item_name});
+  const kd=sel.design;
+  if(mode==='door'&&kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts()); }
+  resetItemAll(); refreshToday(); wizGo('mode');
+}
+
+/* ---- save (OUT, multi-item) ---- */
 async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(); if(!cur)return; }
   const lines=outCart.slice(); if(cur)lines.push(cur);
   if(!lines.length){ toast('Add an item first','err'); return; }
@@ -548,31 +619,9 @@ async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(
     const entry={brand:L.brand,thickness:L.thickness,size:L.size,design:L.design,customer:cust,item_name:L.item_name,category:L.category,item_desc:L.item_desc||null,qty:L.qty,unit:'pcs',direction:'out',source_godown:null,zone_name:null,logged_by:me_.name,_photos:(i===0?photos:[]),_ts:Date.now()+i};
     const row=await pushEntry(entry); if(!row){ queue(entry); queued++; } pushRecent(entry); }
   if(b)b.disabled=false;
-  outCart=[]; renderOutCart(); sel.photos=[]; renderPhotoStrip(); if($('outCust'))$('outCust').value=''; resetItemOnly(); refreshToday();
-  toast(queued?('Saved on phone ('+queued+') — will sync'):('Given out ✓ '+lines.length+' item'+(lines.length>1?'s':'')),queued?'err':'ok'); }
-async function saveEntry(){
-  if(dir==='out') return giveOutAll();
-  const qty=$('qtyIn').value?Number($('qtyIn').value):null;
-  let item_name='', category='';
-  if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Complete brand, thickness & size','err');return;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
-  else if(mode==='door'){ if(!sel.design||!sel.size){toast('Choose design & size','err');return;} item_name=sel.design+' '+sel.size; category='Door'; }
-  else { if(!sel.cat){toast('Tap what it is','err');return;} category=sel.cat; item_name=($('descIn').value.trim()||sel.cat); }
-  if(!qty){toast('Enter quantity','err');return;}
-  const entry={brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,customer:dir==='out'?(($('outCust')&&$('outCust').value.trim())||null):(mode==='door'?(sel.customer||null):null),item_name,category,item_desc:mode==='other'?($('descIn').value.trim()||null):null,qty,unit:'pcs',direction:dir,source_godown:dir==='out'?null:(src||null),zone_name:dir==='out'?null:(sel.zone||null),logged_by:me_.name,_photos:(sel.photos||[]).slice(),_ts:Date.now()};
-  $('saveBtn').disabled=true; $('saveBtn').textContent='Saving…';
-  const row=await pushEntry(entry);
-  $('saveBtn').disabled=false; $('saveBtn').innerHTML=dir==='out'?'&#128228; Give out':'&#10003; Save entry';
-  if(row){ toast((dir==='out'?'Given out ✓ ':'Saved ✓ ')+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); } else { queue(entry); toast('No signal — saved on phone, will sync','err'); }
-  pushRecent(entry);
-  pushRecentItem({mode:mode,brand:sel.brand||null,thickness:sel.thickness||null,size:sel.size||null,design:sel.design||null,cat:(mode==='other'?category:null),name:item_name}); renderRecentPick();
-  const kb=sel.brand, kd=sel.design; resetQty();
-  sel.thickness='';sel.size='';
-  if(mode==='plywood'){ sel.brand=kb; }
-  if(mode==='door'){ sel.design=kd; if($('designIn'))$('designIn').value=kd||'';
-    if(kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts().then(renderDesignRecent)); }
-    renderDesignRecent(); }
-  renderChips(); renderZoneChips(); updateReveal(); refreshToday();
-}
+  outCart=[]; sel.photos=[]; sel.customer=''; if($('outCust'))$('outCust').value=''; resetItemAll(); refreshToday();
+  toast(queued?('Saved on phone ('+queued+') — will sync'):('Given out ✓ '+lines.length+' item'+(lines.length>1?'s':'')),queued?'err':'ok');
+  wizRestart(); }
 async function pushEntry(entry){
   try{
     // Photos are BEST-EFFORT: a failed upload must NEVER discard the stock entry.
