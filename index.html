@@ -258,9 +258,9 @@ button,input,select{font-family:inherit;font-size:16px}
   </div>
   <div class="card">
     <div class="wizbar">
-      <button class="wizback hide" id="wizBack" onclick="wizPrev()">&#8249; Back</button>
+      <button class="wizback hide" id="wizBack" onclick="wizPrev()">&#8249; पीछे</button>
       <div class="wizdots" id="wizDots"></div>
-      <button class="wizx hide" id="wizX" onclick="wizRestart()">Start over</button>
+      <button class="wizx hide" id="wizX" onclick="wizRestart()">फिर से</button>
     </div>
     <div class="wizctx" id="wizCtx"></div>
     <div id="wizBody"></div>
@@ -268,7 +268,7 @@ button,input,select{font-family:inherit;font-size:16px}
     <input id="qtyIn" type="hidden"><input id="descIn" type="hidden"><input id="outCust" type="hidden"><input id="designIn" type="hidden">
     <input id="fileIn" type="file" accept="image/*" multiple class="hide" onchange="onPhoto(event)">
   </div>
-  <div class="subline"><span id="todayLbl">Today: 0 logged</span><span><button class="undo hide" id="undoBtn" onclick="undoLast()">&#8630; Undo last</button> <span id="pendLbl" class="pend hide"></span></span></div>
+  <div class="subline"><span id="todayLbl">Today: 0 logged</span><span><button class="undo hide" id="undoBtn" onclick="undoLast()">&#8630; वापस लें</button> <span id="pendLbl" class="pend hide"></span></span></div>
   <div class="recent" id="recentStrip"></div>
 </div>
 
@@ -474,9 +474,9 @@ function onPhoto(e){ const files=[...(e.target.files||[])]; if(!files.length)ret
   files.forEach(f=>{ const img=new Image(),rd=new FileReader(); rd.onload=()=>{ img.onload=()=>{ const m=1280,s=Math.min(1,m/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height); (sel.photos=sel.photos||[]).push(c.toDataURL('image/jpeg',0.72)); renderPhotoStrip(); }; img.src=rd.result; }; rd.readAsDataURL(f); });
   e.target.value=''; }
 function photoStripHTML(){ return (sel.photos||[]).map((p,i)=>'<div class="pth"><img src="'+p+'" onclick="viewSel('+i+')"><button class="x" onclick="rmPhoto('+i+')">×</button></div>').join(''); }
-function photoHintText(){ const n=(sel.photos||[]).length; return n?(n+' photo'+(n>1?'s':'')+' attached'):''; }
+function photoHintText(){ const n=(sel.photos||[]).length; return n?(n+' फ़ोटो लगी'):''; }
 function renderPhotoStrip(){ const el=$('photoStrip'); if(el)el.innerHTML=photoStripHTML();
-  const b=$('photoBtn'); if(b){ if((sel.photos||[]).length){b.classList.add('on');b.innerHTML='📷 Add more';}else{b.classList.remove('on');b.innerHTML='📷 Add photo';} }
+  const b=$('photoBtn'); if(b){ if((sel.photos||[]).length){b.classList.add('on');b.innerHTML='📷 और फ़ोटो';}else{b.classList.remove('on');b.innerHTML='📷 फ़ोटो';} }
   const h=$('photoHint'); if(h)h.textContent=photoHintText(); }
 function rmPhoto(i){ (sel.photos||[]).splice(i,1); renderPhotoStrip(); }
 function viewSel(i){ openPhotos((sel.photos||[]).join('|'), i); }
@@ -484,10 +484,10 @@ function viewSel(i){ openPhotos((sel.photos||[]).join('|'), i); }
 /* ---- item helpers (kept) ---- */
 function _itemStarted(){ return !!(sel.brand||sel.thickness||sel.size||sel.design||sel.cat||($('qtyIn')&&$('qtyIn').value)); }
 function _currentItem(){ const qty=$('qtyIn').value?Number($('qtyIn').value):null; let item_name='',category='';
-  if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Complete brand, thickness & size','err');return null;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
-  else if(mode==='door'){ if(!sel.design||!sel.size){toast('Choose design & size','err');return null;} item_name=sel.design+' '+sel.size; category='Door'; }
-  else { if(!sel.cat){toast('Tap what it is','err');return null;} category=sel.cat; item_name=(($('descIn')&&$('descIn').value.trim())||sel.cat); }
-  if(!qty){toast('Enter quantity','err');return null;}
+  if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('ब्रांड, मोटाई, साइज़ भरें','err');return null;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
+  else if(mode==='door'){ if(!sel.design||!sel.size){toast('डिज़ाइन और साइज़ चुनें','err');return null;} item_name=sel.design+' '+sel.size; category='Door'; }
+  else { if(!sel.cat){toast('क्या चीज़ है चुनें','err');return null;} category=sel.cat; item_name=(($('descIn')&&$('descIn').value.trim())||sel.cat); }
+  if(!qty){toast('कितने? भरें','err');return null;}
   return {mode:mode,brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,cat:mode==='other'?category:null,item_desc:mode==='other'?(($('descIn')&&$('descIn').value.trim())||null):null,item_name:item_name,category:category,qty:qty}; }
 function resetItemOnly(){ sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat=''; if($('qtyIn'))$('qtyIn').value=''; if($('descIn'))$('descIn').value=''; if($('designIn'))$('designIn').value=''; }
 function resetItemAll(){ sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.cat='';sel.zone='';sel.photos=[]; if($('qtyIn'))$('qtyIn').value=''; if($('descIn'))$('descIn').value=''; if($('designIn'))$('designIn').value=''; }
@@ -510,7 +510,7 @@ function pickRecentDesign(v){ sel.design=v; if($('designIn'))$('designIn').value
 function onQtyType(v){ if($('qtyIn'))$('qtyIn').value=v; renderCtx(); }
 function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); if($('qtyIn'))$('qtyIn').value=v||''; const el=$('qtyVis'); if(el)el.value=v||''; renderCtx(); }
 function setQtyQuick(q){ if($('qtyIn'))$('qtyIn').value=q; const el=$('qtyVis'); if(el)el.value=q; renderCtx(); qtyNext(); }
-function qtyNext(){ if(!(Number($('qtyIn').value)>0)){ toast('Enter quantity','err'); return; } wizNext(); }
+function qtyNext(){ if(!(Number($('qtyIn').value)>0)){ toast('कितने? भरें','err'); return; } wizNext(); }
 function setZoneWiz(z){ sel.zone=(sel.zone===z?'':z); renderWiz(); }
 
 /* ---- wizard engine ---- */
@@ -530,7 +530,7 @@ function renderCtx(){ const c=$('wizCtx'); if(!c)return; if(wizKey==='dir'){c.in
   if(dir==='in'&&src)t+='<span class="wctag">From '+esc(src)+'</span>';
   const it=itemText(); if(it)t+='<span class="wctag item">'+esc(it)+'</span>';
   const q=Number($('qtyIn')&&$('qtyIn').value)||0; if(q)t+='<span class="wctag item">'+q+' pcs</span>';
-  if(dir==='out'&&outCart.length)t+='<span class="wctag">+'+outCart.length+' in list</span>';
+  if(dir==='out'&&outCart.length)t+='<span class="wctag">+'+outCart.length+' और</span>';
   c.innerHTML=t; }
 function renderDots(){ const f=flowFor(),i=f.indexOf(wizKey),d=$('wizDots'); if(d)d.innerHTML=f.map((k,x)=>'<i class="'+(x===i?'on':(x<i?'done':''))+'"></i>').join('');
   const bk=$('wizBack'); if(bk)bk.classList.toggle('hide',i<=0); const wx=$('wizX'); if(wx)wx.classList.toggle('hide',i<=0); }
@@ -538,12 +538,12 @@ function renderDots(){ const f=flowFor(),i=f.indexOf(wizKey),d=$('wizDots'); if(
 function brandChipsHTML(){ const all=opts.brand||[]; const favs=all.filter(b=>b.favorite); const list=favs.length?favs:all;
   let h=list.map(o=>'<button class="chip'+(sel.brand===o.name?' on':'')+'" onclick="setBrand(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join('');
   if(sel.brand&&!list.some(b=>b.name===sel.brand)) h+='<button class="chip on" onclick="setBrand(\''+esc(sel.brand)+'\')">'+esc(sel.brand)+'</button>';
-  if(all.length>list.length) h+='<button class="chip add" onclick="pickBrand()">🔍 More</button>';
-  h+='<button class="chip add" onclick="pickBrand()">＋ Add brand</button>'; return h; }
+  if(all.length>list.length) h+='<button class="chip add" onclick="pickBrand()">🔍 और</button>';
+  h+='<button class="chip add" onclick="pickBrand()">＋ नया ब्रांड</button>'; return h; }
 function optChips(list,setter){ return (list||[]).map(o=>'<button class="chip'+(sel[setter.key]===o.name?' on':'')+'" onclick="'+setter.fn+'(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join(''); }
-function designRecentHTML(){ const l=(opts.design&&opts.design.door)||[]; return l.length?l.map(o=>'<button class="chip sm'+(sel.design===o.name?' on':'')+'" onclick="pickRecentDesign(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2);font-size:13px">none yet</span>'; }
+function designRecentHTML(){ const l=(opts.design&&opts.design.door)||[]; return l.length?l.map(o=>'<button class="chip sm'+(sel.design===o.name?' on':'')+'" onclick="pickRecentDesign(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2);font-size:13px">अभी कोई नहीं</span>'; }
 function zoneHTML(){ return zones.map(z=>'<button class="chip'+(z.name===sel.zone?' on':'')+'" onclick="setZoneWiz(\''+esc(z.name)+'\')">'+esc(z.name)+'</button>').join('')+'<button class="chip add" onclick="newZoneInline()">＋</button>'; }
-function recentQuickHTML(){ const r=recentItems(); if(!r.length)return ''; return '<div class="wsub">Or reuse a recent item</div><div class="chips">'+r.map((it,i)=>'<button class="chip rp" onclick="applyRecent('+i+')">'+esc(it.name)+'</button>').join('')+'</div>'; }
+function recentQuickHTML(){ const r=recentItems(); if(!r.length)return ''; return '<div class="wsub">पुराना दोबारा · Reuse</div><div class="chips">'+r.map((it,i)=>'<button class="chip rp" onclick="applyRecent('+i+')">'+esc(it.name)+'</button>').join('')+'</div>'; }
 
 function cartRow(name,qty,rm){ return '<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc(name)+'</div><div class="bl-s">'+qty+' pcs</div></div>'+(rm!=null?'<button class="bl-x" onclick="rmOutCart('+rm+')">×</button>':'')+'</div>'; }
 function cartHTML(){ let h='<div class="revcart">'; outCart.forEach((L,i)=>h+=cartRow(L.item_name,L.qty,i));
@@ -555,32 +555,32 @@ function stepHTML(k){
   if(k==='dir') return '<div class="wq">माल आया या गया?</div><div class="wqs">Coming in or going out? — टैप करें</div><div class="bigwrap">'
     +'<button class="bigopt din" onclick="setDir(\'in\')"><span class="ic">📥</span><span class="tx">माल आया<span class="sub">ट्रक / सप्लायर से आया · Coming in</span></span></button>'
     +'<button class="bigopt dout" onclick="setDir(\'out\')"><span class="ic">📤</span><span class="tx">माल गया<span class="sub">ग्राहक / पार्टी को दिया · Giving out</span></span></button></div>';
-  if(k==='source'){ const chips=sources.length?sources.map(s=>'<button class="chip'+(s.name===src?' on':'')+'" onclick="setSrc(\''+esc(s.name)+'\')">'+esc(s.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2)">No sources yet.</span>';
-    return '<div class="wq">Where is it from?</div><div class="wqs">Tap once — the whole load is tagged to it.</div><div class="chips big">'+chips+'<button class="chip add" onclick="newSrcWiz()">＋ Add source</button></div>'+(src?'<button class="wnext" onclick="wizNext()">Next ›</button>':''); }
-  if(k==='mode') return '<div class="wq">What kind of item?</div><div class="bigwrap">'
-    +'<button class="bigopt" onclick="setMode(\'plywood\')"><span class="ic">🪵</span><span class="tx">Plywood<span class="sub">Brand · thickness · size</span></span></button>'
-    +'<button class="bigopt" onclick="setMode(\'door\')"><span class="ic">🚪</span><span class="tx">Door<span class="sub">Design code · size</span></span></button>'
-    +'<button class="bigopt" onclick="setMode(\'other\')"><span class="ic">📦</span><span class="tx">Other<span class="sub">Hardware, laminate, glass…</span></span></button></div>'+recentQuickHTML();
-  if(k==='brand') return '<div class="wq">Which brand?</div><div class="chips big">'+brandChipsHTML()+'</div>';
-  if(k==='thick') return '<div class="wq">Thickness?</div><div class="chips big">'+optChips((opts.thickness&&opts.thickness.plywood),{key:'thickness',fn:'setThick'})+'<button class="chip add" onclick="newOpt(\'thickness\')">＋</button></div>';
-  if(k==='size') return '<div class="wq">Size?</div><div class="chips big">'+optChips((opts.size&&opts.size.plywood),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
-  if(k==='design') return '<div class="wq">Design code</div><div class="wqs">Type it, or tap a recent one.</div><input id="designVis" class="wqbig" placeholder="e.g. KP7098" autocapitalize="characters" autocomplete="off" value="'+esc(sel.design||'')+'" oninput="onDesignType(this.value)">'
-    +'<div class="wsub">Recent designs</div><div class="chips">'+designRecentHTML()+'</div><button class="wnext" id="designNext" onclick="wizNext()"'+(sel.design?'':' disabled')+'>Next ›</button>';
-  if(k==='dsize') return '<div class="wq">Size?</div><div class="wqs">Height × width</div><div class="chips big">'+optChips((opts.size&&opts.size.door),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
-  if(k==='cat') return '<div class="wq">What is it?</div><div class="chips big">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
-  if(k==='qty') return '<div class="wq">How many?</div><div class="wqs">Pieces.</div>'
-    +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:12px" placeholder="Name / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx()">':'')
-    +'<div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">−</button><input id="qtyVis" class="qtyin num" type="number" inputmode="numeric" placeholder="Qty" value="'+(Number($('qtyIn').value)||'')+'" oninput="onQtyType(this.value)" onkeydown="if(event.key===\'Enter\')qtyNext()"><button onclick="stepQty(1)">＋</button></div></div>'
-    +'<div class="qbtns">'+QTYQUICK.map(q=>'<button class="chip" onclick="setQtyQuick('+q+')">'+q+'</button>').join('')+'</div><button class="wnext" onclick="qtyNext()">Next ›</button>';
-  if(k==='place') return '<div class="wq">Anything to add?</div><div class="wqs">Optional — then save.</div>'
-    +'<div class="wsub">Placed at (rack / zone)</div><div class="chips">'+zoneHTML()+'</div>'
-    +'<div class="wsub">Photo</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 Add photo</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
-    +'<button class="save" id="saveBtn" onclick="saveIn()">✓ Save entry</button>';
-  if(k==='review') return '<div class="wq">Review &amp; give out</div>'+cartHTML()
-    +'<div class="wsub">To customer / party (optional)</div><input id="outCustVis" class="optin" placeholder="Who is taking it?" value="'+esc(($('outCust')&&$('outCust').value)||'')+'" oninput="if($(\'outCust\'))$(\'outCust\').value=this.value">'
-    +'<div class="wsub">Photo (optional)</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 Add photo</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
-    +'<button class="wnext" style="background:var(--panel2);color:var(--ink);box-shadow:none;border:1px dashed var(--hair2)" onclick="addAnother()">＋ Add another item</button>'
-    +'<button class="save outbtn" id="saveBtn" onclick="giveOutAll()">📤 Give out'+(giveCount()>1?' ('+giveCount()+')':'')+'</button>';
+  if(k==='source'){ const chips=sources.length?sources.map(s=>'<button class="chip'+(s.name===src?' on':'')+'" onclick="setSrc(\''+esc(s.name)+'\')">'+esc(s.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2)">अभी कोई सोर्स नहीं।</span>';
+    return '<div class="wq">माल कहाँ से आया?</div><div class="wqs">एक बार टैप करें · Where from</div><div class="chips big">'+chips+'<button class="chip add" onclick="newSrcWiz()">＋ नया (Add)</button></div>'+(src?'<button class="wnext" onclick="wizNext()">आगे ›</button>':''); }
+  if(k==='mode') return '<div class="wq">कौन सी चीज़?</div><div class="wqs">What kind of item?</div><div class="bigwrap">'
+    +'<button class="bigopt" onclick="setMode(\'plywood\')"><span class="ic">🪵</span><span class="tx">प्लाईवुड<span class="sub">ब्रांड · मोटाई · साइज़ · Plywood</span></span></button>'
+    +'<button class="bigopt" onclick="setMode(\'door\')"><span class="ic">🚪</span><span class="tx">दरवाज़ा<span class="sub">डिज़ाइन · साइज़ · Door</span></span></button>'
+    +'<button class="bigopt" onclick="setMode(\'other\')"><span class="ic">📦</span><span class="tx">अन्य<span class="sub">हार्डवेयर, लैमिनेट, ग्लास… · Other</span></span></button></div>'+recentQuickHTML();
+  if(k==='brand') return '<div class="wq">कौन सा ब्रांड?</div><div class="wqs">Which brand?</div><div class="chips big">'+brandChipsHTML()+'</div>';
+  if(k==='thick') return '<div class="wq">मोटाई?</div><div class="wqs">Thickness</div><div class="chips big">'+optChips((opts.thickness&&opts.thickness.plywood),{key:'thickness',fn:'setThick'})+'<button class="chip add" onclick="newOpt(\'thickness\')">＋</button></div>';
+  if(k==='size') return '<div class="wq">साइज़?</div><div class="wqs">Size</div><div class="chips big">'+optChips((opts.size&&opts.size.plywood),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
+  if(k==='design') return '<div class="wq">डिज़ाइन कोड</div><div class="wqs">टाइप करें या नीचे से चुनें · Design</div><input id="designVis" class="wqbig" placeholder="जैसे KP7098" autocapitalize="characters" autocomplete="off" value="'+esc(sel.design||'')+'" oninput="onDesignType(this.value)">'
+    +'<div class="wsub">पुराने डिज़ाइन · Recent</div><div class="chips">'+designRecentHTML()+'</div><button class="wnext" id="designNext" onclick="wizNext()"'+(sel.design?'':' disabled')+'>आगे ›</button>';
+  if(k==='dsize') return '<div class="wq">साइज़?</div><div class="wqs">ऊँचाई × चौड़ाई · Size</div><div class="chips big">'+optChips((opts.size&&opts.size.door),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
+  if(k==='cat') return '<div class="wq">क्या चीज़ है?</div><div class="wqs">What is it?</div><div class="chips big">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
+  if(k==='qty') return '<div class="wq">कितने?</div><div class="wqs">पीस · How many</div>'
+    +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:12px" placeholder="नाम / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx()">':'')
+    +'<div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">−</button><input id="qtyVis" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने" value="'+(Number($('qtyIn').value)||'')+'" oninput="onQtyType(this.value)" onkeydown="if(event.key===\'Enter\')qtyNext()"><button onclick="stepQty(1)">＋</button></div></div>'
+    +'<div class="qbtns">'+QTYQUICK.map(q=>'<button class="chip" onclick="setQtyQuick('+q+')">'+q+'</button>').join('')+'</div><button class="wnext" onclick="qtyNext()">आगे ›</button>';
+  if(k==='place') return '<div class="wq">और कुछ?</div><div class="wqs">ज़रूरी नहीं · फिर सेव करें</div>'
+    +'<div class="wsub">कहाँ रखा? · Rack / Zone</div><div class="chips">'+zoneHTML()+'</div>'
+    +'<div class="wsub">फ़ोटो · Photo</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 फ़ोटो</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
+    +'<button class="save" id="saveBtn" onclick="saveIn()">✓ सेव करें (Save)</button>';
+  if(k==='review') return '<div class="wq">देखें और दें</div>'+cartHTML()
+    +'<div class="wsub">किसको दिया? (optional)</div><input id="outCustVis" class="optin" placeholder="किसने लिया / पार्टी" value="'+esc(($('outCust')&&$('outCust').value)||'')+'" oninput="if($(\'outCust\'))$(\'outCust\').value=this.value">'
+    +'<div class="wsub">फ़ोटो (optional)</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 फ़ोटो</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
+    +'<button class="wnext" style="background:var(--panel2);color:var(--ink);box-shadow:none;border:1px dashed var(--hair2)" onclick="addAnother()">＋ और आइटम (Add item)</button>'
+    +'<button class="save outbtn" id="saveBtn" onclick="giveOutAll()">📤 माल दें'+(giveCount()>1?' ('+giveCount()+')':'')+'</button>';
   return '';
 }
 function renderWiz(){ renderDots(); renderCtx(); const b=$('wizBody'); if(b)b.innerHTML=stepHTML(wizKey);
@@ -588,20 +588,20 @@ function renderWiz(){ renderDots(); renderCtx(); const b=$('wizBody'); if(b)b.in
 }
 
 /* ---- add another (OUT) ---- */
-function addAnother(){ const it=_currentItem(); if(!it)return; outCart.push(it); pushRecentItem({mode:it.mode,brand:it.brand,thickness:it.thickness,size:it.size,design:it.design,cat:it.cat,name:it.item_name}); resetItemOnly(); toast('Added ✓ — pick the next item','ok'); wizGo('mode'); }
+function addAnother(){ const it=_currentItem(); if(!it)return; outCart.push(it); pushRecentItem({mode:it.mode,brand:it.brand,thickness:it.thickness,size:it.size,design:it.design,cat:it.cat,name:it.item_name}); resetItemOnly(); toast('जुड़ गया ✓ — अगला चुनें','ok'); wizGo('mode'); }
 
 /* ---- save (IN) ---- */
 async function saveIn(){
   const qty=$('qtyIn').value?Number($('qtyIn').value):null; let item_name='',category='';
-  if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('Item incomplete','err');return;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
-  else if(mode==='door'){ if(!sel.design||!sel.size){toast('Item incomplete','err');return;} item_name=sel.design+' '+sel.size; category='Door'; }
-  else { if(!sel.cat){toast('Item incomplete','err');return;} category=sel.cat; item_name=(($('descIn')&&$('descIn').value.trim())||sel.cat); }
-  if(!qty){toast('Enter quantity','err');return;}
+  if(mode==='plywood'){ if(!sel.brand||!sel.thickness||!sel.size){toast('अधूरा है','err');return;} item_name=sel.brand+' '+sel.thickness+' '+sel.size; category='Plywood'; }
+  else if(mode==='door'){ if(!sel.design||!sel.size){toast('अधूरा है','err');return;} item_name=sel.design+' '+sel.size; category='Door'; }
+  else { if(!sel.cat){toast('अधूरा है','err');return;} category=sel.cat; item_name=(($('descIn')&&$('descIn').value.trim())||sel.cat); }
+  if(!qty){toast('कितने? भरें','err');return;}
   const entry={brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,customer:mode==='door'?(sel.customer||null):null,item_name,category,item_desc:mode==='other'?(($('descIn')&&$('descIn').value.trim())||null):null,qty,unit:'pcs',direction:'in',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photos:(sel.photos||[]).slice(),_ts:Date.now()};
   const b=$('saveBtn'); if(b){b.disabled=true;b.textContent='Saving…';}
   const row=await pushEntry(entry);
-  if(row){ toast('Saved ✓ '+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); }
-  else { queue(entry); toast('No signal — saved on phone, will sync','err'); }
+  if(row){ toast('सेव हुआ ✓ '+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); }
+  else { queue(entry); toast('नेट नहीं — फ़ोन में सेव','err'); }
   pushRecent(entry); pushRecentItem({mode:mode,brand:sel.brand||null,thickness:sel.thickness||null,size:sel.size||null,design:sel.design||null,cat:(mode==='other'?category:null),name:item_name});
   const kd=sel.design;
   if(mode==='door'&&kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts()); }
@@ -611,7 +611,7 @@ async function saveIn(){
 /* ---- save (OUT, multi-item) ---- */
 async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(); if(!cur)return; }
   const lines=outCart.slice(); if(cur)lines.push(cur);
-  if(!lines.length){ toast('Add an item first','err'); return; }
+  if(!lines.length){ toast('पहले आइटम जोड़ें','err'); return; }
   const cust=($('outCust')&&$('outCust').value.trim())||null; const photos=(sel.photos||[]).slice();
   const b=$('saveBtn'); if(b){b.disabled=true;b.textContent='Saving…';}
   let queued=0;
@@ -620,7 +620,7 @@ async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(
     const row=await pushEntry(entry); if(!row){ queue(entry); queued++; } pushRecent(entry); }
   if(b)b.disabled=false;
   outCart=[]; sel.photos=[]; sel.customer=''; if($('outCust'))$('outCust').value=''; resetItemAll(); refreshToday();
-  toast(queued?('Saved on phone ('+queued+') — will sync'):('Given out ✓ '+lines.length+' item'+(lines.length>1?'s':'')),queued?'err':'ok');
+  toast(queued?('फ़ोन में सेव ('+queued+') — बाद में'):('दे दिया ✓ '+lines.length+' आइटम'),queued?'err':'ok');
   wizRestart(); }
 async function pushEntry(entry){
   try{
@@ -639,7 +639,7 @@ async function pushEntry(entry){
     return {id:row.id};
   }catch(e){ return null; }
 }
-async function undoLast(){ if(!lastId)return; await api("/rest/v1/nkg_stock?id=eq."+lastId,{method:'DELETE',headers:H}); lastId=null; $('undoBtn').classList.add('hide'); todayCount=Math.max(0,todayCount-1); localStorage.setItem('nkg_today_'+today(),todayCount); recent.shift(); renderRecent(); refreshToday(); toast('Removed','ok'); }
+async function undoLast(){ if(!lastId)return; await api("/rest/v1/nkg_stock?id=eq."+lastId,{method:'DELETE',headers:H}); lastId=null; $('undoBtn').classList.add('hide'); todayCount=Math.max(0,todayCount-1); localStorage.setItem('nkg_today_'+today(),todayCount); recent.shift(); renderRecent(); refreshToday(); toast('हटाया','ok'); }
 
 function pending(){ return JSON.parse(localStorage.getItem('nkg_pending')||'[]'); }
 function queue(e){ const p=pending(); p.push(e); localStorage.setItem('nkg_pending',JSON.stringify(p)); showPend(); }
@@ -648,7 +648,7 @@ async function syncPending(){ let p=pending(); if(!p.length){showPend();return;}
 window.addEventListener('online',syncPending);
 
 let todayCount=Number(localStorage.getItem('nkg_today_'+today())||0);
-function refreshToday(){ $('todayLbl').textContent='Today: '+todayCount+' logged'; showPend(); }
+function refreshToday(){ $('todayLbl').textContent='आज: '+todayCount+' दर्ज'; showPend(); }
 let recent=[];
 function renderRecent(){ $('recentStrip').innerHTML=recent.map(r=>`<div class="r">${esc(r.name)} <span>&times;${r.qty}</span></div>`).join(''); }
 function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),todayCount); refreshToday(); recent.unshift({name:e.item_name,qty:e.qty}); recent=recent.slice(0,10); renderRecent(); }
