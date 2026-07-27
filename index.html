@@ -526,7 +526,7 @@ function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.siz
   if(mode==='door')return [sel.design,sel.size].filter(Boolean).join(' ');
   return [sel.cat,($('descIn')&&$('descIn').value)].filter(Boolean).join(' '); }
 function renderCtx(){ const c=$('wizCtx'); if(!c)return; if(wizKey==='dir'){c.innerHTML='';return;} let t='';
-  t+='<span class="wctag '+(dir==='out'?'dout':'din')+'">'+(dir==='out'?'Giving out':'Coming in')+'</span>';
+  t+='<span class="wctag '+(dir==='out'?'dout':'din')+'">'+(dir==='out'?'माल गया':'माल आया')+'</span>';
   if(dir==='in'&&src)t+='<span class="wctag">From '+esc(src)+'</span>';
   const it=itemText(); if(it)t+='<span class="wctag item">'+esc(it)+'</span>';
   const q=Number($('qtyIn')&&$('qtyIn').value)||0; if(q)t+='<span class="wctag item">'+q+' pcs</span>';
@@ -552,9 +552,9 @@ function giveCount(){ return outCart.length+(_itemStarted()&&(Number($('qtyIn').
 function rmOutCart(i){ outCart.splice(i,1); renderWiz(); }
 
 function stepHTML(k){
-  if(k==='dir') return '<div class="wq">What are you doing?</div><div class="wqs">Tap one to begin.</div><div class="bigwrap">'
-    +'<button class="bigopt din" onclick="setDir(\'in\')"><span class="ic">📥</span><span class="tx">Coming in<span class="sub">Stock received from a truck / supplier</span></span></button>'
-    +'<button class="bigopt dout" onclick="setDir(\'out\')"><span class="ic">📤</span><span class="tx">Giving out<span class="sub">Material leaving to a customer / party</span></span></button></div>';
+  if(k==='dir') return '<div class="wq">माल आया या गया?</div><div class="wqs">Coming in or going out? — टैप करें</div><div class="bigwrap">'
+    +'<button class="bigopt din" onclick="setDir(\'in\')"><span class="ic">📥</span><span class="tx">माल आया<span class="sub">ट्रक / सप्लायर से आया · Coming in</span></span></button>'
+    +'<button class="bigopt dout" onclick="setDir(\'out\')"><span class="ic">📤</span><span class="tx">माल गया<span class="sub">ग्राहक / पार्टी को दिया · Giving out</span></span></button></div>';
   if(k==='source'){ const chips=sources.length?sources.map(s=>'<button class="chip'+(s.name===src?' on':'')+'" onclick="setSrc(\''+esc(s.name)+'\')">'+esc(s.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2)">No sources yet.</span>';
     return '<div class="wq">Where is it from?</div><div class="wqs">Tap once — the whole load is tagged to it.</div><div class="chips big">'+chips+'<button class="chip add" onclick="newSrcWiz()">＋ Add source</button></div>'+(src?'<button class="wnext" onclick="wizNext()">Next ›</button>':''); }
   if(k==='mode') return '<div class="wq">What kind of item?</div><div class="bigwrap">'
