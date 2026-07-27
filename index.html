@@ -54,7 +54,7 @@ button,input,select{font-family:inherit;font-size:16px}
 .gap8{height:6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:12px 15px;font-size:16px;font-weight:600}
-.chip.on{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 6px 16px -8px rgba(124,109,242,.7)}.chip.add{color:var(--mut);border-style:dashed;border-color:var(--hair2);font-size:14px;font-weight:600}.chip.sm{padding:9px 12px;font-size:14px}
+.chip.on{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 6px 16px -8px rgba(124,109,242,.7)}.chip.add{color:var(--mut);border-style:dashed;border-color:var(--hair2);font-size:14px;font-weight:600}.chip.sm{padding:9px 12px;font-size:14px}.chip.rp{background:rgba(99,102,241,.13);border-color:rgba(99,102,241,.4)}
 .itembtn{width:100%;background:var(--panel2);border:1px solid var(--hair2);color:var(--ink);border-radius:14px;padding:15px;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left}
 .itembtn.ph{color:var(--mut);font-weight:600}
 .qtyrow{display:flex;gap:10px;align-items:stretch}
@@ -221,6 +221,7 @@ button,input,select{font-family:inherit;font-size:16px}
   </div>
   <div class="card">
     <div class="dirw"><button id="dirIn" class="on" onclick="setDir('in')">&#128229; Coming in</button><button id="dirOut" onclick="setDir('out')">&#128228; Giving out</button></div>
+    <div id="recentPick" class="hide"></div>
     <div class="buildbar" id="buildBar"><div class="bt empty" id="buildText">Pick below to start</div><div class="bq" id="buildQty"></div></div>
     <div class="modew"><button id="mPlywood" class="on" onclick="setMode('plywood')">Plywood</button><button id="mDoor" onclick="setMode('door')">Door</button><button id="mOther" onclick="setMode('other')">Other</button></div>
 
@@ -406,7 +407,7 @@ async function showAdd(){
   $('addBack').textContent=origin==='owner'?'← Owner':'Switch';
   buildStatic(); resetQty(); updateSrcLbl();
   await Promise.all([loadZones(),loadSources(),loadOpts()]);
-  setMode('plywood'); setDir('in'); renderZoneChips(); refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
+  setMode('plywood'); setDir('in'); renderRecentPick(); renderZoneChips(); refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
   if(!src) openSource();
 }
 function resetQty(){ $('qtyIn').value=''; $('descIn').value=''; sel.photos=[]; renderPhotoStrip(); sel.zone=''; }
@@ -418,6 +419,15 @@ function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); $('qty
 async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,kind,name,sort,product,favorite&order=favorite.desc,sort.asc,name.asc"))||[]; opts={brand:[],customer:[],thickness:{},size:{},design:{}};
   a.forEach(o=>{ if(o.kind==='brand')opts.brand.push(o); else if(o.kind==='customer')opts.customer.push(o); else { const p=o.product||'plywood'; opts[o.kind]=opts[o.kind]||{}; (opts[o.kind][p]=opts[o.kind][p]||[]).push(o); } }); }
 
+function recentItems(){ try{ return JSON.parse(localStorage.getItem('nkg_recent_items')||'[]'); }catch(e){ return []; } }
+function pushRecentItem(it){ if(!it||!it.name)return; let r=recentItems().filter(x=>x.name!==it.name); r.unshift(it); r=r.slice(0,6); try{localStorage.setItem('nkg_recent_items',JSON.stringify(r));}catch(e){} }
+function renderRecentPick(){ const el=$('recentPick'); if(!el)return; const r=recentItems(); if(!r.length){ el.classList.add('hide'); el.innerHTML=''; return; }
+  el.classList.remove('hide'); el.innerHTML='<div class="lab">Quick pick <span class="opt">tap to reuse</span></div><div class="chips">'+r.map((it,i)=>'<button class="chip rp" onclick="applyRecent('+i+')">'+esc(it.name)+'</button>').join('')+'</div>'; }
+function applyRecent(i){ const it=recentItems()[i]; if(!it)return; setMode(it.mode||'plywood');
+  sel.brand=it.brand||''; sel.thickness=it.thickness||''; sel.size=it.size||''; sel.design=it.design||''; sel.cat=it.cat||'';
+  if(it.mode==='door'&&$('designIn'))$('designIn').value=it.design||'';
+  if(it.mode==='other')document.querySelectorAll('#catChips .chip').forEach(b=>b.classList.toggle('on',b.dataset.cat===it.cat));
+  renderChips(); renderDesignRecent(); updateReveal(); const q=$('qtyIn'); if(q&&q.focus){try{q.focus();}catch(e){}} }
 let dir='in';
 function setDir(d){ dir=d;
   $('dirIn').classList.toggle('on',d==='in'); $('dirOut').classList.toggle('on',d==='out');
@@ -521,6 +531,7 @@ async function saveEntry(){
   $('saveBtn').disabled=false; $('saveBtn').innerHTML=dir==='out'?'&#128228; Give out':'&#10003; Save entry';
   if(row){ toast((dir==='out'?'Given out ✓ ':'Saved ✓ ')+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); } else { queue(entry); toast('No signal — saved on phone, will sync','err'); }
   pushRecent(entry);
+  pushRecentItem({mode:mode,brand:sel.brand||null,thickness:sel.thickness||null,size:sel.size||null,design:sel.design||null,cat:(mode==='other'?category:null),name:item_name}); renderRecentPick();
   const kb=sel.brand, kd=sel.design; resetQty();
   sel.thickness='';sel.size='';
   if(mode==='plywood'){ sel.brand=kb; }
