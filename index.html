@@ -489,12 +489,13 @@ function openSource(){ const b=sources.length?sources.map(s=>`<button class="chi
 function setSource(s){ src=s; localStorage.setItem('nkg_src',s); updateSrcLbl(); closeSheet(); }
 
 /* ---- generic picker sheet (brand) ---- */
-function openPicker(cfg){ _pk=cfg; _pk.q=''; renderPicker(); openSheet(); }
-function renderPicker(){ const list=(_pk.list||[]).filter(x=>!_pk.q||x.name.toLowerCase().includes(_pk.q));
+function openPicker(cfg){ _pk=cfg; _pk.q='';
+  sheetHTML('<div class="grab"></div><h4>'+esc(_pk.title)+'</h4><input id="pkq" class="optin" placeholder="Search…" autocomplete="off" oninput="pkSearch(this.value)"><div class="chips" id="pkChips"></div><button class="ghost" style="justify-content:center" onclick="pkAdd()">＋ Add new</button>');
+  pkRenderChips(); openSheet(); const el=$('pkq'); if(el){try{el.focus();}catch(e){}} }
+function pkRenderChips(){ const list=(_pk.list||[]).filter(x=>!_pk.q||x.name.toLowerCase().includes(_pk.q));
   const chips=(_pk.allowNone?'<button class="chip" onclick="pkPick(\'\')">None</button>':'')+list.map(x=>`<button class="chip" onclick="pkPick('${esc(x.name)}')">${esc(x.name)}</button>`).join('');
-  sheetHTML('<div class="grab"></div><h4>'+_pk.title+'</h4><input id="pkq" class="optin" placeholder="Search…" oninput="pkSearch(this.value)" value="'+esc(_pk.q)+'"><div class="chips">'+chips+'</div><button class="ghost" style="justify-content:center" onclick="pkAdd()">＋ Add new</button>');
-  const el=$('pkq'); if(el){el.focus();el.value=_pk.q;} }
-function pkSearch(v){ _pk.q=(v||'').toLowerCase(); renderPicker(); }
+  const el=$('pkChips'); if(el)el.innerHTML=chips||'<span class="opt" style="color:var(--mut2);font-size:13px">कोई मैच नहीं — ＋ Add new</span>'; }
+function pkSearch(v){ _pk.q=(v||'').toLowerCase(); pkRenderChips(); }
 function pkPick(v){ closeSheet(); _pk.onPick(v); }
 async function pkAdd(){ const n=prompt('New '+_pk.title+':'); if(!n)return; const v=n.trim(); if(!v)return; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:_pk.addKind,name:v,sort:99,product:_pk.addProduct})}); await loadOpts(); closeSheet(); _pk.onPick(v); }
 function pickBrand(){ openPicker({title:'Brand',list:opts.brand||[],addKind:'brand',addProduct:null,onPick:v=>{ if(v){ sel.brand=v; wizNext(); } }}); }
