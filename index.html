@@ -41,6 +41,11 @@ button,input,select{font-family:inherit;font-size:16px}
 .buildbar .bt{font-size:18px;font-weight:800;letter-spacing:-.015em;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .buildbar .bt.empty{color:var(--mut);font-weight:600;font-size:15px}
 .buildbar .bq{font-size:16px;font-weight:800;color:var(--violet);flex:0 0 auto;white-space:nowrap}
+.dirw{display:flex;gap:8px}
+.dirw button{flex:1;background:var(--panel2);border:1px solid var(--hair);color:var(--mut);font-size:15px;font-weight:700;padding:13px 6px;border-radius:13px}
+.dirw #dirIn.on{background:rgba(52,211,153,.16);border-color:rgba(52,211,153,.55);color:var(--mint)}
+.dirw #dirOut.on{background:rgba(251,113,133,.16);border-color:rgba(251,113,133,.55);color:var(--rose)}
+.save.outbtn{background:var(--rose);color:#2a0a12;box-shadow:0 10px 24px -8px rgba(251,113,133,.5)}
 .modew{display:flex;background:var(--panel2);border:1px solid var(--hair);border-radius:13px;padding:4px}
 .modew button{flex:1;background:none;border:none;color:var(--mut);font-size:15px;font-weight:700;padding:11px 6px;border-radius:9px}
 .modew button.on{background:var(--grad);color:#fff}
@@ -215,6 +220,7 @@ button,input,select{font-family:inherit;font-size:16px}
     <button class="iconlink" id="addBack" onclick="addBack()">Switch</button>
   </div>
   <div class="card">
+    <div class="dirw"><button id="dirIn" class="on" onclick="setDir('in')">&#128229; Coming in</button><button id="dirOut" onclick="setDir('out')">&#128228; Giving out</button></div>
     <div class="buildbar" id="buildBar"><div class="bt empty" id="buildText">Pick below to start</div><div class="bq" id="buildQty"></div></div>
     <div class="modew"><button id="mPlywood" class="on" onclick="setMode('plywood')">Plywood</button><button id="mDoor" onclick="setMode('door')">Door</button><button id="mOther" onclick="setMode('other')">Other</button></div>
 
@@ -232,7 +238,8 @@ button,input,select{font-family:inherit;font-size:16px}
       <div class="chips" id="qtyQuick" style="margin-top:9px"></div></div>
 
     <div id="secTail" class="hide">
-      <div class="lab">Placed at <span class="opt">&mdash; optional</span></div><div class="chips" id="zoneChips"></div>
+      <div id="secOutCust" class="hide"><div class="lab">To customer / party</div><input id="outCust" class="optin" placeholder="Who is taking it? (optional)"></div>
+      <div id="secZone"><div class="lab">Placed at <span class="opt">&mdash; optional</span></div><div class="chips" id="zoneChips"></div></div>
       <div class="gap8"></div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">&#128247; Add photo</button><span id="photoHint" class="opt" style="align-self:center"></span></div><div id="photoStrip" class="pstrip"></div>
     </div>
     <input id="fileIn" type="file" accept="image/*" multiple class="hide" onchange="onPhoto(event)">
@@ -399,7 +406,7 @@ async function showAdd(){
   $('addBack').textContent=origin==='owner'?'← Owner':'Switch';
   buildStatic(); resetQty(); updateSrcLbl();
   await Promise.all([loadZones(),loadSources(),loadOpts()]);
-  setMode('plywood'); renderZoneChips(); refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
+  setMode('plywood'); setDir('in'); renderZoneChips(); refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
   if(!src) openSource();
 }
 function resetQty(){ $('qtyIn').value=''; $('descIn').value=''; sel.photos=[]; renderPhotoStrip(); sel.zone=''; }
@@ -411,6 +418,16 @@ function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); $('qty
 async function loadOpts(){ const a=(await api("/rest/v1/nkg_options?select=id,kind,name,sort,product,favorite&order=favorite.desc,sort.asc,name.asc"))||[]; opts={brand:[],customer:[],thickness:{},size:{},design:{}};
   a.forEach(o=>{ if(o.kind==='brand')opts.brand.push(o); else if(o.kind==='customer')opts.customer.push(o); else { const p=o.product||'plywood'; opts[o.kind]=opts[o.kind]||{}; (opts[o.kind][p]=opts[o.kind][p]||[]).push(o); } }); }
 
+let dir='in';
+function setDir(d){ dir=d;
+  $('dirIn').classList.toggle('on',d==='in'); $('dirOut').classList.toggle('on',d==='out');
+  const out=(d==='out');
+  const sb=$('srcBtn'); if(sb)sb.classList.toggle('hide',out);
+  const sz=$('secZone'); if(sz)sz.classList.toggle('hide',out);
+  const oc=$('secOutCust'); if(oc)oc.classList.toggle('hide',!out);
+  const b=$('saveBtn'); if(b){ b.innerHTML=out?'&#128228; Give out':'&#10003; Save entry'; b.classList.toggle('outbtn',out); }
+  renderBuild();
+}
 function setMode(m){ mode=m; sel.brand='';sel.thickness='';sel.size='';sel.design='';sel.customer='';sel.cat='';
   ['plywood','door','other'].forEach(x=>$('m'+cap(x)).classList.toggle('on',x===m));
   if($('designIn'))$('designIn').value=''; renderDesignRecent();
@@ -498,11 +515,11 @@ async function saveEntry(){
   else if(mode==='door'){ if(!sel.design||!sel.size){toast('Choose design & size','err');return;} item_name=sel.design+' '+sel.size; category='Door'; }
   else { if(!sel.cat){toast('Tap what it is','err');return;} category=sel.cat; item_name=($('descIn').value.trim()||sel.cat); }
   if(!qty){toast('Enter quantity','err');return;}
-  const entry={brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,customer:mode==='door'?(sel.customer||null):null,item_name,category,item_desc:mode==='other'?($('descIn').value.trim()||null):null,qty,unit:'pcs',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photos:(sel.photos||[]).slice(),_ts:Date.now()};
+  const entry={brand:mode==='plywood'?sel.brand:null,thickness:mode==='plywood'?sel.thickness:null,size:(mode==='plywood'||mode==='door')?sel.size:null,design:mode==='door'?sel.design:null,customer:dir==='out'?(($('outCust')&&$('outCust').value.trim())||null):(mode==='door'?(sel.customer||null):null),item_name,category,item_desc:mode==='other'?($('descIn').value.trim()||null):null,qty,unit:'pcs',direction:dir,source_godown:dir==='out'?null:(src||null),zone_name:dir==='out'?null:(sel.zone||null),logged_by:me_.name,_photos:(sel.photos||[]).slice(),_ts:Date.now()};
   $('saveBtn').disabled=true; $('saveBtn').textContent='Saving…';
   const row=await pushEntry(entry);
-  $('saveBtn').disabled=false; $('saveBtn').innerHTML='&#10003; Save entry';
-  if(row){ toast('Saved ✓ '+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); } else { queue(entry); toast('No signal — saved on phone, will sync','err'); }
+  $('saveBtn').disabled=false; $('saveBtn').innerHTML=dir==='out'?'&#128228; Give out':'&#10003; Save entry';
+  if(row){ toast((dir==='out'?'Given out ✓ ':'Saved ✓ ')+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); } else { queue(entry); toast('No signal — saved on phone, will sync','err'); }
   pushRecent(entry);
   const kb=sel.brand, kd=sel.design; resetQty();
   sel.thickness='';sel.size='';
