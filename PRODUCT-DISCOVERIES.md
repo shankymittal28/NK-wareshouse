@@ -1,83 +1,117 @@
 # NK Warehouse — Product Discoveries
 
-The memory of NK Warehouse. Before proposing any improvement, **search this file first** — if a discovery already explains the situation, reuse it instead of rediscovering it.
+The memory of NK Warehouse. **Search this file before proposing any improvement.** If a discovery already explains the situation, reuse it instead of rediscovering it. Only non-trivial, reusable findings belong here.
 
-Only non-trivial, reusable findings are recorded here. Each entry uses the fixed format.
+## Template
 
-| # | Workflow | Decision in one line | Confidence | Action |
-|---|----------|----------------------|------------|--------|
-| 001 | Receiving — source | Source is already solved; don't optimize it | High | REJECT (no build) |
-| 002 | Receiving plywood | Specs vary line-to-line; a "repeat last item" shortcut isn't worth building | High | REJECT (no build) |
-| 003 | Receiving — rack/location | Rack unused because warehouse organization isn't finished; keep capability, don't push it yet | High | WAIT |
-| 004 | Photo attachment | Near-zero usage is a reliability bug, not low value; usage stats invalid until fixed | Medium | BUILD |
-| 005 | Receiving plywood/hardware | The post-quantity placement screen was dead weight; quantity is now the last step | High | MONITOR |
+```
+# Product Discovery ###
+
+Type
+□ Product  □ UX  □ Workflow  □ Business Process  □ Technical
+□ Operational  □ Data Interpretation  □ Assumption Proven Wrong
+
+Evidence
+...
+Discovery
+...
+What changed our mind?
+...
+Old belief
+...
+New belief
+...
+Impact
+□ Low  □ Medium  □ High
+Applies to
+□ Receiving  □ Doors  □ Plywood  □ Entire Application  □ Future Modules
+Status
+□ Active  □ Waiting  □ Superseded  □ Invalidated
+
+→ Next action: Build / Wait / Monitor / Reject
+```
+
+## Index
+
+| # | Applies to | Discovery (one line) | Type | Impact | Status | Next |
+|---|-----------|----------------------|------|--------|--------|------|
+| 001 | Receiving | Source is a per-truck constant, already carried forward | Data Interpretation | Low | Active | Reject |
+| 002 | Plywood | Intake is a mixed pile; "repeat last item" would help <10% of lines | Assumption Proven Wrong | Medium | Active | Reject |
+| 003 | Receiving | Rack unused because warehouse organization isn't finished | Business Process | Medium | Waiting | Wait |
+| 004 | Doors | Near-zero photo use is a reliability bug, not low value | Technical / Assumption Proven Wrong | High | Active | Build |
+| 005 | Plywood | The post-quantity placement screen was dead weight | UX / Workflow | Medium | Active | Monitor |
 
 ---
 
 # Product Discovery 001
 
-**Date:** 2026-07-30
-**Workflow:** Receiving — picking the source ("From")
-**Evidence:** 329 consecutive intake lines analysed. Source matches the previous line **99.4%** of the time; the app already remembers the last source per device (`nkg_src`).
-**Observation:** The operator effectively never changes source within a truck's unload, and the software already carries it forward.
-**Root Cause:** The workflow is correct — source is a per-truck constant, set once and reused. There is no repeated work here.
-**Decision:** Do not add source shortcuts, defaults, or re-prompts. It is already frictionless.
-**Result:** Prevented a wasted "smart source" iteration.
-**Confidence:** High
-**Action:** REJECT (no build)
+**Type:** ☑ Data Interpretation
+**Evidence:** 329 consecutive intake lines — source matches the previous line **99.4%** of the time; the app already remembers the last source per device (`nkg_src`).
+**Discovery:** Source is a per-truck constant: set once when the truck arrives, correctly carried forward for every line.
+**What changed our mind?** We listed "re-picking the source each line" as a candidate friction; the data cleared it.
+**Old belief:** Source selection might be repeated friction worth optimizing.
+**New belief:** Source is already frictionless; nothing to build.
+**Impact:** ☑ Low
+**Applies to:** ☑ Receiving
+**Status:** ☑ Active
+→ **Next action: Reject** (no build)
 
 ---
 
 # Product Discovery 002
 
-**Date:** 2026-07-30
-**Workflow:** Receiving plywood
-**Evidence:** 329 consecutive plywood-IN lines. The next line repeats the previous **brand only 36%**, and **brand + thickness only 9.4%** of the time. Median 24s/line.
-**Observation:** Intake is a physically mixed pile — nearly every board is a different spec. The pick steps (brand → thickness → size) are real work, not redundant tapping.
-**Root Cause:** Plywood arrives assorted, not batched by SKU. There is no "same as last" pattern strong enough to exploit.
-**Decision:** Do **not** build a "repeat last item / same brand+thickness" shortcut — it would help fewer than 1 line in 10, adding UI for little gain. Do not optimize the pick steps; 24s/line is already fast.
-**Result:** Killed a plausible-but-wrong optimization (originally hypothesized, falsified by data).
-**Confidence:** High
-**Action:** REJECT (no build)
+**Type:** ☑ Assumption Proven Wrong
+**Evidence:** 329 consecutive plywood-IN lines — the next line repeats the previous **brand 36%**, **brand + thickness only 9.4%**. Median 24s/line.
+**Discovery:** Incoming plywood is a physically assorted pile; nearly every board is a different spec. The brand → thickness → size pick steps are real work, not redundant taps.
+**What changed our mind?** Production measurement of consecutive lines.
+**Old belief:** Bulk intake repeats brand/thickness, so a "same as last / repeat last item" shortcut would speed it up.
+**New belief:** Repetition is too rare (<1 in 10 lines) to exploit; a repeat-last shortcut would add UI for almost no gain. 24s/line is already fast.
+**Impact:** ☑ Medium
+**Applies to:** ☑ Plywood ☑ Receiving
+**Status:** ☑ Active
+→ **Next action: Reject** (no build)
 
 ---
 
 # Product Discovery 003
 
-**Date:** 2026-07-30
-**Workflow:** Receiving — rack / location
-**Evidence:** 0 of 488 production entries recorded a rack/zone. Plus operator input (Shanky).
-**Observation:** Rack location is never recorded.
-**Root Cause:** **Not** because the feature lacks value. The warehouse has not yet completed its rack organization, so there is nothing stable to record against. Recording rack now would create work with no payoff. (Operator-stated; consistent with the data. Resolves the earlier open remove-vs-fix question.)
-**Decision:** Keep the rack capability in the system; do not optimize, expand, or push it. Revisit **only after** warehouse rack organization is complete. Note: PD-005 removed the rack *prompt* from the fast plywood-intake path — consistent with "don't make operators do rack work now" — and is reversible for when organization is done.
-**Result:** Avoids burdening operators with premature location data; sets a clear trigger (organization complete) for reopening.
-**Confidence:** High
-**Action:** WAIT
+**Type:** ☑ Business Process ☑ Operational
+**Evidence:** 0 of 488 production entries recorded a rack/zone. Operator input (Shanky).
+**Discovery:** Rack location is never recorded — and the reason is physical, not digital.
+**What changed our mind?** Operator explanation resolved an open remove-vs-fix question the data alone couldn't answer.
+**Old belief:** Rack is unused either because the feature is inconvenient or because it isn't needed.
+**New belief:** Rack is unused because the warehouse hasn't finished organizing into fixed racks — there's nothing stable to record against yet. Recording rack now would create work with no payoff.
+**Impact:** ☑ Medium
+**Applies to:** ☑ Receiving
+**Status:** ☑ Waiting — reopen only when rack organization is complete.
+→ **Next action: Wait.** Keep the capability; don't push it. (PD-005 removed the rack *prompt* from the fast intake path, consistent with this, and is reversible for when organization is done.)
 
 ---
 
 # Product Discovery 004
 
-**Date:** 2026-07-30
-**Workflow:** Photo attachment (door builty / LR receipt; goods evidence)
+**Type:** ☑ Technical ☑ Assumption Proven Wrong
 **Evidence:** Photo present on ~0.4% of 488 entries. Operator explanation (Shanky): staff must upload via the phone **gallery**, and photos **fail to appear correctly on the owner side**.
-**Observation:** Photo usage is near zero.
-**Root Cause:** **Implementation failure, not lack of business value.** The capture/upload/display path is unreliable (gallery-only upload; owner-side rendering fails). Low usage reflects the feature being broken, so people stopped using it.
-**Decision:** Treat photo as a **reliability bug**. Do **not** use photo usage statistics to judge the feature's value until it works end-to-end (capture → upload → owner sees it). This **supersedes** any reasoning that "photos are unused, so deprioritize/remove them." The door builty photo is a real, valued workflow.
-**Result:** Corrects a wrong assumption before it drove a bad decision. Flags the top BUILD candidate. (Mechanism not yet reproduced by us — verify the owner-side failure first, then fix.)
-**Confidence:** Medium (strong operator report; failure mode not yet independently reproduced)
-**Action:** BUILD (verify, then fix)
+**Discovery:** The near-zero photo usage reflects a broken pipeline, not a lack of need. The door builty / LR receipt photo is a real, valued workflow.
+**What changed our mind?** Operator explanation of *why* the number is low.
+**Old belief:** Photos are unused → low value → safe to deprioritize or remove.
+**New belief:** Photos are unused because the capture/upload/display path is unreliable. **Photo usage statistics are invalid evidence until the pipeline works end-to-end.** This supersedes any "photos unused, so remove them" reasoning.
+**Impact:** ☑ High
+**Applies to:** ☑ Doors (also the general goods-evidence photo)
+**Status:** ☑ Active — failure mode operator-reported, not yet reproduced by us.
+→ **Next action: Build** — first reproduce the owner-side failure (capture → upload → does the owner actually see it?), turn it into evidence, then fix as one iteration.
 
 ---
 
 # Product Discovery 005
 
-**Date:** 2026-07-30
-**Workflow:** Receiving plywood / hardware (incoming)
-**Evidence:** 488 production entries. After every incoming line, the operator hit a placement screen ("और कुछ?" — rack + photo). Rack usage **0%**; the tap-by-tap flow forced this screen + a Save tap on 100% of lines. Median 24s/line.
-**Observation:** Every incoming plywood/hardware line ended on a screen the operator never used, then had to find Save.
-**Root Cause:** Rack recording is premature (see PD-003) and plywood boards don't need photos (photos matter for the door builty — see PD-004, which is on the door flow). So the placement screen delivered nothing on the plywood/hardware path — a dead screen on the highest-frequency workflow. *(Justified by rack 0% + plywood-doesn't-need-photos, NOT by photo usage stats, which PD-004 marks invalid.)*
-**Decision:** For incoming plywood/hardware, make **quantity the final step** — completing the quantity saves the entry. Doors keep the placement step (builty photo). Giving-out unchanged. One screen + one tap removed per line. Fully reversible.
-**Result:** Deployed. Removes ~70 dead-screen transitions/day at current volume.
-**Confidence:** High
-**Action:** MONITOR — re-read production after real use: median seconds/line should drop; rack should stay ~0% (confirming it was waste); watch for anyone hunting for the removed photo option on plywood.
+**Type:** ☑ UX ☑ Workflow
+**Evidence:** 488 production entries. Rack usage **0%**; the tap-by-tap flow forced a placement screen ("और कुछ?" — rack + photo) plus a Save tap after every incoming line. Median 24s/line.
+**Discovery:** Every incoming plywood/hardware line ended on a screen the operator never used, then had to hunt for Save — a dead screen on the highest-frequency workflow.
+**What changed our mind?** Production data (0% rack) plus tap-by-tap flow analysis showed the step delivered nothing on this path.
+**Old belief:** A final placement step (rack + photo) is a reasonable optional close to an entry.
+**New belief:** On incoming plywood/hardware it's pure waste — rack is premature (PD-003) and plywood doesn't need photos (photos matter on the door builty, PD-004). *Justified by rack 0% + plywood-not-needing-photos, NOT by photo usage stats (PD-004 marks those invalid).*
+**Impact:** ☑ Medium (every incoming line)
+**Applies to:** ☑ Plywood ☑ Receiving
+**Status:** ☑ Active — deployed; doors keep the placement/photo step; giving-out unchanged; reversible.
+→ **Next action: Monitor** — re-read production after real use: median seconds/line should drop; rack should stay ~0% (confirming it was waste); watch for anyone hunting for the removed photo option on plywood.
