@@ -4,6 +4,14 @@ Permanent operational knowledge about how Mittal Hardware's warehouse actually w
 
 Every month the software should get *simpler* and this file should get *deeper*. If both aren't happening, we're optimizing the wrong thing.
 
+## How this learning system works
+
+Every investigation has two equally valid outputs — a **product change**, an **organizational learning**, or both — and sometimes the right outcome is **no code at all**. Success is not "did we ship." It is: **"Did today's work make tomorrow's decisions better?"** If yes, the investigation succeeded even if nothing was built.
+
+**Admission test — record a learning only if it passes:** *If a new engineer or AI joined six months from now, would knowing this stop them from making a bad decision?* If no, don't record it. A bare fact does not qualify — every learning must end in a **Future Rule**. Facts explain the past; rules improve the future.
+
+**Rules are provisional, never permanent truth.** When stronger evidence contradicts a rule, **replace it in place** (edit the rule) and log the change under *Rule revisions* — old understanding → new understanding → the evidence that forced it. **Never append a second, contradictory rule.** Preserve the *reason* the understanding changed, not the obsolete rule.
+
 ## Evidence hierarchy (work from the strongest available)
 
 1. **Production behaviour** — database, event logs, usage stats, timings, errors.
@@ -20,6 +28,13 @@ Every month the software should get *simpler* and this file should get *deeper*.
 - **R3 — Zero usage can be a business-process gap, not a software gap.** Check Level-3 business context (ask the owner) before changing the feature. *(from L003)*
 - **R4 — A step that yields nothing on the highest-frequency path is waste.** Remove it from that path; keep the capability where it's actually used and reversible. *(from L005)*
 - **R5 — One friction, one improvement, one metric, one deploy, then stop.** Reality gets the next turn. BUILD / WAIT / REMOVE / FIX / DO NOTHING are all valid outcomes.
+
+### Rule revisions
+When a Standing Rule changes, edit it above and record the supersession here — so there are never two contradictory rules active, and the reason for the change is preserved.
+
+| Date | Rule | Old understanding | New understanding | Evidence that forced it |
+|------|------|-------------------|-------------------|-------------------------|
+| — | (none yet) | | | |
 
 ## Template
 
