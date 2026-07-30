@@ -1,0 +1,105 @@
+# NK Warehouse — Warehouse Learnings
+
+Permanent operational knowledge about how Mittal Hardware's warehouse actually works. **Search this file before proposing any improvement.** If a learning already explains the situation, reuse it — do not rediscover it.
+
+Every month the software should get *simpler* and this file should get *deeper*. If both aren't happening, we're optimizing the wrong thing.
+
+## Evidence hierarchy (work from the strongest available)
+
+1. **Production behaviour** — database, event logs, usage stats, timings, errors.
+2. **Real operations** — watching work, screen/warehouse recordings, photos, shadowing.
+3. **Business context** — what the owner knows that the software cannot (warehouse still being organized, a step intentionally skipped, a process planned but not adopted).
+4. **Operator feedback** — comments, complaints, suggestions.
+5. **Code** — current implementation.
+6. **Assumptions** — always weakest.
+
+## Standing rules (harvested from the learnings below)
+
+- **R1 — Never interpret low feature usage without understanding *why* it's low.** Candidates: unnecessary · broken · poor UX · wrong workflow · future business process · no training. Each is a different problem. *(from L004)*
+- **R2 — A candidate friction isn't friction until production confirms it.** Don't optimize what the data shows is already fast or already solved. *(from L001, L002)*
+- **R3 — Zero usage can be a business-process gap, not a software gap.** Check Level-3 business context (ask the owner) before changing the feature. *(from L003)*
+- **R4 — A step that yields nothing on the highest-frequency path is waste.** Remove it from that path; keep the capability where it's actually used and reversible. *(from L005)*
+- **R5 — One friction, one improvement, one metric, one deploy, then stop.** Reality gets the next turn. BUILD / WAIT / REMOVE / FIX / DO NOTHING are all valid outcomes.
+
+## Template
+
+```
+# Warehouse Learning ###
+Date · Workflow · Evidence (+ level) · Observation · Root Cause
+Old Belief · New Understanding · Business Impact · Applies To · Status · Future Rule
+```
+
+## Index
+
+| # | Applies to | New understanding (one line) | Impact | Status | Next |
+|---|-----------|------------------------------|--------|--------|------|
+| 001 | Receiving | Source is a per-truck constant, already carried forward | Low | Active | Do nothing |
+| 002 | Plywood | Specs vary line-to-line; "repeat last" helps <10% of lines | Medium | Active | Reject |
+| 003 | Receiving | Rack unused because the warehouse isn't organized yet | Medium | Waiting | Wait |
+| 004 | Doors / photos | Near-zero photo use is a broken pipeline, not low value | High | Active | Build (fix) |
+| 005 | Plywood | The post-quantity placement screen was dead weight | Medium | Active | Monitor |
+
+---
+
+# Warehouse Learning 001
+
+**Date:** 2026-07-30 · **Workflow:** Receiving — picking the source ("From")
+**Evidence (L1):** 329 consecutive intake lines — source matches the previous line **99.4%**; the app already remembers the last source (`nkg_src`).
+**Observation:** Source is essentially never changed within a truck's unload.
+**Root Cause:** Source is a per-truck constant, set once and correctly carried forward.
+**Old Belief:** Re-picking the source each line might be repeated friction worth optimizing.
+**New Understanding:** It's already frictionless — nothing to build.
+**Business Impact:** Low · **Applies To:** Receiving · **Status:** Active
+**Future Rule:** Before optimizing a "repeated" action, confirm in production that it actually repeats.
+
+---
+
+# Warehouse Learning 002
+
+**Date:** 2026-07-30 · **Workflow:** Receiving plywood
+**Evidence (L1):** 329 consecutive plywood-IN lines — next line repeats brand **36%**, brand + thickness **9.4%**. Median 24s/line.
+**Observation:** Incoming plywood is a physically assorted pile; nearly every board is a different spec.
+**Root Cause:** Plywood arrives mixed, not batched by SKU. The brand→thickness→size picks are real work, not redundant taps.
+**Old Belief:** Bulk intake repeats brand/thickness, so a "repeat last item" shortcut would speed it up.
+**New Understanding:** Repetition is too rare (<1 in 10 lines) to exploit; the shortcut would add UI for almost no gain. 24s/line is already fast.
+**Business Impact:** Medium · **Applies To:** Plywood, Receiving · **Status:** Active
+**Future Rule:** Measure repetition in production before building any "repeat last" shortcut.
+
+---
+
+# Warehouse Learning 003
+
+**Date:** 2026-07-30 · **Workflow:** Receiving — rack / location
+**Evidence (L1 + L3):** 0 of 488 entries recorded a rack/zone; owner (business context) confirms the warehouse isn't finished being organized.
+**Observation:** Rack location is never recorded.
+**Root Cause:** Physical, not digital — there are no stable racks to record against yet, so recording now would create work with no payoff.
+**Old Belief:** Rack is unused because the feature is inconvenient or unneeded (a software problem).
+**New Understanding:** Rack is unused because of an unfinished **business process**. Keep the capability; don't push it. Reopen when organization is complete. (L005 removed the rack *prompt* from the fast intake path — consistent with this — and is reversible.)
+**Business Impact:** Medium · **Applies To:** Receiving · **Status:** Waiting (trigger: rack organization complete)
+**Future Rule:** Zero usage can be a business-process gap, not a software gap — check Level-3 business context before touching the feature.
+
+---
+
+# Warehouse Learning 004
+
+**Date:** 2026-07-30 · **Workflow:** Photo attachment (door builty / LR receipt; goods evidence)
+**Evidence (L1 + L4):** Photo present on ~0.4% of 488 entries; operator (Shanky) reports staff must upload via the phone **gallery** and photos **fail to appear correctly on the owner side**.
+**Observation:** Photo usage is near zero.
+**Root Cause:** **Broken implementation, not low value.** The capture/upload/display path is unreliable, so people stopped using it.
+**Old Belief:** Photos are unused → low value → safe to deprioritize or remove.
+**New Understanding:** Usage is low *because the feature is broken*. **Photo usage stats are invalid evidence until the pipeline works end-to-end** (capture → upload → owner sees it). This supersedes any "photos unused, remove them" reasoning. The door builty photo is a real, valued workflow.
+**Business Impact:** High · **Applies To:** Doors, and the general goods-evidence photo · **Status:** Active (failure operator-reported, not yet reproduced by us)
+**Future Rule:** *Never interpret low feature usage without understanding why usage is low.*
+
+---
+
+# Warehouse Learning 005
+
+**Date:** 2026-07-30 · **Workflow:** Receiving plywood / hardware (incoming)
+**Evidence (L1 + L5):** 488 entries; rack usage **0%**; tap-by-tap flow forced a placement screen ("और कुछ?" — rack + photo) plus a Save tap after every incoming line.
+**Observation:** Every incoming plywood/hardware line ended on a screen the operator never used, then had to hunt for Save.
+**Root Cause:** Rack is premature (L003) and plywood doesn't need photos (photos matter on the door builty, L004), so the screen delivered nothing on this path — a dead screen on the highest-frequency workflow.
+**Old Belief:** A final placement step (rack + photo) is a reasonable optional close to an entry.
+**New Understanding:** On incoming plywood/hardware it's pure waste. Made **quantity the final step** — completing it saves. Doors keep the placement/photo step; giving-out unchanged; reversible. *Justified by rack 0% + plywood-not-needing-photos, NOT by photo usage stats (invalid per L004).*
+**Business Impact:** Medium (every incoming line) · **Applies To:** Plywood, Receiving · **Status:** Active — deployed
+**Future Rule:** A step that produces nothing on the highest-frequency path is waste — remove it from that path, keep the capability reachable where it's used.
