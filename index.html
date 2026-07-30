@@ -543,13 +543,13 @@ function pickRecentDesign(v){ sel.design=v; if($('designIn'))$('designIn').value
 function onQtyType(v){ if($('qtyIn'))$('qtyIn').value=v; renderCtx(); }
 function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); if($('qtyIn'))$('qtyIn').value=v||''; const el=$('qtyVis'); if(el)el.value=v||''; renderCtx(); }
 function setQtyQuick(q){ if($('qtyIn'))$('qtyIn').value=q; const el=$('qtyVis'); if(el)el.value=q; renderCtx(); qtyNext(); }
-function qtyNext(){ if(!(Number($('qtyIn').value)>0)){ toast('कितने? भरें','err'); return; } wizNext(); }
+function qtyNext(){ if(!(Number($('qtyIn').value)>0)){ toast('कितने? भरें','err'); return; } if(dir==='in') return saveIn(); wizNext(); }
 function setZoneWiz(z){ sel.zone=(sel.zone===z?'':z); renderWiz(); }
 
 /* ---- wizard engine ---- */
 function flowFor(){ let attrs = mode==='plywood'?['brand','thick','size'] : mode==='door'?['doortype','design','doorsizes'] : ['cat'];
   const tail = mode==='door'?[] : ['qty'];
-  if(dir==='in') return ['dir','source','mode'].concat(attrs).concat(tail).concat(['place']);
+  if(dir==='in') return ['dir','source','mode'].concat(attrs).concat(tail).concat(mode==='door'?['place']:[]);
   return ['dir','mode'].concat(attrs).concat(tail).concat(['review']); }
 function wizGo(k){ wizKey=k; renderWiz(); }
 function wizNext(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>=0&&i<f.length-1)wizGo(f[i+1]); }
@@ -644,7 +644,7 @@ function stepHTML(k){
   if(k==='qty') return '<div class="wq">कितने?</div><div class="wqs">पीस · How many</div>'
     +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:12px" placeholder="नाम / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx()">':'')
     +'<div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">−</button><input id="qtyVis" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने" value="'+(Number($('qtyIn').value)||'')+'" oninput="onQtyType(this.value)" onkeydown="if(event.key===\'Enter\')qtyNext()"><button onclick="stepQty(1)">＋</button></div></div>'
-    +'<div class="qbtns">'+QTYQUICK.map(q=>'<button class="chip" onclick="setQtyQuick('+q+')">'+q+'</button>').join('')+'</div><button class="wnext" onclick="qtyNext()">आगे ›</button>';
+    +'<div class="qbtns">'+QTYQUICK.map(q=>'<button class="chip" onclick="setQtyQuick('+q+')">'+q+'</button>').join('')+'</div>'+(dir==='in'?'<button class="save" onclick="qtyNext()">✓ सेव करें</button>':'<button class="wnext" onclick="qtyNext()">आगे ›</button>');
   if(k==='place') return '<div class="wq">और कुछ?</div><div class="wqs">ज़रूरी नहीं · फिर सेव करें</div>'
     +'<div class="wsub">कहाँ रखा? · Rack / Zone</div><div class="chips">'+zoneHTML()+'</div>'
     +'<div class="wsub">फ़ोटो · Photo</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 फ़ोटो</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
