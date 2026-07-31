@@ -751,7 +751,7 @@ async function pushEntry(entry){
     const urls=[];
     for(const p of pics){ try{
         const path=today()+'/'+(entry._ts||Date.now())+'-'+Math.floor(performance.now()%100000)+'-'+urls.length+'.jpg';
-        const up=await fetch(SB+"/storage/v1/object/nkg-photos/"+path,{method:'POST',headers:{...H,"Content-Type":"image/jpeg","x-upsert":"true"},body:dataURLtoBlob(p)});
+        const up=await fetch(SB+"/storage/v1/object/nkg-photos/"+path,{method:'POST',headers:{...H,"Content-Type":"image/jpeg"},body:dataURLtoBlob(p)});
         if(up.ok) urls.push(SB+"/storage/v1/object/public/nkg-photos/"+path);
       }catch(_){} }
     const row={...entry}; delete row._photo; delete row._photos; delete row._ts;
