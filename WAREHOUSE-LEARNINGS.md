@@ -51,7 +51,7 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 | 001 | Receiving | Source is a per-truck constant, already carried forward | Low | Active | Do nothing |
 | 002 | Plywood | Specs vary line-to-line; "repeat last" helps <10% of lines | Medium | Active | Reject |
 | 003 | Receiving | Rack unused because the warehouse isn't organized yet | Medium | Waiting | Wait |
-| 004 | Doors / photos | Near-zero photo use is a broken pipeline, not low value | High | Active | Build (fix) |
+| 004 | Doors / photos | Near-zero photo use was broken *client-side* (camera launch + owner token), not the server pipeline | High | Active | Monitor |
 | 005 | Plywood | The post-quantity placement screen was dead weight | Medium | Active | Monitor |
 
 ---
@@ -103,8 +103,9 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 **Root Cause:** **Broken implementation, not low value.** The capture/upload/display path is unreliable, so people stopped using it.
 **Old Belief:** Photos are unused → low value → safe to deprioritize or remove.
 **New Understanding:** Usage is low *because the feature is broken*. **Photo usage stats are invalid evidence until the pipeline works end-to-end** (capture → upload → owner sees it). This supersedes any "photos unused, remove them" reasoning. The door builty photo is a real, valued workflow.
-**Business Impact:** High · **Applies To:** Doors, and the general goods-evidence photo · **Status:** Active (failure operator-reported, not yet reproduced by us)
-**Future Rule:** *Never interpret low feature usage without understanding why usage is low.*
+**Business Impact:** High · **Applies To:** Doors, and the general goods-evidence photo · **Status:** Active — investigated & fixed 2026-07-31.
+**Resolution (2026-07-31):** Reproduced across all layers. The **server pipeline was healthy** — uploads land in the private bucket, rows link correctly, and owner-read RLS passes (`owner_sees=2, is_owner=true`). The failure was **two client defects**: (1) the camera input had no `capture` attribute, so tapping it opened a chooser not the camera — hence the gallery workaround; (2) `fetchPhoto` had no token refresh/retry, so a stale owner token showed a blank thumbnail with no recovery — hence "can't reliably see." Both fixed and deployed. **Monitor:** confirm the camera launches on a real phone, and that owner thumbnails stop going blank in real use.
+**Future Rule:** *Never interpret low feature usage without understanding why usage is low.* (Held up exactly: usage was low because the feature was broken, and the break was client-side, not where the operator assumed.)
 
 ---
 
