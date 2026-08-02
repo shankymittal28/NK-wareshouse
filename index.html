@@ -428,7 +428,7 @@ function renderStaffBtns(){ if(!staff.length){$('staffBtns').innerHTML='';$('noS
   const last=(()=>{try{return localStorage.getItem('nkg_last_staff');}catch(e){return null;}})();
   const list=staff.slice().sort((a,b)=>(a.name===last?-1:0)-(b.name===last?-1:0));
   $('staffBtns').innerHTML=list.map(s=>`<button class="namebtn${s.name===last?' last':''}" onclick="pickStaff('${esc(s.name)}')"><span class="av">${esc((s.name||'?').slice(0,1).toUpperCase())}</span>${esc(s.name)}${s.name===last?'<span class="lastTag">पिछली बार</span>':''}</button>`).join(''); }
-function pickStaff(n){ me_={name:n}; origin='gate'; try{localStorage.setItem('nkg_last_staff',n);}catch(e){} showAdd(); }
+function pickStaff(n){ me_={name:n}; origin='gate'; try{localStorage.setItem('nkg_last_staff',n);}catch(e){} tryResume(n); showAdd(); }
 function backToGate(){ ['add','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('gate').classList.remove('hide'); loadStaff(); }
 function addBack(){ origin==='owner'?showOwner():backToGate(); }
 function ownerLogin(){
@@ -448,6 +448,10 @@ function logAsOwner(){ me_={name:'Owner'}; origin='owner'; showAdd(); }
 /* ===== Staff entry — step-by-step wizard ===== */
 let dir='in', outCart=[], _pk={}, wizKey='dir', doorBatch=[], _lastSave=null;
 function lastSaveHTML(){ if(!_lastSave)return ''; return '<div class="lastsave'+(_lastSave.ok?'':' q')+'">'+(_lastSave.ok?'✓ सेव हुआ: ':'⏳ फ़ोन में सेव: ')+esc(_lastSave.txt)+'</div>'; }
+function persistWiz(){ try{ localStorage.setItem('nkg_wiz', JSON.stringify({t:Date.now(), me:me_&&me_.name, dir:dir, mode:mode, wizKey:wizKey, sel:{brand:sel.brand,thickness:sel.thickness,size:sel.size,design:sel.design,cat:sel.cat,doortype:sel.doortype,zone:sel.zone}, src:src, qty:($('qtyIn')&&$('qtyIn').value)||'', outCart:outCart, doorBatch:doorBatch, lastSave:_lastSave})); }catch(e){} }
+let _resume=null;
+function tryResume(n){ try{ const d=JSON.parse(localStorage.getItem('nkg_wiz')||'null');
+  if(d && d.me===n && (Date.now()-d.t)<3600000 && d.wizKey && d.wizKey!=='dir'){ _resume=d; } else { _resume=null; } }catch(e){ _resume=null; } }
 function qsaveLabel(){ const q=Number($('qtyIn')&&$('qtyIn').value)||0; return q?('✓ सेव — '+q+' · '+itemText()):'✓ सेव करें'; }
 function updQSave(){ const b=$('qsave'); if(b)b.textContent=qsaveLabel(); const w=document.querySelector('.wqitem'); if(w)w.textContent=itemText(); }
 
@@ -458,6 +462,11 @@ async function showAdd(){
   await Promise.all([loadZones(),loadSources(),loadOpts()]);
   dir='in'; mode='plywood'; outCart=[]; doorBatch=[]; sel.customer=''; resetItemAll(); if($('outCust'))$('outCust').value='';
   refreshToday(); syncPending(); $('undoBtn').classList.add('hide');
+  if(_resume){ const d=_resume; _resume=null; dir=d.dir; mode=d.mode; src=d.src||src;
+    sel.brand=d.sel.brand||''; sel.thickness=d.sel.thickness||''; sel.size=d.sel.size||''; sel.design=d.sel.design||''; sel.cat=d.sel.cat||''; sel.doortype=d.sel.doortype||''; sel.zone=d.sel.zone||'';
+    outCart=d.outCart||[]; doorBatch=d.doorBatch||[]; _lastSave=d.lastSave||null;
+    if($('qtyIn'))$('qtyIn').value=d.qty||''; if($('designIn'))$('designIn').value=sel.design||'';
+    updateSrcLbl(); wizGo(d.wizKey); toast('वहीं से जारी ✓','ok'); return; }
   wizGo('dir');
 }
 
@@ -532,7 +541,7 @@ function setCat(c){ sel.cat=c; wizNext(); }
 function setSrc(s){ src=s; localStorage.setItem('nkg_src',s); updateSrcLbl(); wizNext(); }
 function onDesignType(v){ sel.design=(v||'').trim(); if($('designIn'))$('designIn').value=sel.design; const nx=$('designNext'); if(nx)nx.disabled=!sel.design; renderCtx(); }
 function pickRecentDesign(v){ sel.design=v; if($('designIn'))$('designIn').value=v; wizNext(); }
-function onQtyType(v){ if($('qtyIn'))$('qtyIn').value=v; renderCtx(); updQSave(); }
+function onQtyType(v){ if($('qtyIn'))$('qtyIn').value=v; renderCtx(); updQSave(); persistWiz(); }
 function stepQty(d){ const v=Math.max(0,(Number($('qtyIn').value)||0)+d); if($('qtyIn'))$('qtyIn').value=v||''; const el=$('qtyVis'); if(el)el.value=v||''; renderCtx(); updQSave(); }
 function setQtyQuick(q){ if($('qtyIn'))$('qtyIn').value=q; const el=$('qtyVis'); if(el)el.value=q; renderCtx(); qtyNext(); }
 function qtyNext(){ if(!(Number($('qtyIn').value)>0)){ toast('कितने? भरें','err'); return; } if(dir==='in') return saveIn(); wizNext(); }
@@ -649,7 +658,7 @@ function stepHTML(k){
     +'<button class="save outbtn" id="saveBtn" onclick="giveOutAll()">📤 माल दें'+(giveCount()>1?' ('+giveCount()+')':'')+'</button>';
   return '';
 }
-function renderWiz(){ renderDots(); renderCtx(); const b=$('wizBody'); if(b)b.innerHTML=stepHTML(wizKey);
+function renderWiz(){ renderDots(); renderCtx(); const b=$('wizBody'); if(b)b.innerHTML=stepHTML(wizKey); persistWiz();
   if(wizKey==='design'){ const el=$('designVis'); if(el){try{el.focus();}catch(e){}} }
 }
 
