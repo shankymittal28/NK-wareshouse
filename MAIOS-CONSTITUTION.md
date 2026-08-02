@@ -204,3 +204,19 @@ If it can answer all three, build it inside the core, under the Laws.
 If it cannot — if it records no clear claim, or produces a number nothing can rebuild, or has no way of ever being checked against the world — then it does not belong in the trust core. It may still exist as a convenience, a report, or an external integration, but it must live outside the boundary and must never become something the business is asked to trust.
 
 *Everything the business trusts is an account of what happened, checked against what is. Anything that cannot be both does not get to be trusted.*
+
+---
+
+## MAIOS Design Law — Evidence Has a Half-Life (added 2026-08-02)
+
+A feature and the evidence that justified it are different things.
+
+**Every feature must carry an evidence record:** why it was introduced · what evidence justified it · what assumptions that evidence depended on · under what future conditions it must be re-evaluated.
+
+**Evidence is never timeless.** Before any measurement justifies permanent design, classify the operational context that produced it: normal operation · seasonal variation · migration · cleanup · emergency · exceptional event · experiment. Evidence from a temporary phase may justify improving that phase, but never automatically becomes the basis of permanent product design.
+
+**When the phase ends, the evidence expires — the feature does not.** A feature remains until newer, more representative evidence demonstrates that another design serves reality better.
+
+Therefore: never preserve a feature because of history; never remove a feature because of history. Preserve or remove only because current evidence supports doing so.
+
+**Software evolves by replacing evidence, not by replacing opinions.**
