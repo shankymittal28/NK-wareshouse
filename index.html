@@ -109,6 +109,7 @@ button,input,select{font-family:inherit;font-size:16px}
 .ghd-r{text-align:right;flex:0 0 auto}
 .gval{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--mint)}
 .gval.pcs{color:var(--ink)}
+.gval.neg,.gval.pcs.neg,.ival.neg,.vnum.neg{color:var(--rose)}
 .gmeta{display:block;font-size:11.5px;color:var(--mut);margin-top:1px}
 .gbar{height:4px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;margin:0 2px 4px}
 .gbar>i{display:block;height:100%;background:var(--indigo);border-radius:99px}
@@ -160,13 +161,13 @@ button,input,select{font-family:inherit;font-size:16px}
 #lbPrev{left:10px}#lbNext{right:10px}
 .lbcount{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 18px);left:50%;transform:translateX(-50%);color:#fff;font-size:13px;font-weight:700;background:rgba(0,0,0,.5);padding:5px 12px;border-radius:99px}
 .valcard.khdue .vnum{color:var(--rose)}
-.valcard.khadv .vnum{color:var(--mint)}
+.valcard.khadv .vnum{color:var(--sky)}
 .khrow{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:14px;margin-bottom:9px;color:var(--ink)}
 .khrow:active{background:rgba(255,255,255,.05)}
 .khn{font-size:16px;font-weight:700;letter-spacing:-.01em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .khb{font-size:13px;font-weight:600;flex:0 0 auto;white-space:nowrap}
 .khb b{font-size:15px;font-weight:800}
-.khb.due{color:var(--rose)}.khb.adv{color:var(--mint)}.khb.set{color:var(--mut)}
+.khb.due{color:var(--rose)}.khb.adv{color:var(--sky)}.khb.set{color:var(--mut)}
 .khe{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 2px;border-bottom:1px solid var(--hair)}
 .khe-l{min-width:0}
 .khe-t{font-size:14.5px;font-weight:600}
@@ -755,11 +756,11 @@ function renderRecent(){ $('recentStrip').innerHTML=recent.map(r=>`<div class="r
 function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),todayCount); refreshToday(); recent.unshift({name:e.item_name,qty:e.qty}); recent=recent.slice(0,10); renderRecent(); }
 
 let ownerView='items', groups=[], rates={};
-const inr=n=>'₹'+Math.round(Number(n)||0).toLocaleString('en-IN');
+const inr=n=>{const v=Math.round(Number(n)||0);return (v<0?'-₹':'₹')+Math.abs(v).toLocaleString('en-IN');};
 async function showOwner(){ ['gate','add','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
 async function loadStock(){ const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]); stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); buildFilters(); updateStats(); renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
-function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>IST(s.created_at)===IST()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; $('stVal').textContent=inr(val); }
+function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>IST(s.created_at)===IST()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); }
 function setOwnerView(v){ ownerView=v;
   $('vwItems').classList.toggle('on',v==='items'); $('vwToday').classList.toggle('on',v==='today'); $('vwLog').classList.toggle('on',v==='log');
   $('itemList').classList.toggle('hide',v!=='items'); $('todayList').classList.toggle('hide',v!=='today'); $('stockList').classList.toggle('hide',v!=='log');
@@ -818,11 +819,11 @@ function setGroupBy(k){ groupBy=k; renderItems(); }
 function toggleGroup(bi){ const key=_buckets[bi]; if(key==null)return; const cid=groupBy+'::'+key; collapsed[cid]=!collapsed[cid]; renderItems(); }
 function _itemRow(g){ const i=g._i, net=g.net, rate=rates[g.k]||0, val=net*rate;
   const spec='<span class="pc">'+net+' pcs</span>'+(rate?' &middot; '+inr(rate)+'/pc':'');
-  const right=rate?('<span class="ival">'+inr(val)+'</span>'):('<span class="ival z">Set rate</span>');
+  const right=rate?('<span class="ival'+(val<0?' neg':'')+'">'+inr(val)+'</span>'):('<span class="ival z">Set rate</span>');
   return '<button class="irow" onclick="openItem('+i+')"><div class="irow-main"><div class="iname">'+esc(g.name)+'</div><div class="ispec">'+spec+'</div></div><div class="irow-r">'+right+'<span class="chev">&rsaquo;</span></div></button>'; }
 function openItem(i){ const g=groups[i]; if(!g)return; const net=g.net, rate=rates[g.k]||0;
   sheetHTML('<div class="grab"></div><h4>'+esc(g.name)+'</h4>'
-   +'<div class="isum"><div><b>'+net+'</b><span>in stock</span></div><div><b>'+(rate?inr(rate):'—')+'</b><span>per pc</span></div><div><b style="color:var(--mint)">'+(rate?inr(net*rate):'—')+'</b><span>value</span></div></div>'
+   +'<div class="isum"><div><b>'+net+'</b><span>in stock</span></div><div><b>'+(rate?inr(rate):'—')+'</b><span>per pc</span></div><div><b style="color:var(--'+(net*rate<0?'rose':'mint')+')">'+(rate?inr(net*rate):'—')+'</b><span>value</span></div></div>'
    +'<button class="pri" style="max-width:none" onclick="billFromItem('+i+')">&#8722; Give out to customer</button>'
    +'<div class="row2btn"><button class="sec" onclick="openRate('+i+')">&#8377; '+(rate?'Change rate':'Set rate')+'</button><button class="sec" onclick="openRename('+i+')">&#9998; Edit name</button></div>'); openSheet(); }
 function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m={};
@@ -845,7 +846,7 @@ function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m
   else { order.sort((a,b)=>(bv[b]-bv[a])||(bp[b]-bp[a])||(a>b?1:-1)); }
   const maxv=Math.max(1,...order.map(k=>bv[k])); _buckets=order;
   $('itemList').innerHTML=order.map((key,bi)=>{ const items=bk[key].slice().sort(bySeq), pcs=bp[key], val=bv[key], isC=!!collapsed[groupBy+'::'+key];
-    const rt=val?('<span class="gval">'+inr(val)+'</span>'):('<span class="gval pcs">'+pcs+' pcs</span>');
+    const rt=val?('<span class="gval'+(val<0?' neg':'')+'">'+inr(val)+'</span>'):('<span class="gval pcs'+(pcs<0?' neg':'')+'">'+pcs+' pcs</span>');
     const meta=items.length+' item'+(items.length!==1?'s':'')+(val?' &middot; '+pcs+' pcs':'');
     const head='<button class="ghd'+(isC?' col':'')+'" onclick="toggleGroup('+bi+')"><div class="ghd-l"><span class="gcar">&#9662;</span><span class="gname">'+esc(key)+'</span></div><div class="ghd-r">'+rt+'<span class="gmeta">'+meta+'</span></div></button>';
     const bar=val?'<div class="gbar"><i style="width:'+Math.max(5,Math.round(val/maxv*100))+'%"></i></div>':'';
