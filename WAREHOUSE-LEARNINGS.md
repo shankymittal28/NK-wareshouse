@@ -28,6 +28,7 @@ Every investigation has two equally valid outputs — a **product change**, an *
 - **R3 — Zero usage can be a business-process gap, not a software gap.** Check Level-3 business context (ask the owner) before changing the feature. *(from L003)*
 - **R4 — A step that yields nothing on the highest-frequency path is waste.** Remove it from that path; keep the capability where it's actually used and reversible. *(from L005)*
 - **R5 — One friction, one improvement, one metric, one deploy, then stop.** Reality gets the next turn. BUILD / WAIT / REMOVE / FIX / DO NOTHING are all valid outcomes.
+- **R6 — Classify the operational context before trusting any production measurement.** Ask first: normal business · seasonal · migration · one-time cleanup · exceptional event? Only stable long-term data may drive permanent UX. Temporary-phase data may only improve temporary workflows, and anything built on it must carry a revisit trigger. *(from the 2026-08-02 migration-bias correction)*
 
 ### Rule revisions
 When a Standing Rule changes, edit it above and record the supersession here — so there are never two contradictory rules active, and the reason for the change is preserved.
@@ -133,3 +134,16 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 **New Understanding:** Item type is sticky like source (L001). The loop now restarts at the first attribute step (brand/door-type/category kept); changing type = one existing पीछे tap, costing 1 extra tap on ~2.6% of lines while saving a decision + tap on ~97.4%.
 **Business Impact:** Medium (every incoming line) · **Applies To:** Receiving, all products · **Status:** Active — deployed
 **Future Rule:** A wizard loop should restart at the first question whose answer actually changes line-to-line — measure repetition in production before deciding where the loop begins.
+
+---
+
+## Context reclassification — 2026-08-02 (migration bias)
+
+**Owner correction:** NK Warehouse is currently in a **migration phase** — plywood is being moved first from old godowns (hence 87.7% plywood share and 97.4% category repetition), and the sources "Rice Mill 1/2/3, Dukaan, Transport" are temporary migration-verification labels that will disappear when migration completes. None of this represents the next 10 years of operations.
+
+**Reclassified as migration-context evidence (not permanent):**
+- **L001** (source per-truck constant) — re-verify with real suppliers post-migration.
+- **L002** (assorted plywood, 24s/line, repeat <10%) — re-measure with normal mixed-category deliveries.
+- **L006** (item type repeats 97.4% → loop restarts at brand) — the sticky-type loop is **kept as migration scaffolding** because it demonstrably helps the current daily work, but it is NOT a permanent decision. **Revisit trigger: migration complete → re-run the category-repetition query on post-migration lines only; if repetition drops materially, restart the loop at the item-type step again (one-line revert, `loopStart()`).**
+
+**Future Rule:** now Standing Rule R6 — classify operational context before any measurement drives permanent design.
