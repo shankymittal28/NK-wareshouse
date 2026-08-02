@@ -28,7 +28,7 @@ Every investigation has two equally valid outputs — a **product change**, an *
 - **R3 — Zero usage can be a business-process gap, not a software gap.** Check Level-3 business context (ask the owner) before changing the feature. *(from L003)*
 - **R4 — A step that yields nothing on the highest-frequency path is waste.** Remove it from that path; keep the capability where it's actually used and reversible. *(from L005)*
 - **R5 — One friction, one improvement, one metric, one deploy, then stop.** Reality gets the next turn. BUILD / WAIT / REMOVE / FIX / DO NOTHING are all valid outcomes.
-- **R6 — Classify the operational context before trusting any production measurement.** Ask first: normal business · seasonal · migration · one-time cleanup · exceptional event? Only stable long-term data may drive permanent UX. Temporary-phase data may only improve temporary workflows, and anything built on it must carry a revisit trigger. *(from the 2026-08-02 migration-bias correction)*
+- **R6 — Classify the operational context before trusting any production measurement.** Ask first: normal business · seasonal · migration · one-time cleanup · exceptional event? Temporary-phase evidence may justify building something that improves today's work — but it is the *evidence* that is temporary, never automatically the feature. Every feature carries its evidence history (why added · what evidence · when to re-evaluate), and its long-term fate is decided by future representative evidence, not by assumptions about the future. *(from the 2026-08-02 migration-bias correction)*
 
 ### Rule revisions
 When a Standing Rule changes, edit it above and record the supersession here — so there are never two contradictory rules active, and the reason for the change is preserved.
@@ -144,6 +144,6 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 **Reclassified as migration-context evidence (not permanent):**
 - **L001** (source per-truck constant) — re-verify with real suppliers post-migration.
 - **L002** (assorted plywood, 24s/line, repeat <10%) — re-measure with normal mixed-category deliveries.
-- **L006** (item type repeats 97.4% → loop restarts at brand) — the sticky-type loop is **kept as migration scaffolding** because it demonstrably helps the current daily work, but it is NOT a permanent decision. **Revisit trigger: migration complete → re-run the category-repetition query on post-migration lines only; if repetition drops materially, restart the loop at the item-type step again (one-line revert, `loopStart()`).**
+- **L006** (item type repeats 97.4% → loop restarts at brand) — **the evidence is temporary; the feature is not.** The implementation stays until representative post-migration data proves it should change. Evidence history: *Why added:* removes a repeated decision on ~97% of migration-phase lines. *Evidence:* 456-line category-repetition query, 2026-08-02, migration context. *Re-evaluate:* after migration completes, re-run the query on post-migration lines only; keep, change, or revert (`loopStart()`, one line) based on what that shows — not on assumptions.
 
 **Future Rule:** now Standing Rule R6 — classify operational context before any measurement drives permanent design.
