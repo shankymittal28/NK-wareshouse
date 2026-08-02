@@ -30,3 +30,11 @@ Therefore: never preserve a feature because of history; never remove a feature b
 - **Temporary vs representative evidence:** temporary-phase evidence may improve that phase; permanent design requires representative evidence.
 - **Evidence expiration & re-evaluation triggers:** dated evidence with explicit re-measurement conditions; confidence downgrades when context shifts.
 - **Worked example:** NK Warehouse L006 (sticky item-type loop) — migration-phase evidence, feature retained, post-migration re-evaluation trigger recorded.
+
+---
+
+## Meta-Governance — Structure Follows Reality (2026-08-02)
+
+**A new layer in the MAIOS knowledge architecture may only be created when reality repeatedly produces knowledge that has no natural home in the existing architecture.** We never create structure hoping reality will fill it. The Foundation must remain smaller than our imagination until reality forces it to grow.
+
+**Deferred layer — Design Principles (hypothesis on record, document NOT created).** A cross-project heuristics layer (product/UX philosophy, engineering and operational heuristics) becomes necessary only when multiple independent projects repeatedly produce reusable heuristics that are: not constitutional laws · not learning-system mechanics · no longer project-specific. Earliest observable trigger: a second MAIOS project imports or independently rediscovers a rule from another project's Learnings. Until that is observed, no additional structure is introduced.
