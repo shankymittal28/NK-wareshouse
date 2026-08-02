@@ -60,17 +60,17 @@ button,input,select{font-family:inherit;font-size:16px}
 .subline{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--mut);margin-top:2px}
 .pend{color:var(--amber);font-weight:600}.undo{background:none;border:none;color:var(--sky);font-size:12.5px;font-weight:700}
 .recent{display:flex;gap:8px;overflow-x:auto;padding-top:6px}.recent .r{flex:0 0 auto;background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;white-space:nowrap}.recent .r span{color:var(--mut);font-weight:500}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.stat{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:12px 6px;text-align:center}
-.stat b{display:block;font-size:20px;font-weight:800}.stat span{display:block;font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
 .valcard{background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:14px 16px;margin-bottom:10px}
 .valcard .vlab{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
 .valcard .vlab span{display:inline;font-weight:500;text-transform:none;letter-spacing:0;color:var(--mut2);font-size:11px}
 .valcard .vnum{font-size:30px;font-weight:800;color:var(--ink);margin-top:3px;letter-spacing:-.01em}
+.valcard .vmeta{font-size:13px;color:var(--mut);margin-top:6px}
+.valcard .vmeta b{color:var(--ink);font-weight:700}
 .obtns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .obtn{flex:1;min-width:44%;background:var(--panel);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:13px 12px;font-size:14px;font-weight:700}.obtn.go{background:var(--grad);border-color:transparent;color:#fff}
 .searchbar{width:100%;font-size:15px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);background:var(--well);color:var(--ink);outline:none;margin-bottom:10px}
 .fchips{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px}
+.fchips:empty{display:none}
 .fchip{flex:0 0 auto;background:var(--panel);border:1px solid var(--hair);color:var(--mut);border-radius:99px;padding:11px 14px;font-size:13px;font-weight:600}.fchip.on{background:rgba(99,102,241,.18);color:var(--ink);border-color:rgba(99,102,241,.55)}
 .row{display:flex;gap:12px;background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:10px;margin-bottom:9px}
 .row .thumb{width:60px;height:60px;border-radius:12px;object-fit:cover;flex:0 0 auto;background:var(--panel2);display:grid;place-items:center;font-size:26px}
@@ -286,20 +286,13 @@ button,input,select{font-family:inherit;font-size:16px}
 </div>
 
 <div id="owner" class="wrap hide">
-  <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" onclick="ownerLogout()">&#128274; Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
-  <div class="valcard"><div class="vlab">Stock value <span>at your rates &middot; owner only</span></div><div class="vnum" id="stVal">&#8377;0</div></div>
-  <div class="stats">
-    <div class="stat"><b class="num" id="stEntries">0</b><span>Entries</span></div>
-    <div class="stat"><b class="num" id="stQty">0</b><span>Total pcs</span></div>
-    <div class="stat"><b class="num" id="stToday">0</b><span>Today</span></div>
-    <div class="stat"><b class="num" id="stZones">0</b><span>Zones</span></div>
-  </div>
+  <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
+  <div class="valcard"><div class="vlab">Stock value <span>at your rates</span></div><div class="vnum" id="stVal">&#8377;0</div><div class="vmeta"><b class="num" id="stQty">0</b> pcs in stock &middot; <b class="num" id="stToday">0</b> entries today</div></div>
   <div class="obtns">
-    <button class="obtn go" onclick="logAsOwner()">&#10133; Add stock</button>
-    <button class="obtn" onclick="newBill()">&#129534; Give out</button>
-    <button class="obtn" onclick="showKhata()">&#128210; Khata</button>
-    <button class="obtn" onclick="showManage()">&#9881; Manage</button>
-    <button class="obtn" onclick="loadStock()">&#8635; Refresh</button>
+    <button class="obtn go" onclick="logAsOwner()">+ Add stock</button>
+    <button class="obtn" onclick="newBill()">Give out</button>
+    <button class="obtn" onclick="showKhata()">Khata</button>
+    <button class="obtn" onclick="showManage()">Manage</button>
   </div>
   <div class="modew" id="ownerView"><button id="vwItems" class="on" onclick="setOwnerView('items')">Stock</button><button id="vwToday" onclick="setOwnerView('today')">Today</button><button id="vwLog" onclick="setOwnerView('log')">All entries</button></div>
   <input id="searchIn" class="searchbar" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
@@ -761,7 +754,7 @@ const inr=n=>{const v=Math.round(Number(n)||0);return (v<0?'-₹':'₹')+Math.ab
 async function showOwner(){ ['gate','add','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
 async function loadStock(){ const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]); stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); buildFilters(); updateStats(); renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
-function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stEntries').textContent=stock.length; $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>IST(s.created_at)===IST()).length; $('stZones').textContent=new Set(stock.map(s=>s.zone_name).filter(Boolean)).size; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); }
+function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>IST(s.created_at)===IST()).length; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); }
 function setOwnerView(v){ ownerView=v;
   $('vwItems').classList.toggle('on',v==='items'); $('vwToday').classList.toggle('on',v==='today'); $('vwLog').classList.toggle('on',v==='log');
   $('itemList').classList.toggle('hide',v!=='items'); $('todayList').classList.toggle('hide',v!=='today'); $('stockList').classList.toggle('hide',v!=='log');
@@ -799,7 +792,7 @@ function renderToday(){
   const outN=list.filter(s=>s.direction==='out').reduce((x,s)=>x+(Number(s.qty)||0),0);
   const who={}; list.forEach(s=>{ const n=s.logged_by||'—'; who[n]=(who[n]||0)+1; });
   const wholine=Object.keys(who).sort((a,b)=>who[b]-who[a]).map(n=>esc(n)+' '+who[n]).join(' · ');
-  let head='<div class="tdsum"><div><b>'+list.length+'</b><span>arrivals</span></div><div><b class="mint">'+inN+'</b><span>pcs in</span></div>'+(outN?'<div><b class="rose">'+outN+'</b><span>pcs out</span></div>':'')+'</div>'+(wholine?'<div class="tdwho">Logged by '+wholine+'</div>':'');
+  let head='<div class="tdsum"><div><b>'+list.length+'</b><span>entries</span></div><div><b class="mint">'+inN+'</b><span>pcs in</span></div>'+(outN?'<div><b class="rose">'+outN+'</b><span>pcs out</span></div>':'')+'</div>'+(wholine?'<div class="tdwho">Logged by '+wholine+'</div>':'');
   if(!list.length){ $('todayList').innerHTML='<div class="empty">Nothing logged today yet.</div>'; return; }
   const rows=list.map(s=>{ const tm=s.created_at?new Date(s.created_at).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:true}):''; const out=s.direction==='out';
     const th=thumbHTML(s,'tdth');
@@ -808,7 +801,7 @@ function renderToday(){
   $('todayList').innerHTML=head+rows; hydratePhotos($('todayList'));
 }
 function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(Boolean))];
-  $('filterChips').innerHTML=['<button class="fchip'+(!filter.category?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).join(''); }
+  $('filterChips').innerHTML=cats.length<2?'':['<button class="fchip'+(!filter.category?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).join(''); }
 function clearFilter(){ filter={}; buildFilters(); renderOwner(); }
 function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderOwner(); }
 function matchF(s,q){ if(filter.category&&s.category!==filter.category)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; }
