@@ -66,8 +66,9 @@ button,input,select{font-family:inherit;font-size:16px}
 .valcard .vnum{font-size:30px;font-weight:800;color:var(--ink);margin-top:3px;letter-spacing:-.01em}
 .valcard .vmeta{font-size:13px;color:var(--mut);margin-top:6px}
 .valcard .vmeta b{color:var(--ink);font-weight:700}
-.vnote{color:var(--amber);font-weight:600}
+.vnote{color:var(--amber);font-weight:600;white-space:nowrap}
 .vnote.bad{color:var(--rose)}
+#staleNote,#khStale{color:var(--rose)}
 .iconlink.busy{opacity:.55;pointer-events:none;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.iconlink.busy{animation:none}}
@@ -762,12 +763,14 @@ async function showOwner(){ ['gate','add','manage','khata','bill'].forEach(i=>$(
 async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('busy'); if(!stock.length){ $('itemList').innerHTML='<div class="empty">Loading&hellip;</div>'; }
   const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]);
   if(rb)rb.classList.remove('busy');
-  loadFailed=(s===null); const sn=$('staleNote');
+  loadFailed=(s===null||rt===null); const sn=$('staleNote');
   if(loadFailed&&stock.length){ if(sn)sn.classList.remove('hide'); toast("Couldn't refresh — showing older data",'err'); return; }
   if(sn)sn.classList.add('hide');
-  stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); _lastLoad=Date.now(); buildFilters(); updateStats(); document.querySelector('#owner .vmeta').classList.toggle('hide',loadFailed&&!stock.length); if(loadFailed){ $('stVal').textContent='—'; } renderOwner(); }
+  if(!loadFailed){ stock=s; rates={}; rt.forEach(r=>rates[r.k]=Number(r.rate)||0); _lastLoad=Date.now(); }
+  else { stock=[]; rates={}; }
+  buildFilters(); updateStats(); document.querySelector('#owner .vmeta').classList.toggle('hide',loadFailed); if(loadFailed){ $('stVal').textContent='—'; } renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
-function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net; let tIn=0,tOut=0; stock.forEach(s=>{ if(IST(s.created_at)===IST()){ if(s.direction==='out')tOut+=Number(s.qty)||0; else tIn+=Number(s.qty)||0; } }); $('stIn').textContent=tIn; $('stOut').textContent=tOut; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); const os=Object.keys(g).filter(k=>g[k]<0).length; $('stWarn').textContent=os?('· '+os+' oversold'):''; const un=Object.keys(g).filter(k=>g[k]>0&&!(rates[k]>0)).length; $('stUnrated').textContent=un?('· '+un+' without rate'):''; }
+function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net.toLocaleString('en-IN'); let tIn=0,tOut=0; stock.forEach(s=>{ if(IST(s.created_at)===IST()){ if(s.direction==='out')tOut+=Number(s.qty)||0; else tIn+=Number(s.qty)||0; } }); $('stIn').textContent=tIn; $('stOut').textContent=tOut; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); const os=Object.keys(g).filter(k=>g[k]<0).length; $('stWarn').textContent=os?('· '+os+' oversold'):''; const un=Object.keys(g).filter(k=>g[k]>0&&!(rates[k]>0)).length; $('stUnrated').textContent=un?('· '+un+' without rate'):''; }
 function setOwnerView(v){ ownerView=v;
   $('vwItems').classList.toggle('on',v==='items'); $('vwToday').classList.toggle('on',v==='today'); $('vwLog').classList.toggle('on',v==='log');
   $('itemList').classList.toggle('hide',v!=='items'); $('todayList').classList.toggle('hide',v!=='today'); $('stockList').classList.toggle('hide',v!=='log');
