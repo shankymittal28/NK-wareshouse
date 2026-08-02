@@ -372,7 +372,7 @@ let me_={name:''}, origin='gate', mode='plywood';
 let src=localStorage.getItem('nkg_src')||'';
 let zones=[], sources=[], staff=[], opts={brand:[],customer:[],thickness:{},size:{},design:{}};
 let sel={brand:'',thickness:'',size:'',design:'',customer:'',cat:'',zone:'',photos:[],doortype:'',doorcust:''};
-let stock=[], filter={}, lastId=null;
+let stock=[], filter={}, lastId=null, loadFailed=false;
 
 async function api(path,o){
   o=o||{};
@@ -752,7 +752,11 @@ function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),
 let ownerView='items', groups=[], rates={};
 const inr=n=>{const v=Math.round(Number(n)||0);return (v<0?'-₹':'₹')+Math.abs(v).toLocaleString('en-IN');};
 async function showOwner(){ ['gate','add','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
-async function loadStock(){ const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]); stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); buildFilters(); updateStats(); renderOwner(); }
+async function loadStock(){ if(!stock.length){ $('itemList').innerHTML='<div class="empty">Loading&hellip;</div>'; }
+  const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]);
+  loadFailed=(s===null);
+  if(loadFailed&&stock.length){ toast("Couldn't refresh — showing older data",'err'); return; }
+  stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); buildFilters(); updateStats(); if(loadFailed){ $('stVal').textContent='—'; } renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
 function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>IST(s.created_at)===IST()).length; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); }
 function setOwnerView(v){ ownerView=v;
@@ -824,7 +828,7 @@ function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m
   stock.forEach(s=>{ if(!matchF(s,q))return; const k=keyOf(s); if(!m[k])m[k]={k:k,name:s.item_name||s.category||'—',category:s.category,brand:s.brand,thickness:s.thickness,size:s.size,design:s.design,inq:0,outq:0,ids:[]}; const g=m[k]; g.ids.push(s.id); if(s.direction==='out')g.outq+=Number(s.qty)||0; else g.inq+=Number(s.qty)||0; });
   groups=Object.values(m); groups.forEach((g,idx)=>{ g._i=idx; g.net=g.inq-g.outq; g.val=g.net*(rates[g.k]||0); });
   renderGroupChips();
-  if(!groups.length){ _buckets=[]; $('itemList').innerHTML='<div class="empty">No stock yet.</div>'; return; }
+  if(!groups.length){ _buckets=[]; $('itemList').innerHTML='<div class="empty">'+(loadFailed?"Couldn't load stock.<br>Check internet, then tap &#8635; to retry.":"No stock yet.")+'</div>'; return; }
   const _num=v=>{const n=parseFloat(String(v==null?'':v));return isNaN(n)?0:n;};
   const _area=sz=>{const p=String(sz||'').split(/[x×X*]/);return p.length<2?0:_num(p[0])*_num(p[1]);};
   const bySeq=(a,b)=>_num(a.thickness)-_num(b.thickness)||_area(a.size)-_area(b.size)||(String(a.name)>String(b.name)?1:-1);
