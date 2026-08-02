@@ -1,4 +1,9 @@
-# Next Mission — Owner-side reliability (recorded 2026-08-02, not started)
+# Next Mission — Owner-side reliability (recorded 2026-08-02, updated after UX mission)
+
+> Update: the *display* half of the P0 was fixed in the Owner Dashboard UX
+> mission — stock and khata now show honest loading/failed/stale states, and
+> negative values render correctly. What remains below is the *functional*
+> half: guarding the data itself.
 
 Findings from the dual-agent design review that are **functional, not visual** —
 explicitly excluded from the owner-visuals branch and queued for the next mission.
@@ -20,9 +25,12 @@ snapshot, and show a "couldn't refresh — showing older numbers" banner.
 - `.xdel` delete targets on log rows measure ~21×24px (too small to tap safely).
 
 ## P2 — Smaller functional items
-- Refresh gives no visible feedback; owner lists have no loading state.
 - View/filter/group-by state resets on every load (no persistence).
-- "Today" arrivals tile counts give-outs too (`list.length` counts both directions).
-- Khata "advance" is shown in green although it is goods owed to a customer.
-- `user-scalable=no` blocks pinch-zoom (WCAG 1.4.4) — trivial to change but it
-  alters page behavior, so it belongs in this mission, not the visual one.
+- Owner surfaces have no pending-sync indicator (⏳ exists only on the staff
+  add screen) — the owner can't see queued offline writes.
+- Khata has no persistent stale-data badge (stock value card now has one).
+- On a failed empty load, the value-card meta line still shows "0 pcs · 0
+  entries today" between the '—' headline and the error message.
+- Done in UX mission: refresh feedback, loading states, honest failure
+  states, 'arrivals'→'entries' label, advance recolored sky, pinch-zoom
+  restored.
