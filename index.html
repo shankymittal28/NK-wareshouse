@@ -13,7 +13,7 @@
 <style>
 :root{--bg:#0b0b0f;--surface:#15151b;--well:#101016;--panel:#15151b;--panel2:#1d1d25;--ink:#f5f5f7;--mut:#9a9aa6;--mut2:#88888f;
   --hair:rgba(255,255,255,.09);--hair2:rgba(255,255,255,.16);
-  --indigo:#6366f1;--violet:#8b5cf6;--violet2:#a78bfa;--mint:#34d399;--amber:#f5b13d;--rose:#fb7185;--sky:#38bdf8;--grad:linear-gradient(135deg,#6366f1,#8b5cf6);}
+  --indigo:#6366f1;--violet:#8b5cf6;--violet2:#a78bfa;--mint:#34d399;--amber:#f5b13d;--rose:#fb7185;--sky:#38bdf8;--grad:linear-gradient(135deg,#5a5de9,#7f50e6);}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 :where(button,input,select):focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 html,body{margin:0;height:100%}
@@ -36,11 +36,11 @@ button,input,select{font-family:inherit;font-size:16px}
 .top .who{font-size:13px;color:var(--mut)}.top .who b{color:var(--ink)}
 .srcbtn{background:var(--panel);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:9px 12px;font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center}
 .srcbtn.need{border-color:var(--amber);color:var(--amber)}.srcbtn .lbl{color:var(--mut2);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-.iconlink{background:var(--panel);border:1px solid var(--hair);color:var(--mut);border-radius:12px;padding:9px 11px;font-size:13px;font-weight:600}
+.iconlink{background:var(--panel);border:1px solid var(--hair);color:var(--mut);border-radius:12px;padding:9px 11px;font-size:13px;font-weight:600;min-height:40px}
 .card{background:transparent;border:none;padding:0;display:flex;flex-direction:column;gap:22px}
 .save.outbtn{background:var(--rose);color:#2a0a12;box-shadow:0 10px 24px -8px rgba(251,113,133,.5)}
 .modew{display:flex;background:var(--panel2);border:1px solid var(--hair);border-radius:12px;padding:4px}
-.modew button{flex:1;background:none;border:none;color:var(--mut);font-size:15px;font-weight:700;padding:11px 6px;border-radius:9px}
+.modew button{flex:1;background:none;border:none;color:var(--mut);font-size:15px;font-weight:700;padding:13px 6px;border-radius:9px}
 .modew button.on{background:rgba(99,102,241,.22);box-shadow:inset 0 0 0 1px rgba(99,102,241,.55);color:var(--ink)}
 .lab{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);margin-bottom:11px}
 .lab .opt{color:var(--mut2);font-weight:600;text-transform:none;letter-spacing:0}
@@ -66,6 +66,10 @@ button,input,select{font-family:inherit;font-size:16px}
 .valcard .vnum{font-size:30px;font-weight:800;color:var(--ink);margin-top:3px;letter-spacing:-.01em}
 .valcard .vmeta{font-size:13px;color:var(--mut);margin-top:6px}
 .valcard .vmeta b{color:var(--ink);font-weight:700}
+.vnote{color:var(--amber);font-weight:600}
+.iconlink.busy{opacity:.55;pointer-events:none;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.iconlink.busy{animation:none}}
 .obtns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .obtn{flex:1;min-width:44%;background:var(--panel);border:1px solid var(--hair);color:var(--ink);border-radius:12px;padding:13px 12px;font-size:14px;font-weight:700}.obtn.go{background:var(--grad);border-color:transparent;color:#fff}
 .searchbar{width:100%;font-size:15px;padding:12px 14px;border-radius:12px;border:1px solid var(--hair);background:var(--well);color:var(--ink);outline:none;margin-bottom:10px}
@@ -99,8 +103,9 @@ button,input,select{font-family:inherit;font-size:16px}
 .grab{width:38px;height:4px;border-radius:99px;background:var(--hair2);align-self:center}.sheet h4{margin:0;font-size:17px;font-weight:700}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%) translateY(16px);background:#16161c;border:1px solid var(--hair2);color:var(--ink);padding:12px 18px;border-radius:99px;font-size:14px;font-weight:700;z-index:60;opacity:0;pointer-events:none;transition:.2s;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}#toast.ok{color:var(--mint)}#toast.err{color:var(--rose)}
-.gbrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:14px 0 2px}
-.gblab{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin-right:2px}
+.gbrow{display:flex;gap:6px;overflow-x:auto;align-items:center;margin:12px 0 2px;padding-bottom:4px}
+.gbrow .fchip{flex:0 0 auto}
+.gblab{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin-right:2px;flex:0 0 auto;white-space:nowrap}
 .gblock{margin-bottom:20px}
 .ghd{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;width:100%;background:none;border:none;padding:4px 2px 9px;cursor:pointer;text-align:left;color:var(--ink)}
 .ghd-l{display:flex;align-items:center;gap:9px;min-width:0}
@@ -286,8 +291,8 @@ button,input,select{font-family:inherit;font-size:16px}
 </div>
 
 <div id="owner" class="wrap hide">
-  <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
-  <div class="valcard"><div class="vlab">Stock value <span>at your rates</span></div><div class="vnum" id="stVal">&#8377;0</div><div class="vmeta"><b class="num" id="stQty">0</b> pcs in stock &middot; <b class="num" id="stToday">0</b> entries today</div></div>
+  <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" id="refreshBtn" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
+  <div class="valcard"><div class="vlab">Stock value <span>at your rates</span></div><div class="vnum" id="stVal">&#8377;0</div><div class="vmeta"><b class="num" id="stQty">0</b> pcs in stock &middot; <b class="num" id="stToday">0</b> entries today <span id="stUnrated" class="vnote"></span> <span id="staleNote" class="vnote hide">&middot; old data &mdash; tap &#8635;</span></div></div>
   <div class="obtns">
     <button class="obtn go" onclick="logAsOwner()">+ Add stock</button>
     <button class="obtn" onclick="newBill()">Give out</button>
@@ -342,8 +347,8 @@ button,input,select{font-family:inherit;font-size:16px}
   <div class="valcard" style="margin-top:18px"><div class="vlab">Bill total <span id="billCount"></span></div><div class="vnum" id="billTotal">&#8377;0</div></div>
   <button class="save" id="billSaveBtn" style="width:100%;margin-top:14px" onclick="saveBill()">&#10003; Save &amp; give out</button>
 </div>
-<div id="sheet" onclick="if(event.target.id==='sheet')closeSheet()"><div class="sheet" id="sheetInner"></div></div>
-<div id="toast"></div>
+<div id="sheet" onclick="if(event.target.id==='sheet')closeSheet()"><div class="sheet" id="sheetInner" role="dialog" aria-modal="true"></div></div>
+<div id="toast" role="status" aria-live="polite"></div>
 <div id="lightbox" onclick="closeLb(event)">
   <button class="lbx" onclick="closeLb()" aria-label="Close">&times;</button>
   <button id="lbPrev" class="lbnav hide" onclick="lbGo(-1,event)" aria-label="Previous">&#8249;</button>
@@ -372,7 +377,7 @@ let me_={name:''}, origin='gate', mode='plywood';
 let src=localStorage.getItem('nkg_src')||'';
 let zones=[], sources=[], staff=[], opts={brand:[],customer:[],thickness:{},size:{},design:{}};
 let sel={brand:'',thickness:'',size:'',design:'',customer:'',cat:'',zone:'',photos:[],doortype:'',doorcust:''};
-let stock=[], filter={}, lastId=null, loadFailed=false;
+let stock=[], filter={}, lastId=null, loadFailed=false, khLoadFailed=false;
 
 async function api(path,o){
   o=o||{};
@@ -752,13 +757,15 @@ function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),
 let ownerView='items', groups=[], rates={};
 const inr=n=>{const v=Math.round(Number(n)||0);return (v<0?'-₹':'₹')+Math.abs(v).toLocaleString('en-IN');};
 async function showOwner(){ ['gate','add','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
-async function loadStock(){ if(!stock.length){ $('itemList').innerHTML='<div class="empty">Loading&hellip;</div>'; }
+async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('busy'); if(!stock.length){ $('itemList').innerHTML='<div class="empty">Loading&hellip;</div>'; }
   const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]);
-  loadFailed=(s===null);
-  if(loadFailed&&stock.length){ toast("Couldn't refresh — showing older data",'err'); return; }
+  if(rb)rb.classList.remove('busy');
+  loadFailed=(s===null); const sn=$('staleNote');
+  if(loadFailed&&stock.length){ if(sn)sn.classList.remove('hide'); toast("Couldn't refresh — showing older data",'err'); return; }
+  if(sn)sn.classList.add('hide');
   stock=s||[]; rates={}; (rt||[]).forEach(r=>rates[r.k]=Number(r.rate)||0); buildFilters(); updateStats(); if(loadFailed){ $('stVal').textContent='—'; } renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
-function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>IST(s.created_at)===IST()).length; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); }
+function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net; $('stToday').textContent=stock.filter(s=>IST(s.created_at)===IST()).length; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); const un=Object.keys(g).filter(k=>g[k]>0&&!(rates[k]>0)).length; $('stUnrated').textContent=un?('· '+un+' without rate'):''; }
 function setOwnerView(v){ ownerView=v;
   $('vwItems').classList.toggle('on',v==='items'); $('vwToday').classList.toggle('on',v==='today'); $('vwLog').classList.toggle('on',v==='log');
   $('itemList').classList.toggle('hide',v!=='items'); $('todayList').classList.toggle('hide',v!=='today'); $('stockList').classList.toggle('hide',v!=='log');
@@ -834,7 +841,7 @@ function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m
   const bySeq=(a,b)=>_num(a.thickness)-_num(b.thickness)||_area(a.size)-_area(b.size)||(String(a.name)>String(b.name)?1:-1);
   const bySeqFlat=(a,b)=>String(a.brand||'~').localeCompare(String(b.brand||'~'))||bySeq(a,b);
   if(!groupBy){ _buckets=[]; $('itemList').innerHTML='<div class="glist" style="border-top:none">'+groups.slice().sort(bySeqFlat).map(_itemRow).join('')+'</div>'; return; }
-  const NONE={brand:'Doors / other',thickness:'No thickness',size:'No size',design:'Plywood / other',category:'Uncategorised'};
+  const NONE={brand:'No brand',thickness:'No thickness',size:'No size',design:'No design',category:'Uncategorised'};
   const bk={}; groups.forEach(g=>{ const key=((g[groupBy]!=null?g[groupBy]:'')+'').trim()||(NONE[groupBy]||'Other'); (bk[key]=bk[key]||[]).push(g); });
   const sum=(arr,f)=>arr.reduce((x,g)=>x+f(g),0); const bv={},bp={};
   Object.keys(bk).forEach(k=>{ bv[k]=sum(bk[k],g=>g.val); bp[k]=sum(bk[k],g=>g.net); });
@@ -846,7 +853,7 @@ function renderItems(){ const q=($('searchIn').value||'').toLowerCase(); const m
   $('itemList').innerHTML=order.map((key,bi)=>{ const items=bk[key].slice().sort(bySeq), pcs=bp[key], val=bv[key], isC=!!collapsed[groupBy+'::'+key];
     const rt=val?('<span class="gval'+(val<0?' neg':'')+'">'+inr(val)+'</span>'):('<span class="gval pcs'+(pcs<0?' neg':'')+'">'+pcs+' pcs</span>');
     const meta=items.length+' item'+(items.length!==1?'s':'')+(val?' &middot; '+pcs+' pcs':'');
-    const head='<button class="ghd'+(isC?' col':'')+'" onclick="toggleGroup('+bi+')"><div class="ghd-l"><span class="gcar">&#9662;</span><span class="gname">'+esc(key)+'</span></div><div class="ghd-r">'+rt+'<span class="gmeta">'+meta+'</span></div></button>';
+    const head='<button class="ghd'+(isC?' col':'')+'" aria-expanded="'+(isC?'false':'true')+'" onclick="toggleGroup('+bi+')"><div class="ghd-l"><span class="gcar">&#9662;</span><span class="gname">'+esc(key)+'</span></div><div class="ghd-r">'+rt+'<span class="gmeta">'+meta+'</span></div></button>';
     const bar=val?'<div class="gbar"><i style="width:'+Math.max(5,Math.round(val/maxv*100))+'%"></i></div>':'';
     return '<div class="gblock">'+head+bar+(isC?'':'<div class="glist">'+items.map(_itemRow).join('')+'</div>')+'</div>'; }).join('');
 }
@@ -892,13 +899,17 @@ async function deleteStock(id){ if(!confirm('Remove this entry?'))return; await 
 /* ---------- Khata (customer dues) ---------- */
 let customers=[], ledger=[], khCust=null, _khList=[];
 async function showKhata(){ ['gate','add','owner','manage','bill'].forEach(i=>$(i).classList.add('hide')); khCust=null; $('khata').classList.remove('hide'); await loadKhata(); }
-async function loadKhata(){ const [c,l]=await Promise.all([api("/rest/v1/nkg_customers?select=*&order=name.asc"),api("/rest/v1/nkg_ledger?select=*&order=created_at.asc")]); customers=c||[]; ledger=l||[];
+async function loadKhata(){ const [c,l]=await Promise.all([api("/rest/v1/nkg_customers?select=*&order=name.asc"),api("/rest/v1/nkg_ledger?select=*&order=created_at.asc")]);
+  khLoadFailed=(c===null||l===null);
+  if(khLoadFailed&&ledger.length){ toast("Couldn't refresh — showing older data",'err'); }
+  else if(!khLoadFailed){ customers=c||[]; ledger=l||[]; }
+  else { customers=[]; ledger=[]; }
   if(khCust){ $('khataMain').classList.add('hide'); $('khataCust').classList.remove('hide'); renderCust(); } else { $('khataCust').classList.add('hide'); $('khataMain').classList.remove('hide'); renderKhata(); } }
 function khBalances(){ const b={}; ledger.forEach(e=>{ const n=e.customer; b[n]=(b[n]||0)+(e.kind==='payment'?-1:1)*(Number(e.amount)||0); }); return b; }
 function renderKhata(){ const b=khBalances(); const names=new Set(customers.map(c=>c.name)); Object.keys(b).forEach(n=>names.add(n));
-  const q=($('khSearch').value||'').toLowerCase(); let total=0; Object.keys(b).forEach(n=>{ if(b[n]>0.5)total+=b[n]; }); $('khTotal').textContent=inr(total);
+  const q=($('khSearch').value||'').toLowerCase(); let total=0; Object.keys(b).forEach(n=>{ if(b[n]>0.5)total+=b[n]; }); $('khTotal').textContent=(khLoadFailed&&!ledger.length)?'—':inr(total);
   _khList=[...names].filter(n=>n&&n.toLowerCase().includes(q)).map(n=>({name:n,bal:b[n]||0})).sort((a,b)=>b.bal-a.bal||(a.name>b.name?1:-1));
-  if(!_khList.length){ $('khataList').innerHTML='<div class="empty">No customers yet. Give out stock with a sale rate to start a khata.</div>'; return; }
+  if(!_khList.length){ $('khataList').innerHTML='<div class="empty">'+((khLoadFailed&&!ledger.length)?"Couldn't load khata.<br>Check internet, then <button class=\"linkbtn\" onclick=\"loadKhata()\">try again</button>.":"No customers yet. Give out stock with a sale rate to start a khata.")+'</div>'; return; }
   $('khataList').innerHTML=_khList.map((c,i)=>{ const settled=Math.abs(c.bal)<0.5, due=c.bal>0;
     return '<button class="khrow" onclick="openCust('+i+')"><div class="khn">'+esc(c.name)+'</div><div class="khb '+(settled?'set':(due?'due':'adv'))+'">'+(settled?'settled':'<b>'+inr(Math.abs(c.bal))+'</b> '+(due?'due':'adv'))+'</div></button>'; }).join('');
 }
