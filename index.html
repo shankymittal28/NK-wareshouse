@@ -552,6 +552,7 @@ function flowFor(){ let attrs = mode==='plywood'?['brand','thick','size'] : mode
   const tail = mode==='door'?[] : ['qty'];
   if(dir==='in') return ['dir','source','mode'].concat(attrs).concat(tail).concat(mode==='door'?['place']:[]);
   return ['dir','mode'].concat(attrs).concat(tail).concat(['review']); }
+function loopStart(){ return mode==='plywood'?'brand':(mode==='door'?'doortype':'cat'); }
 function wizGo(k){ wizKey=k; renderWiz(); }
 function wizNext(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>=0&&i<f.length-1)wizGo(f[i+1]); }
 function wizPrev(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>0)wizGo(f[i-1]); else wizGo('dir'); }
@@ -587,7 +588,7 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   pushRecentItem({mode:'door',doortype:doorBatch[0].doortype,design:kd,size:doorBatch[0].size,name:[doorBatch[0].doortype,kd,doorBatch[0].size].filter(Boolean).join(' ')});
   const n=doorBatch.length; toast(queued?('फ़ोन में सेव ('+queued+') — बाद में'):('सेव हुआ ✓ '+n+' साइज़'),queued?'err':'ok');
   _lastSave={txt:(kd||'Door')+' — '+n+' साइज़', ok:!queued};
-  doorBatch=[]; resetItemAll(); refreshToday(); wizGo('mode'); }
+  doorBatch=[]; resetItemAll(); refreshToday(); wizGo(loopStart()); }
 
 function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
   if(mode==='door')return [sel.design,sel.size].filter(Boolean).join(' ');
@@ -630,8 +631,8 @@ function stepHTML(k){
     +'<button class="bigopt" onclick="setMode(\'plywood\')"><span class="ic">🪵</span><span class="tx">प्लाईवुड<span class="sub">ब्रांड · मोटाई · साइज़ · Plywood</span></span></button>'
     +'<button class="bigopt" onclick="setMode(\'door\')"><span class="ic">🚪</span><span class="tx">दरवाज़ा<span class="sub">डिज़ाइन · साइज़ · Door</span></span></button>'
     +'<button class="bigopt" onclick="setMode(\'other\')"><span class="ic">📦</span><span class="tx">अन्य<span class="sub">हार्डवेयर, लैमिनेट, ग्लास… · Other</span></span></button></div>'+recentQuickHTML();
-  if(k==='doortype'){ const l=(opts.doortype&&opts.doortype.door)||[]; return '<div class="wq">कौन सा दरवाज़ा?</div><div class="wqs">Door type</div><div class="chips big">'+l.map(o=>'<button class="chip'+(sel.doortype===o.name?' on':'')+'" onclick="setDoorType(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join('')+'<button class="chip add" onclick="newDoorType()">＋ नया</button></div>'; }
-  if(k==='brand') return '<div class="wq">कौन सा ब्रांड?</div><div class="wqs">Which brand?</div><div class="chips big">'+brandChipsHTML()+'</div>';
+  if(k==='doortype'){ const l=(opts.doortype&&opts.doortype.door)||[]; return lastSaveHTML()+'<div class="wq">कौन सा दरवाज़ा?</div><div class="wqs">Door type</div><div class="chips big">'+l.map(o=>'<button class="chip'+(sel.doortype===o.name?' on':'')+'" onclick="setDoorType(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join('')+'<button class="chip add" onclick="newDoorType()">＋ नया</button></div>'; }
+  if(k==='brand') return lastSaveHTML()+'<div class="wq">कौन सा ब्रांड?</div><div class="wqs">Which brand?</div><div class="chips big">'+brandChipsHTML()+'</div>';
   if(k==='thick') return '<div class="wq">मोटाई?</div><div class="wqs">Thickness</div><div class="chips big">'+optChips((opts.thickness&&opts.thickness.plywood),{key:'thickness',fn:'setThick'})+'<button class="chip add" onclick="newOpt(\'thickness\')">＋</button></div>';
   if(k==='size') return '<div class="wq">साइज़?</div><div class="wqs">Size</div><div class="chips big">'+optChips((opts.size&&opts.size.plywood),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
   if(k==='design') return '<div class="wq">डिज़ाइन कोड</div><div class="wqs">टाइप करें या नीचे से चुनें · Design</div><input id="designVis" class="wqbig" placeholder="जैसे KP7098" autocapitalize="characters" autocomplete="off" value="'+esc(sel.design||'')+'" oninput="onDesignType(this.value)">'
@@ -642,7 +643,7 @@ function stepHTML(k){
     +'<div class="wsub">आम साइज़ · Common</div><div class="chips">'+doorPresetHTML()+'</div>'
     +(doorBatch.length?('<div class="wsub">जोड़े गए · '+doorBatch.length+'</div>'+doorRowsHTML()):'')
     +'<button class="wnext" onclick="doorNext()">'+(dir==='in'?'आगे ›':'आगे › देखें और दें')+(doorBatch.length?(' ('+doorBatch.length+')'):'')+'</button>';
-  if(k==='cat') return '<div class="wq">क्या चीज़ है?</div><div class="wqs">What is it?</div><div class="chips big">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
+  if(k==='cat') return lastSaveHTML()+'<div class="wq">क्या चीज़ है?</div><div class="wqs">What is it?</div><div class="chips big">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
   if(k==='qty') return '<div class="wqitem">'+esc(itemText())+'</div><div class="wq">कितने?</div><div class="wqs">पीस · How many</div>'
     +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:12px" placeholder="नाम / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx();updQSave()">':'')
     +'<div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">−</button><input id="qtyVis" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने" value="'+(Number($('qtyIn').value)||'')+'" oninput="onQtyType(this.value)" onkeydown="if(event.key===\'Enter\')qtyNext()"><button onclick="stepQty(1)">＋</button></div></div>'
@@ -684,7 +685,7 @@ async function saveIn(){
   const kd=sel.design;
   if(mode==='door'&&kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts()); }
   window._saving=false;
-  resetItemAll(); refreshToday(); wizGo('mode');
+  resetItemAll(); refreshToday(); wizGo(loopStart());
 }
 
 /* ---- save (OUT, multi-item) ---- */

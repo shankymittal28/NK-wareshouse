@@ -53,6 +53,7 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 | 003 | Receiving | Rack unused because the warehouse isn't organized yet | Medium | Waiting | Wait |
 | 004 | Doors / photos | Near-zero photo use was broken *client-side* (camera launch + owner token), not the server pipeline | High | Active | Monitor |
 | 005 | Plywood | The post-quantity placement screen was dead weight | Medium | Active | Monitor |
+| 006 | Receiving | Item type repeats 97.4% — loop restarts at brand, not type | Medium | Active | Monitor |
 
 ---
 
@@ -119,3 +120,16 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 **New Understanding:** On incoming plywood/hardware it's pure waste. Made **quantity the final step** — completing it saves. Doors keep the placement/photo step; giving-out unchanged; reversible. *Justified by rack 0% + plywood-not-needing-photos, NOT by photo usage stats (invalid per L004).*
 **Business Impact:** Medium (every incoming line) · **Applies To:** Plywood, Receiving · **Status:** Active — deployed
 **Future Rule:** A step that produces nothing on the highest-frequency path is waste — remove it from that path, keep the capability reachable where it's used.
+
+---
+
+# Warehouse Learning 006
+
+**Date:** 2026-08-02 · **Workflow:** Receiving — item-type step ("कौन सी चीज़?")
+**Evidence (L1):** 456 consecutive incoming lines — the category repeats line-to-line **97.4%**; Plywood alone is 87.7% of lines. (Brand repeats only 36.8%, consistent with L002.)
+**Observation:** After every save the wizard re-asked the item type, which is a per-truck constant, not a per-line decision.
+**Root Cause:** Loop restarted one step too early — at a question whose answer almost never changes.
+**Old Belief:** Each line should re-confirm what kind of item it is.
+**New Understanding:** Item type is sticky like source (L001). The loop now restarts at the first attribute step (brand/door-type/category kept); changing type = one existing पीछे tap, costing 1 extra tap on ~2.6% of lines while saving a decision + tap on ~97.4%.
+**Business Impact:** Medium (every incoming line) · **Applies To:** Receiving, all products · **Status:** Active — deployed
+**Future Rule:** A wizard loop should restart at the first question whose answer actually changes line-to-line — measure repetition in production before deciding where the loop begins.
