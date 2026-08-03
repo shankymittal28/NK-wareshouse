@@ -379,7 +379,11 @@ const today=()=>new Date().toISOString().slice(0,10);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
 const CATS=["Hardware","Laminate","Mica","Adhesive","Glass","Other"];
-const QTYQUICK=[5,10,25,50,100];
+// Operational configuration — quantity fast-chips. The interaction model
+// (instant-commit chips + keyboard escape hatch) is permanent; these VALUES
+// are chosen from current operational evidence and are expected to change
+// as the warehouse's work changes. Evidence record: WAREHOUSE-LEARNINGS L007.
+const QTYQUICK=[1,2,3,4,5,10];
 
 let me_={name:''}, origin='gate', mode='plywood';
 let src=localStorage.getItem('nkg_src')||'';

@@ -147,3 +147,14 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 - **L006** (item type repeats 97.4% → loop restarts at brand) — **the evidence is temporary; the feature is not.** The implementation stays until representative post-migration data proves it should change. Evidence history: *Why added:* removes a repeated decision on ~97% of migration-phase lines. *Evidence:* 456-line category-repetition query, 2026-08-02, migration context. *Re-evaluate:* after migration completes, re-run the query on post-migration lines only; keep, change, or revert (`loopStart()`, one line) based on what that shows — not on assumptions.
 
 **Future Rule:** now Standing Rule R6 — classify operational context before any measurement drives permanent design.
+
+---
+
+# Warehouse Learning 007
+
+**Date:** 2026-08-02 · **Workflow:** Receiving/giving — quantity entry
+**Evidence (L1, migration context):** 456 incoming lines — preset chips [5,10,25,50,100] matched only **9.4%** of real quantities; **62.9% of lines have qty ≤ 4**; most common qty is 1 (163×), then 2 (77×), 3 (30×). Interaction analysis: a chip is one gesture on one surface (~<1s to pocket); typing is 3–4 taps across two surfaces with a keyboard layout shift (~3–5s), fixed overhead regardless of the number.
+**New Understanding:** **The interaction model is permanent; the numbers are operational configuration.** The feature is "fast-access quantity chips whose values are chosen from operational evidence" — today's values happen to be [1,2,3,4,5,10] (~72% one-gesture coverage). Instant commit retained (post-commit read-back = persistent ✓ line; undo = eraser); keyboard + sticky save = escape hatch; Enter = expert shortcut.
+**Business Impact:** Medium-high (majority of lines) · **Applies To:** Quantity entry, all products · **Status:** Active — deployed
+**Evidence history:** *Why:* majority path was paying keyboard overhead. *Assumptions:* migration-phase quantity distribution. *Re-evaluate:* post-migration, re-run the qty-distribution query and re-tune the chip VALUES only — the model stays unless interaction evidence (not frequency evidence) says otherwise.
+**Future Rule:** Configuration values inside a permanent interaction model are re-tuned from evidence, never hard-coded as truth.
