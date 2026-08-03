@@ -56,6 +56,7 @@ button,input,select{font-family:inherit;font-size:16px}
 .ghost{background:var(--panel2);border:1px solid var(--hair);color:var(--mut);border-radius:12px;padding:11px 13px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
 .ghost.on{border-color:var(--mint);color:var(--mint)}
 .optrow{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.save.stick{position:sticky;bottom:calc(env(safe-area-inset-bottom) + 10px);z-index:5}
 .save{background:var(--mint);color:#04241a;border:none;border-radius:15px;padding:18px;font-size:18px;font-weight:800;box-shadow:0 10px 24px -8px rgba(52,211,153,.5)}.save:active{transform:scale(.985)}.save:disabled{opacity:.5;box-shadow:none}
 .subline{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--mut);margin-top:2px}
 .pend{color:var(--amber);font-weight:600}.undo{background:none;border:none;color:var(--sky);font-size:12.5px;font-weight:700}
@@ -647,7 +648,7 @@ function stepHTML(k){
   if(k==='qty') return '<div class="wqitem">'+esc(itemText())+'</div><div class="wq">कितने?</div><div class="wqs">पीस · How many</div>'
     +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:12px" placeholder="नाम / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx();updQSave()">':'')
     +'<div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">−</button><input id="qtyVis" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने" value="'+(Number($('qtyIn').value)||'')+'" oninput="onQtyType(this.value)" onkeydown="if(event.key===\'Enter\')qtyNext()"><button onclick="stepQty(1)">＋</button></div></div>'
-    +'<div class="qbtns">'+QTYQUICK.map(q=>'<button class="chip" onclick="setQtyQuick('+q+')">'+q+'</button>').join('')+'</div>'+(dir==='in'?'<button class="save" id="qsave" onclick="qtyNext()">'+qsaveLabel()+'</button>':'<button class="wnext" onclick="qtyNext()">आगे ›</button>');
+    +'<div class="qbtns">'+QTYQUICK.map(q=>'<button class="chip" onclick="setQtyQuick('+q+')">'+q+'</button>').join('')+'</div>'+(dir==='in'?'<button class="save stick" id="qsave" onclick="qtyNext()">'+qsaveLabel()+'</button>':'<button class="wnext" onclick="qtyNext()">आगे ›</button>');
   if(k==='place') return '<div class="wq">और कुछ?</div><div class="wqs">ज़रूरी नहीं · फिर सेव करें</div>'
     +'<div class="wsub">कहाँ रखा? · Rack / Zone</div><div class="chips">'+zoneHTML()+'</div>'
     +'<div class="wsub">फ़ोटो · Photo</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 फ़ोटो</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
