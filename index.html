@@ -551,7 +551,7 @@ function fuzzyHit(q,name){ const n=normC(name), x=normC(q); if(!x)return 1; if(n
 function custSearch(q){ const el=$('custRes'); if(!el)return; const cur=($('outCust')&&$('outCust').value)||'';
   const hits=custSource().map(n=>({n:n,s:fuzzyHit(q,n)})).filter(h=>h.s>0).sort((a,b)=>b.s-a.s).slice(0,8);
   el.innerHTML=hits.map(h=>'<button class="chip'+(cur===h.n?' on':'')+'" onclick="setOutCust(\''+esc(h.n)+'\')">'+esc(h.n)+'</button>').join('')
-   +((q||'').trim()&&!hits.some(h=>normC(h.n)===normC(q))?'<button class="chip add" onclick="setOutCust(\''+esc((q||'').trim())+'\')">\u2795 \''+esc((q||'').trim())+'\' नया</button>':''); }
+   +((q||'').trim()&&!hits.length?'<button class="chip add" onclick="setOutCust(\''+esc((q||'').trim())+'\')">\u2795 \''+esc((q||'').trim())+'\' नया ग्राहक</button>':''); }
 function setOutCust(v){ sel.customer=v||''; if($('outCust'))$('outCust').value=v||''; wizNext(); }
 function newOutCust(){ const n=prompt('किसको? नाम:'); if(n===null)return; setOutCust((n||'').trim()); }
 function setDir(d){ dir=d; if(d==='out')outCart=[]; wizNext(); }
@@ -654,6 +654,7 @@ function stepHTML(k){
   if(k==='outwho'){ const cur=($('outCust')&&$('outCust').value)||'';
     const top=['\uD83C\uDFEA दुकान'].concat(recentCusts()).slice(0,6);
     const chips='<button class="chip'+(cur==='दुकान'?' on':'')+'" onclick="setOutCust(\'दुकान\')">\uD83C\uDFEA दुकान</button>'
+      +'<button class="chip'+(cur==='वर्कशॉप'?' on':'')+'" onclick="setOutCust(\'वर्कशॉप\')">\uD83C\uDFED वर्कशॉप</button>'
       +recentCusts().map(n=>'<button class="chip'+(cur===n?' on':'')+'" onclick="setOutCust(\''+esc(n)+'\')">'+esc(n)+'</button>').join('');
     return '<div class="wq">किसको जा रहा है?</div><div class="wqs">Who is taking it — टैप करें या खोजें</div>'
       +'<div class="chips big">'+chips+'</div>'
