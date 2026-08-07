@@ -1,0 +1,42 @@
+# MAIOS Learning System
+
+How MAIOS learns and evolves. The Constitution defines what software must be;
+this document defines how evidence changes it. Project-level reality lives in
+each project's Learnings file (e.g. NK Warehouse's `WAREHOUSE-LEARNINGS.md`).
+
+Status: validated in one project (NK Warehouse, 2026-08-02). Earns MAIOS-wide
+doctrine status only after surviving multiple independent projects — a gate
+this document applies to itself.
+
+## MAIOS Design Law — Evidence Has a Half-Life
+
+A feature and the evidence that justified it are different things.
+
+**Every feature must carry an evidence record:** why it was introduced · what evidence justified it · what assumptions that evidence depended on · under what future conditions it must be re-evaluated.
+
+**Evidence is never timeless.** Before any measurement justifies permanent design, classify the operational context that produced it: normal operation · seasonal variation · migration · cleanup · emergency · exceptional event · experiment. Evidence from a temporary phase may justify improving that phase, but never automatically becomes the basis of permanent product design.
+
+**When the phase ends, the evidence expires — the feature does not.** A feature remains until newer, more representative evidence demonstrates that another design serves reality better.
+
+Therefore: never preserve a feature because of history; never remove a feature because of history. Preserve or remove only because current evidence supports doing so.
+
+**Software evolves by replacing evidence, not by replacing opinions.**
+
+
+### Mechanics
+
+- **Evidence record per feature:** why introduced · evidence · assumptions · re-evaluation conditions.
+- **Operational-context classification** before trusting any measurement: normal · seasonal · migration · cleanup · emergency · exceptional · experiment.
+- **Temporary vs representative evidence:** temporary-phase evidence may improve that phase; permanent design requires representative evidence.
+- **Evidence expiration & re-evaluation triggers:** dated evidence with explicit re-measurement conditions; confidence downgrades when context shifts.
+- **Worked example:** NK Warehouse L006 (sticky item-type loop) — migration-phase evidence, feature retained, post-migration re-evaluation trigger recorded.
+
+---
+
+## Meta-Governance — Structure Follows Reality (2026-08-02)
+
+**A new layer in the MAIOS knowledge architecture may only be created when reality repeatedly produces knowledge that has no natural home in the existing architecture.** We never create structure hoping reality will fill it. The Foundation must remain smaller than our imagination until reality forces it to grow.
+
+**Deferred layer — Design Principles (hypothesis on record, document NOT created).** A cross-project heuristics layer (product/UX philosophy, engineering and operational heuristics) becomes necessary only when multiple independent projects repeatedly produce reusable heuristics that are: not constitutional laws · not learning-system mechanics · no longer project-specific. Earliest observable trigger: a second MAIOS project imports or independently rediscovers a rule from another project's Learnings. Until that is observed, no additional structure is introduced.
+
+**Foundation status — FROZEN (2026-08-02, owner decision).** The Foundation is an operational institution, not an active design project. Every project has two responsibilities: build software, and report evidence. Any future impulse of "the Foundation should say…" must become the question "what operational evidence proves that?" — if the evidence doesn't exist yet, record the observation in the project's Learnings and continue building. The Foundation changes only when multiple independent pieces of operational evidence force it.

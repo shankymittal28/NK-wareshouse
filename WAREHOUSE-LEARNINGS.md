@@ -28,6 +28,7 @@ Every investigation has two equally valid outputs — a **product change**, an *
 - **R3 — Zero usage can be a business-process gap, not a software gap.** Check Level-3 business context (ask the owner) before changing the feature. *(from L003)*
 - **R4 — A step that yields nothing on the highest-frequency path is waste.** Remove it from that path; keep the capability where it's actually used and reversible. *(from L005)*
 - **R5 — One friction, one improvement, one metric, one deploy, then stop.** Reality gets the next turn. BUILD / WAIT / REMOVE / FIX / DO NOTHING are all valid outcomes.
+- **R6 — Classify the operational context before trusting any production measurement.** Ask first: normal business · seasonal · migration · one-time cleanup · exceptional event? Temporary-phase evidence may justify building something that improves today's work — but it is the *evidence* that is temporary, never automatically the feature. Every feature carries its evidence history (why added · what evidence · when to re-evaluate), and its long-term fate is decided by future representative evidence, not by assumptions about the future. *(from the 2026-08-02 migration-bias correction)*
 
 ### Rule revisions
 When a Standing Rule changes, edit it above and record the supersession here — so there are never two contradictory rules active, and the reason for the change is preserved.
@@ -53,6 +54,7 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 | 003 | Receiving | Rack unused because the warehouse isn't organized yet | Medium | Waiting | Wait |
 | 004 | Doors / photos | Near-zero photo use was broken *client-side* (camera launch + owner token), not the server pipeline | High | Active | Monitor |
 | 005 | Plywood | The post-quantity placement screen was dead weight | Medium | Active | Monitor |
+| 006 | Receiving | Item type repeats 97.4% — loop restarts at brand, not type | Medium | Active | Monitor |
 
 ---
 
@@ -119,3 +121,40 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 **New Understanding:** On incoming plywood/hardware it's pure waste. Made **quantity the final step** — completing it saves. Doors keep the placement/photo step; giving-out unchanged; reversible. *Justified by rack 0% + plywood-not-needing-photos, NOT by photo usage stats (invalid per L004).*
 **Business Impact:** Medium (every incoming line) · **Applies To:** Plywood, Receiving · **Status:** Active — deployed
 **Future Rule:** A step that produces nothing on the highest-frequency path is waste — remove it from that path, keep the capability reachable where it's used.
+
+---
+
+# Warehouse Learning 006
+
+**Date:** 2026-08-02 · **Workflow:** Receiving — item-type step ("कौन सी चीज़?")
+**Evidence (L1):** 456 consecutive incoming lines — the category repeats line-to-line **97.4%**; Plywood alone is 87.7% of lines. (Brand repeats only 36.8%, consistent with L002.)
+**Observation:** After every save the wizard re-asked the item type, which is a per-truck constant, not a per-line decision.
+**Root Cause:** Loop restarted one step too early — at a question whose answer almost never changes.
+**Old Belief:** Each line should re-confirm what kind of item it is.
+**New Understanding:** Item type is sticky like source (L001). The loop now restarts at the first attribute step (brand/door-type/category kept); changing type = one existing पीछे tap, costing 1 extra tap on ~2.6% of lines while saving a decision + tap on ~97.4%.
+**Business Impact:** Medium (every incoming line) · **Applies To:** Receiving, all products · **Status:** Active — deployed
+**Future Rule:** A wizard loop should restart at the first question whose answer actually changes line-to-line — measure repetition in production before deciding where the loop begins.
+
+---
+
+## Context reclassification — 2026-08-02 (migration bias)
+
+**Owner correction:** NK Warehouse is currently in a **migration phase** — plywood is being moved first from old godowns (hence 87.7% plywood share and 97.4% category repetition), and the sources "Rice Mill 1/2/3, Dukaan, Transport" are temporary migration-verification labels that will disappear when migration completes. None of this represents the next 10 years of operations.
+
+**Reclassified as migration-context evidence (not permanent):**
+- **L001** (source per-truck constant) — re-verify with real suppliers post-migration.
+- **L002** (assorted plywood, 24s/line, repeat <10%) — re-measure with normal mixed-category deliveries.
+- **L006** (item type repeats 97.4% → loop restarts at brand) — **the evidence is temporary; the feature is not.** The implementation stays until representative post-migration data proves it should change. Evidence history: *Why added:* removes a repeated decision on ~97% of migration-phase lines. *Evidence:* 456-line category-repetition query, 2026-08-02, migration context. *Re-evaluate:* after migration completes, re-run the query on post-migration lines only; keep, change, or revert (`loopStart()`, one line) based on what that shows — not on assumptions.
+
+**Future Rule:** now Standing Rule R6 — classify operational context before any measurement drives permanent design.
+
+---
+
+# Warehouse Learning 007
+
+**Date:** 2026-08-02 · **Workflow:** Receiving/giving — quantity entry
+**Evidence (L1, migration context):** 456 incoming lines — preset chips [5,10,25,50,100] matched only **9.4%** of real quantities; **62.9% of lines have qty ≤ 4**; most common qty is 1 (163×), then 2 (77×), 3 (30×). Interaction analysis: a chip is one gesture on one surface (~<1s to pocket); typing is 3–4 taps across two surfaces with a keyboard layout shift (~3–5s), fixed overhead regardless of the number.
+**New Understanding:** **The interaction model is permanent; the numbers are operational configuration.** The feature is "fast-access quantity chips whose values are chosen from operational evidence" — today's values happen to be [1,2,3,4,5,10] (~72% one-gesture coverage). Instant commit retained (post-commit read-back = persistent ✓ line; undo = eraser); keyboard + sticky save = escape hatch; Enter = expert shortcut.
+**Business Impact:** Medium-high (majority of lines) · **Applies To:** Quantity entry, all products · **Status:** Active — deployed
+**Evidence history:** *Why:* majority path was paying keyboard overhead. *Assumptions:* migration-phase quantity distribution. *Re-evaluate:* post-migration, re-run the qty-distribution query and re-tune the chip VALUES only — the model stays unless interaction evidence (not frequency evidence) says otherwise.
+**Future Rule:** Configuration values inside a permanent interaction model are re-tuned from evidence, never hard-coded as truth.
