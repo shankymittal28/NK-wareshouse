@@ -537,6 +537,8 @@ async function newSrcWiz(){ const n=prompt('New source (truck / supplier):'); if
 async function newZoneInline(){ const n=prompt("New zone / rack:"); if(!n)return; const z=n.trim(); if(!z)return; if(!zones.find(x=>x.name===z)){ await api("/rest/v1/nkg_zones",{method:'POST',headers:HJ,body:JSON.stringify({name:z,created_by:me_.name})}); zones.push({name:z}); } sel.zone=z; renderWiz(); }
 
 /* ---- step selections (auto-advance) ---- */
+function setOutCust(v){ sel.customer=v||''; if($('outCust'))$('outCust').value=v||''; wizNext(); }
+function newOutCust(){ const n=prompt('किसको? नाम:'); if(n===null)return; setOutCust((n||'').trim()); }
 function setDir(d){ dir=d; if(d==='out')outCart=[]; wizNext(); }
 function setMode(m){ mode=m; doorBatch=[]; resetItemOnly(); wizNext(); }
 function setBrand(v){ sel.brand=v; wizNext(); }
@@ -556,7 +558,7 @@ function setZoneWiz(z){ sel.zone=(sel.zone===z?'':z); renderWiz(); }
 function flowFor(){ let attrs = mode==='plywood'?['brand','thick','size'] : mode==='door'?['doortype','design','doorsizes'] : ['cat'];
   const tail = mode==='door'?[] : ['qty'];
   if(dir==='in') return ['dir','source','mode'].concat(attrs).concat(tail).concat(mode==='door'?['place']:[]);
-  return ['dir','mode'].concat(attrs).concat(tail).concat(['review']); }
+  return ['dir','outwho','mode'].concat(attrs).concat(tail).concat(['review']); }
 function loopStart(){ return mode==='plywood'?'brand':(mode==='door'?'doortype':'cat'); }
 function wizGo(k){ wizKey=k; renderWiz(); }
 function wizNext(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>=0&&i<f.length-1)wizGo(f[i+1]); }
@@ -634,6 +636,12 @@ function stepHTML(k){
     const chips=(others.length?others.map(s=>'<button class="chip'+'" onclick="setSrc(\''+esc(s.name)+'\')">'+esc(s.name)+'</button>').join(''):(sources.length?'':'<span class="opt" style="color:var(--mut2)">अभी कोई सोर्स नहीं।</span>'))+'<button class="chip add" onclick="newSrcWiz()">＋ नया (Add)</button>';
     if(src) return '<div class="wq">माल कहाँ से आया?</div><div class="wqs">Where from</div><div class="bigwrap"><button class="bigopt din" onclick="wizNext()"><span class="ic">&#128666;</span><span class="tx">'+esc(src)+' से — वही &#10003;<span class="sub">पिछली बार जैसा · Same as before</span></span></button></div><div class="wsub">या कहीं और से · Or from</div><div class="chips">'+chips+'</div>';
     return '<div class="wq">माल कहाँ से आया?</div><div class="wqs">एक बार टैप करें · Where from</div><div class="chips big">'+chips+'</div>'; }
+  if(k==='outwho'){ const cs=(opts.customer||[]).slice(0,8); const cur=($('outCust')&&$('outCust').value)||'';
+    return '<div class="wq">किसको जा रहा है?</div><div class="wqs">Who is taking it — टैप करें</div><div class="chips big">'
+    +'<button class="chip'+(cur==='दुकान'?' on':'')+'" onclick="setOutCust(\'दुकान\')">🏪 दुकान</button>'
+    +cs.map(c=>'<button class="chip'+(cur===c.name?' on':'')+'" onclick="setOutCust(\''+esc(c.name)+'\')">'+esc(c.name)+'</button>').join('')
+    +'<button class="chip add" onclick="newOutCust()">＋ नया नाम</button></div>'
+    +'<button class="wskip" onclick="setOutCust(\'\')">पता नहीं — बाद में लिखेंगे ›</button>'; }
   if(k==='mode') return lastSaveHTML()+'<div class="wq">कौन सी चीज़?</div><div class="wqs">What kind of item?</div><div class="bigwrap">'
     +'<button class="bigopt" onclick="setMode(\'plywood\')"><span class="ic">🪵</span><span class="tx">प्लाईवुड<span class="sub">ब्रांड · मोटाई · साइज़ · Plywood</span></span></button>'
     +'<button class="bigopt" onclick="setMode(\'door\')"><span class="ic">🚪</span><span class="tx">दरवाज़ा<span class="sub">डिज़ाइन · साइज़ · Door</span></span></button>'
