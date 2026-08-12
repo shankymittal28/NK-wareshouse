@@ -210,6 +210,19 @@ button,input,select{font-family:inherit;font-size:16px}
 .wctag.din{color:var(--mint);border-color:rgba(52,211,153,.4)}
 .wctag.dout{color:var(--rose);border-color:rgba(251,113,133,.4)}
 .wctag.item{color:var(--ink)}
+.qpnum{font-size:54px;font-weight:800;text-align:center;letter-spacing:-.02em;min-height:66px;font-variant-numeric:tabular-nums}
+.qpnum.empty{color:var(--mut2)}
+.qpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
+.qpad button{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:14px;font-size:26px;font-weight:700;padding:14px 0;min-height:58px}
+.qpad button:active{transform:scale(.96)}
+#stamp{position:fixed;inset:0;background:rgba(7,34,24,.96);display:none;place-items:center;z-index:90;font-size:30px;font-weight:800;color:var(--mint);text-align:center}
+#stamp.on{display:grid}
+.ladder{display:flex;flex-direction:column;gap:9px}
+.ladder .chip{width:100%;text-align:left;font-size:19px;font-weight:700;padding:16px 18px;border-radius:14px;min-height:56px}
+.ladder .chip.add{font-size:15px;font-weight:600;min-height:48px}
+.wizhead{font-size:14px;font-weight:700;color:var(--mut);min-height:20px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wizhead b{color:var(--ink)}
+.wizhead .hin{color:var(--mint)}.wizhead .hout{color:var(--rose)}
 .wq{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:2px 0 3px}
 .wqitem{font-size:21px;font-weight:800;letter-spacing:-.01em;color:var(--mint);margin-bottom:2px;word-break:break-word}
 .lastsave{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.35);color:var(--mint);border-radius:12px;padding:10px 13px;font-size:14px;font-weight:700;margin-bottom:12px}
@@ -458,7 +471,12 @@ let _resume=null;
 function tryResume(n){ try{ const d=JSON.parse(localStorage.getItem('nkg_wiz')||'null');
   if(d && d.me===n && (Date.now()-d.t)<3600000 && d.wizKey && d.wizKey!=='dir'){ _resume=d; } else { _resume=null; } }catch(e){ _resume=null; } }
 function qsaveLabel(){ const q=Number($('qtyIn')&&$('qtyIn').value)||0; return q?('✓ सेव — '+q+' · '+itemText()):'✓ सेव करें'; }
-function updQSave(){ const b=$('qsave'); if(b)b.textContent=qsaveLabel(); const w=document.querySelector('.wqitem'); if(w)w.textContent=itemText(); }
+function updQSave(){ const b=$('qsave'); if(b)b.textContent=qsaveLabel(); const w=document.querySelector('.wqitem'); if(w)w.textContent=itemText();
+  const n=$('qpNum'); if(n){ const q=Number($('qtyIn').value)||0; n.textContent=q||'0'; n.classList.toggle('empty',!q); } }
+function qpDigit(d){ let v=(''+(($('qtyIn')&&$('qtyIn').value)||'')).replace(/\D/g,''); if(v.length>=5)return; v=v+d; onQtyType(v.replace(/^0+(?=\d)/,'')); }
+function qpBack(){ let v=(''+(($('qtyIn')&&$('qtyIn').value)||'')); onQtyType(v.slice(0,-1)); }
+function qpClear(){ onQtyType(''); }
+function showStamp(t){ let el=$('stamp'); if(!el){ el=document.createElement('div'); el.id='stamp'; document.body.appendChild(el); } el.textContent=t; el.classList.add('on'); setTimeout(()=>el.classList.remove('on'),500); }
 
 async function showAdd(){
   ['gate','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('add').classList.remove('hide');
@@ -537,6 +555,21 @@ async function newSrcWiz(){ const n=prompt('New source (truck / supplier):'); if
 async function newZoneInline(){ const n=prompt("New zone / rack:"); if(!n)return; const z=n.trim(); if(!z)return; if(!zones.find(x=>x.name===z)){ await api("/rest/v1/nkg_zones",{method:'POST',headers:HJ,body:JSON.stringify({name:z,created_by:me_.name})}); zones.push({name:z}); } sel.zone=z; renderWiz(); }
 
 /* ---- step selections (auto-advance) ---- */
+function custSource(){ const seen={}, out=[];
+  recentCusts().forEach(n=>{ if(!seen[n]){seen[n]=1; out.push(n);} });
+  (opts.customer||[]).forEach(c=>{ if(!seen[c.name]){seen[c.name]=1; out.push(c.name);} });
+  return out; } // SEAM: when central customer access is authorized, merge that list here.
+function recentCusts(){ try{ return JSON.parse(localStorage.getItem('nkg_recent_cust')||'[]'); }catch(e){ return []; } }
+function pushRecentCust(n){ if(!n)return; let r=recentCusts().filter(x=>x!==n); r.unshift(n); r=r.slice(0,5); try{localStorage.setItem('nkg_recent_cust',JSON.stringify(r));}catch(e){} }
+function normC(s){ return (s||'').toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g,''); }
+function fuzzyHit(q,name){ const n=normC(name), x=normC(q); if(!x)return 1; if(n.startsWith(x))return 4; if(n.includes(x))return 3;
+  let i=0; for(const ch of n){ if(ch===x[i])i++; if(i>=x.length)return 2; }   // subsequence: mital -> mittal, shrma -> sharma
+  if(x.length>=4){ for(let d=0;d<x.length;d++){ const v=x.slice(0,d)+x.slice(d+1); if(v&&n.includes(v))return 1.5; } }  // one wrong/extra letter
+  return 0; }
+function custSearch(q){ const el=$('custRes'); if(!el)return; const cur=($('outCust')&&$('outCust').value)||'';
+  const hits=custSource().map(n=>({n:n,s:fuzzyHit(q,n)})).filter(h=>h.s>0).sort((a,b)=>b.s-a.s).slice(0,8);
+  el.innerHTML=hits.map(h=>'<button class="chip'+(cur===h.n?' on':'')+'" onclick="setOutCust(\''+esc(h.n)+'\')">'+esc(h.n)+'</button>').join('')
+   +((q||'').trim()&&!hits.length?'<button class="chip add" onclick="setOutCust(\''+esc((q||'').trim())+'\')">\u2795 \''+esc((q||'').trim())+'\' नया ग्राहक</button>':''); }
 function setOutCust(v){ sel.customer=v||''; if($('outCust'))$('outCust').value=v||''; wizNext(); }
 function newOutCust(){ const n=prompt('किसको? नाम:'); if(n===null)return; setOutCust((n||'').trim()); }
 function setDir(d){ dir=d; if(d==='out')outCart=[]; wizNext(); }
@@ -594,22 +627,23 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   const kd=doorBatch[0].design; if(kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts()); }
   pushRecentItem({mode:'door',doortype:doorBatch[0].doortype,design:kd,size:doorBatch[0].size,name:[doorBatch[0].doortype,kd,doorBatch[0].size].filter(Boolean).join(' ')});
   const n=doorBatch.length; toast(queued?('फ़ोन में सेव ('+queued+') — बाद में'):('सेव हुआ ✓ '+n+' साइज़'),queued?'err':'ok');
-  _lastSave={txt:(kd||'Door')+' — '+n+' साइज़', ok:!queued};
+  _lastSave={txt:(kd||'Door')+' — '+n+' साइज़', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+n+' साइज़ सेव');
   doorBatch=[]; resetItemAll(); refreshToday(); wizGo(loopStart()); }
 
 function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
   if(mode==='door')return [sel.design,sel.size].filter(Boolean).join(' ');
   return [sel.cat,($('descIn')&&$('descIn').value)].filter(Boolean).join(' '); }
-function renderCtx(){ const c=$('wizCtx'); if(!c)return; if(wizKey==='dir'){c.innerHTML='';return;} let t='';
-  t+='<span class="wctag '+(dir==='out'?'dout':'din')+'">'+(dir==='out'?'माल गया':'माल आया')+'</span>';
-  if(dir==='in'&&src)t+='<span class="wctag">From '+esc(src)+'</span>';
-  if(mode==='door'&&sel.doortype)t+='<span class="wctag">'+esc(sel.doortype)+'</span>';
-  const it=itemText(); if(it)t+='<span class="wctag item">'+esc(it)+'</span>';
-  const q=Number($('qtyIn')&&$('qtyIn').value)||0; if(q)t+='<span class="wctag item">'+q+' pcs</span>';
-  if(mode==='door'&&doorBatch.length)t+='<span class="wctag item">'+doorBatch.length+' साइज़</span>';
-  if(dir==='out'&&outCart.length)t+='<span class="wctag">+'+outCart.length+' और</span>';
-  c.innerHTML=t; }
-function renderDots(){ const f=flowFor(),i=f.indexOf(wizKey),d=$('wizDots'); if(d)d.innerHTML=f.map((k,x)=>'<i class="'+(x===i?'on':(x<i?'done':''))+'"></i>').join('');
+function renderCtx(){ const c=$('wizCtx'); if(!c)return; if(wizKey==='dir'){c.innerHTML='';c.className='wizctx';return;} c.className='wizhead';
+  const parts=[];
+  parts.push('<span class="'+(dir==='out'?'hout':'hin')+'">'+(dir==='out'?'\uD83D\uDCE4 माल गया':'\uD83D\uDE9A '+(src&&dir==='in'?esc(src):'माल आया'))+'</span>');
+  const cust=dir==='out'?(($('outCust')&&$('outCust').value)||''):''; if(cust)parts.push('<b>'+esc(cust)+'</b>');
+  if(mode==='door'&&sel.doortype)parts.push(esc(sel.doortype));
+  const it=itemText(); if(it)parts.push('<b>'+esc(it)+'</b>');
+  const q=Number($('qtyIn')&&$('qtyIn').value)||0; if(q)parts.push('<b>'+q+'</b>');
+  if(mode==='door'&&doorBatch.length)parts.push(doorBatch.length+' साइज़');
+  if(dir==='out'&&outCart.length)parts.push('+'+outCart.length+' और');
+  c.innerHTML=parts.join(' \u203A '); }
+function renderDots(){ const f=flowFor(),i=f.indexOf(wizKey),d=$('wizDots'); if(d)d.innerHTML='';
   const bk=$('wizBack'); if(bk)bk.classList.toggle('hide',i<=0); const wx=$('wizX'); if(wx)wx.classList.toggle('hide',i<=0); }
 
 function brandChipsHTML(){ const all=opts.brand||[]; const favs=all.filter(b=>b.favorite); const list=favs.length?favs:all;
@@ -636,20 +670,25 @@ function stepHTML(k){
     const chips=(others.length?others.map(s=>'<button class="chip'+'" onclick="setSrc(\''+esc(s.name)+'\')">'+esc(s.name)+'</button>').join(''):(sources.length?'':'<span class="opt" style="color:var(--mut2)">अभी कोई सोर्स नहीं।</span>'))+'<button class="chip add" onclick="newSrcWiz()">＋ नया (Add)</button>';
     if(src) return '<div class="wq">माल कहाँ से आया?</div><div class="wqs">Where from</div><div class="bigwrap"><button class="bigopt din" onclick="wizNext()"><span class="ic">&#128666;</span><span class="tx">'+esc(src)+' से — वही &#10003;<span class="sub">पिछली बार जैसा · Same as before</span></span></button></div><div class="wsub">या कहीं और से · Or from</div><div class="chips">'+chips+'</div>';
     return '<div class="wq">माल कहाँ से आया?</div><div class="wqs">एक बार टैप करें · Where from</div><div class="chips big">'+chips+'</div>'; }
-  if(k==='outwho'){ const cs=(opts.customer||[]).slice(0,8); const cur=($('outCust')&&$('outCust').value)||'';
-    return '<div class="wq">किसको जा रहा है?</div><div class="wqs">Who is taking it — टैप करें</div><div class="chips big">'
-    +'<button class="chip'+(cur==='दुकान'?' on':'')+'" onclick="setOutCust(\'दुकान\')">🏪 दुकान</button>'
-    +cs.map(c=>'<button class="chip'+(cur===c.name?' on':'')+'" onclick="setOutCust(\''+esc(c.name)+'\')">'+esc(c.name)+'</button>').join('')
-    +'<button class="chip add" onclick="newOutCust()">＋ नया नाम</button></div>'
-    +'<button class="wskip" onclick="setOutCust(\'\')">पता नहीं — बाद में लिखेंगे ›</button>'; }
+  if(k==='outwho'){ const cur=($('outCust')&&$('outCust').value)||'';
+    const top=['\uD83C\uDFEA दुकान'].concat(recentCusts()).slice(0,6);
+    const chips='<button class="chip'+(cur==='दुकान'?' on':'')+'" onclick="setOutCust(\'दुकान\')">\uD83C\uDFEA दुकान</button>'
+      +'<button class="chip'+(cur==='वर्कशॉप'?' on':'')+'" onclick="setOutCust(\'वर्कशॉप\')">\uD83C\uDFED वर्कशॉप</button>'
+      +recentCusts().map(n=>'<button class="chip'+(cur===n?' on':'')+'" onclick="setOutCust(\''+esc(n)+'\')">'+esc(n)+'</button>').join('');
+    return '<div class="wq">किसको जा रहा है?</div><div class="wqs">Who is taking it — टैप करें या खोजें</div>'
+      +'<div class="chips big">'+chips+'</div>'
+      +'<div class="wsub">\uD83D\uDD0D ग्राहक खोजें · Search</div>'
+      +'<input class="optin" placeholder="नाम लिखना शुरू करें…" autocomplete="off" oninput="custSearch(this.value)">'
+      +'<div class="chips" id="custRes" style="margin-top:9px"></div>'
+      +'<button class="wskip" onclick="setOutCust(\'\')">पता नहीं — बाद में लिखेंगे ›</button>'; }
   if(k==='mode') return lastSaveHTML()+'<div class="wq">कौन सी चीज़?</div><div class="wqs">What kind of item?</div><div class="bigwrap">'
     +'<button class="bigopt" onclick="setMode(\'plywood\')"><span class="ic">🪵</span><span class="tx">प्लाईवुड<span class="sub">ब्रांड · मोटाई · साइज़ · Plywood</span></span></button>'
     +'<button class="bigopt" onclick="setMode(\'door\')"><span class="ic">🚪</span><span class="tx">दरवाज़ा<span class="sub">डिज़ाइन · साइज़ · Door</span></span></button>'
     +'<button class="bigopt" onclick="setMode(\'other\')"><span class="ic">📦</span><span class="tx">अन्य<span class="sub">हार्डवेयर, लैमिनेट, ग्लास… · Other</span></span></button></div>'+recentQuickHTML();
-  if(k==='doortype'){ const l=(opts.doortype&&opts.doortype.door)||[]; return lastSaveHTML()+'<div class="wq">कौन सा दरवाज़ा?</div><div class="wqs">Door type</div><div class="chips big">'+l.map(o=>'<button class="chip'+(sel.doortype===o.name?' on':'')+'" onclick="setDoorType(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join('')+'<button class="chip add" onclick="newDoorType()">＋ नया</button></div>'; }
-  if(k==='brand') return lastSaveHTML()+'<div class="wq">कौन सा ब्रांड?</div><div class="wqs">Which brand?</div><div class="chips big">'+brandChipsHTML()+'</div>';
-  if(k==='thick') return '<div class="wq">मोटाई?</div><div class="wqs">Thickness</div><div class="chips big">'+optChips((opts.thickness&&opts.thickness.plywood),{key:'thickness',fn:'setThick'})+'<button class="chip add" onclick="newOpt(\'thickness\')">＋</button></div>';
-  if(k==='size') return '<div class="wq">साइज़?</div><div class="wqs">Size</div><div class="chips big">'+optChips((opts.size&&opts.size.plywood),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
+  if(k==='doortype'){ const l=(opts.doortype&&opts.doortype.door)||[]; return lastSaveHTML()+'<div class="wq">कौन सा दरवाज़ा?</div><div class="wqs">Door type</div><div class="ladder">'+l.map(o=>'<button class="chip'+(sel.doortype===o.name?' on':'')+'" onclick="setDoorType(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join('')+'<button class="chip add" onclick="newDoorType()">＋ नया</button></div>'; }
+  if(k==='brand') return lastSaveHTML()+'<div class="wq">कौन सा ब्रांड?</div><div class="wqs">Which brand?</div><div class="ladder">'+brandChipsHTML()+'</div>';
+  if(k==='thick') return '<div class="wq">मोटाई?</div><div class="wqs">Thickness</div><div class="ladder">'+optChips((opts.thickness&&opts.thickness.plywood),{key:'thickness',fn:'setThick'})+'<button class="chip add" onclick="newOpt(\'thickness\')">＋</button></div>';
+  if(k==='size') return '<div class="wq">साइज़?</div><div class="wqs">Size</div><div class="ladder">'+optChips((opts.size&&opts.size.plywood),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
   if(k==='design') return '<div class="wq">डिज़ाइन कोड</div><div class="wqs">टाइप करें या नीचे से चुनें · Design</div><input id="designVis" class="wqbig" placeholder="जैसे KP7098" autocapitalize="characters" autocomplete="off" value="'+esc(sel.design||'')+'" oninput="onDesignType(this.value)">'
     +'<div class="wsub">पुराने डिज़ाइन · Recent</div><div class="chips">'+designRecentHTML()+'</div><button class="wnext" id="designNext" onclick="wizNext()"'+(sel.design?'':' disabled')+'>आगे ›</button>';
   if(k==='doorsizes') return '<div class="wq">साइज़ भरें</div><div class="wqs">ऊँचाई × चौड़ाई · Height × width</div>'
@@ -658,11 +697,13 @@ function stepHTML(k){
     +'<div class="wsub">आम साइज़ · Common</div><div class="chips">'+doorPresetHTML()+'</div>'
     +(doorBatch.length?('<div class="wsub">जोड़े गए · '+doorBatch.length+'</div>'+doorRowsHTML()):'')
     +'<button class="wnext" onclick="doorNext()">'+(dir==='in'?'आगे ›':'आगे › देखें और दें')+(doorBatch.length?(' ('+doorBatch.length+')'):'')+'</button>';
-  if(k==='cat') return lastSaveHTML()+'<div class="wq">क्या चीज़ है?</div><div class="wqs">What is it?</div><div class="chips big">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
-  if(k==='qty') return '<div class="wqitem">'+esc(itemText())+'</div><div class="wq">कितने?</div><div class="wqs">पीस · How many</div>'
-    +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:12px" placeholder="नाम / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx();updQSave()">':'')
-    +'<div class="qtyrow"><div class="stepper"><button onclick="stepQty(-1)">−</button><input id="qtyVis" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने" value="'+(Number($('qtyIn').value)||'')+'" oninput="onQtyType(this.value)" onkeydown="if(event.key===\'Enter\')qtyNext()"><button onclick="stepQty(1)">＋</button></div></div>'
-    +'<div class="qbtns">'+QTYQUICK.map(q=>'<button class="chip" onclick="setQtyQuick('+q+')">'+q+'</button>').join('')+'</div>'+(dir==='in'?'<button class="save stick" id="qsave" onclick="qtyNext()">'+qsaveLabel()+'</button>':'<button class="wnext" onclick="qtyNext()">आगे ›</button>');
+  if(k==='cat') return lastSaveHTML()+'<div class="wq">क्या चीज़ है?</div><div class="wqs">What is it?</div><div class="ladder">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
+  if(k==='qty'){ const q=Number($('qtyIn').value)||''; return '<div class="wqitem">'+esc(itemText())+'</div><div class="wq">कितने?</div>'
+    +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:10px" placeholder="नाम / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx();updQSave()">':'')
+    +'<div class="qpnum'+(q?'':' empty')+'" id="qpNum">'+(q||'0')+'</div>'
+    +'<div class="qbtns">'+QTYQUICK.map(x=>'<button class="chip" onclick="setQtyQuick('+x+')">'+x+'</button>').join('')+'</div>'
+    +'<div class="qpad">'+[1,2,3,4,5,6,7,8,9].map(d=>'<button onclick="qpDigit('+d+')">'+d+'</button>').join('')+'<button onclick="qpClear()">C</button><button onclick="qpDigit(0)">0</button><button onclick="qpBack()">&#9003;</button></div>'
+    +(dir==='in'?'<button class="save stick" id="qsave" onclick="qtyNext()">'+qsaveLabel()+'</button>':'<button class="wnext" onclick="qtyNext()">आगे ›</button>'); }
   if(k==='place') return '<div class="wq">और कुछ?</div><div class="wqs">ज़रूरी नहीं · फिर सेव करें</div>'
     +'<div class="wsub">कहाँ रखा? · Rack / Zone</div><div class="chips">'+zoneHTML()+'</div>'
     +'<div class="wsub">फ़ोटो · Photo</div><div class="optrow"><button class="ghost" id="photoBtn" onclick="pickPhoto()">📷 फ़ोटो</button><span id="photoHint" class="opt" style="align-self:center">'+photoHintText()+'</span></div><div id="photoStrip" class="pstrip">'+photoStripHTML()+'</div>'
@@ -695,7 +736,7 @@ async function saveIn(){
   const row=await pushEntry(entry);
   if(row){ toast('सेव हुआ ✓ '+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); }
   else { queue(entry); toast('नेट नहीं — फ़ोन में सेव','err'); }
-  _lastSave={txt:item_name+' ×'+qty, ok:!!row};
+  _lastSave={txt:item_name+' ×'+qty, ok:!!row}; showStamp((row?'✓ सेव':'⏳ फ़ोन में सेव')+' · '+item_name+' ×'+qty);
   pushRecent(entry); pushRecentItem({mode:mode,brand:sel.brand||null,thickness:sel.thickness||null,size:sel.size||null,design:sel.design||null,cat:(mode==='other'?category:null),name:item_name});
   const kd=sel.design;
   if(mode==='door'&&kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts()); }
@@ -707,7 +748,7 @@ async function saveIn(){
 async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(); if(!cur)return; }
   const lines=outCart.slice(); if(cur)lines.push(cur);
   if(!lines.length){ toast('पहले आइटम जोड़ें','err'); return; }
-  const cust=($('outCust')&&$('outCust').value.trim())||null; const photos=(sel.photos||[]).slice();
+  const cust=($('outCust')&&$('outCust').value.trim())||null; if(cust)pushRecentCust(cust); const photos=(sel.photos||[]).slice();
   const b=$('saveBtn'); if(b){b.disabled=true;b.textContent='Saving…';}
   let queued=0;
   for(let i=0;i<lines.length;i++){ const L=lines[i];
@@ -716,7 +757,7 @@ async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(
   if(b)b.disabled=false;
   outCart=[]; sel.photos=[]; sel.customer=''; if($('outCust'))$('outCust').value=''; resetItemAll(); refreshToday();
   toast(queued?('फ़ोन में सेव ('+queued+') — बाद में'):('दे दिया ✓ '+lines.length+' आइटम'),queued?'err':'ok');
-  _lastSave={txt:lines.length+' आइटम दिए', ok:!queued};
+  _lastSave={txt:lines.length+' आइटम दिए', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+lines.length+' आइटम दिए');
   wizRestart(); }
 let _doorStock=[];
 async function showDoorStock(){ ['gate','add','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('dstock').classList.remove('hide'); if($('dsSearch'))$('dsSearch').value=''; $('dsList').innerHTML='<div class="empty">लोड हो रहा है…</div>'; try{await loadOpts();}catch(e){} await loadDoorStock(); }
