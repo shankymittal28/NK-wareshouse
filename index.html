@@ -952,8 +952,9 @@ function stmtWhen(t){ const MM=['January','February','March','April','May','June
   const d=_ist(t),p=n=>String(n).padStart(2,'0');
   return d.getUTCDate()+' '+MM[d.getUTCMonth()]+' '+d.getUTCFullYear()+', '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+' IST'; }
 function showStatement(){ ['gate','add','owner','manage','khata','bill','dstock'].forEach(i=>{ const e=$(i); if(e)e.classList.add('hide'); });
-  $('stmt').classList.add('on'); renderStatement(); window.scrollTo(0,0); }
-function backFromStmt(){ $('stmt').classList.remove('on'); $('owner').classList.remove('hide'); }
+  $('stmt').classList.add('on'); renderStatement(); window.scrollTo(0,0);
+  try{ document.title=stmtNo(Date.now()).replace(/\//g,'-'); }catch(e){} }
+function backFromStmt(){ $('stmt').classList.remove('on'); $('owner').classList.remove('hide'); try{ document.title='NK Warehouse'; }catch(e){} }
 function renderStatement(){ const now=Date.now(), items=stmtItems();
   const live=items.filter(i=>i.net>0), neg=items.filter(i=>i.net<0);
   const ratedLive=live.filter(i=>i.rated), unrated=live.filter(i=>!i.rated);
@@ -1034,7 +1035,7 @@ function renderStatement(){ const now=Date.now(), items=stmtItems();
    +'<li>Figures are as at the date and time stated in the header.</li>'
    +'</ol></div>';
 
-  h+='<div class="foot"><span>Mittal Hardware &amp; Plywood &middot; NK Warehouse</span><span>'+stmtNo(now)+'</span><span>Generated '+stmtWhen(now)+'</span></div>';
+  h+='<div class="foot"><span>Mittal Hardware &amp; Plywood &middot; NK Warehouse</span><span>'+stmtNo(now)+'</span><span>Generated '+stmtWhen(now)+' &middot; MAIOS</span></div>';
   $('docBody').innerHTML=h; }
 /* ---- Owner OS: attention cards (source-agnostic, Decision-Queue-ready) ---- */
 function attentionCards(){ const cards=[]; const g={};
