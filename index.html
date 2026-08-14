@@ -215,6 +215,13 @@ button,input,select{font-family:inherit;font-size:16px}
 /* ---- Console: the owner's analytical surface. Inherits the Stock
    Statement's discipline (density, numeric spine, typographic
    hierarchy), never the staff window's operational language. ---- */
+.daypick{width:100%;margin-top:12px;background:var(--well);border:1px solid var(--hair2);color:var(--ink);border-radius:10px;padding:11px 12px;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color-scheme:dark;min-height:44px}
+.dsum{width:100%;border-collapse:collapse;margin-top:14px}
+.dsum th{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);padding:0 0 6px;text-align:right;border-bottom:1px solid var(--hair2)}
+.dsum th.in{color:var(--mint)}.dsum th.out{color:var(--rose)}
+.dsum td{padding:8px 0;font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;border-bottom:1px solid var(--hair)}
+.dsum td:first-child{text-align:left;color:var(--mut);font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+.dsum tr:last-child td{border-bottom:none;font-weight:800}
 .csum{border-bottom:1px solid var(--hair2);padding-bottom:13px;margin-bottom:2px}
 .csum-r{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .csum-r .cl{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--mut)}
@@ -398,11 +405,13 @@ button,input,select{font-family:inherit;font-size:16px}
 <div id="owner" class="wrap hide">
   <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" id="refreshBtn" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
   <div class="csum"><div class="csum-r"><span class="cl">Stock value</span><b class="cvbig num" id="stVal">&#8377;0</b></div><div class="cmeta"><b id="stQty">0</b> pcs in stock &middot; today <b id="stIn">0</b> in / <b id="stOut">0</b> out<span id="staleNote" class="vnote hide"> &middot; older data &mdash; tap &#8635;</span></div></div>
-  <div class="modew" id="ownerView"><button id="vwHome" class="on" onclick="setOwnerView('home')">Today</button><button id="vwItems" onclick="setOwnerView('items')">Stock</button><button id="vwLog" onclick="setOwnerView('log')">All</button></div>
+  <div class="modew" id="ownerView"><button id="vwHome" class="on" onclick="setOwnerView('home')">Today</button><button id="vwDay" onclick="setOwnerView('day')">By date</button><button id="vwItems" onclick="setOwnerView('items')">Stock</button><button id="vwLog" onclick="setOwnerView('log')">All</button></div>
   <input id="searchIn" class="searchbar hide" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
   <div class="fchips hide" id="filterChips"></div>
   <div class="gbrow hide" id="groupChips"></div>
+  <input type="date" id="dayPick" class="daypick hide" onchange="renderDay()">
   <div id="homeList"></div>
+  <div id="dayList" class="hide"></div>
   <div id="itemList" class="hide"></div>
   <div id="stockList" class="hide"></div>
   <div id="todayList" class="hide"></div>
@@ -935,11 +944,12 @@ async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('bu
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
 function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net.toLocaleString('en-IN'); let tIn=0,tOut=0; stock.forEach(s=>{ if(IST(s.created_at)===IST()){ if(s.direction==='out')tOut+=Number(s.qty)||0; else tIn+=Number(s.qty)||0; } }); $('stIn').textContent=tIn; $('stOut').textContent=tOut; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); }
 function setOwnerView(v){ ownerView=v;
-  $('vwHome').classList.toggle('on',v==='home'); $('vwItems').classList.toggle('on',v==='items'); $('vwLog').classList.toggle('on',v==='log');
-  $('homeList').classList.toggle('hide',v!=='home'); $('itemList').classList.toggle('hide',v!=='items'); $('stockList').classList.toggle('hide',v!=='log'); $('todayList').classList.add('hide');
-  $('groupChips').classList.toggle('hide',v!=='items'); $('filterChips').classList.toggle('hide',v!=='items'); $('searchIn').classList.toggle('hide',v==='home');
+  $('vwHome').classList.toggle('on',v==='home'); $('vwDay').classList.toggle('on',v==='day'); $('vwItems').classList.toggle('on',v==='items'); $('vwLog').classList.toggle('on',v==='log');
+  $('homeList').classList.toggle('hide',v!=='home'); $('dayList').classList.toggle('hide',v!=='day'); $('itemList').classList.toggle('hide',v!=='items'); $('stockList').classList.toggle('hide',v!=='log'); $('todayList').classList.add('hide');
+  $('dayPick').classList.toggle('hide',v!=='day');
+  $('groupChips').classList.toggle('hide',v!=='items'); $('filterChips').classList.toggle('hide',v!=='items'); $('searchIn').classList.toggle('hide',v!=='items'&&v!=='log');
   renderOwner(); }
-function renderOwner(){ ownerView==='home'?renderHome():ownerView==='items'?renderItems():renderStock(); }
+function renderOwner(){ ownerView==='home'?renderHome():ownerView==='day'?renderDay():ownerView==='items'?renderItems():renderStock(); }
 const IST=t=>{ const d=t?new Date(t):new Date(); return isNaN(d)?'':new Date(d.getTime()+19800000).toISOString().slice(0,10); };
 function photosOf(s){ return (Array.isArray(s.photos)&&s.photos.length)?s.photos:(s.photo_url?[s.photo_url]:[]); }
 function stPath(u){ const m=(''+u).split('/nkg-photos/')[1]; return m?m.split('?')[0]:(''+u); }
@@ -967,6 +977,41 @@ function thumbHTML(s,cls){ const p=photosOf(s); const emoji=(s.direction==='out'
   return '<button class="'+cls+' imgbtn" onclick="openPhotos(\''+paths.join('|')+'\')"><img data-p="'+esc(paths[0])+'" loading="lazy">'+(p.length>1?'<span class="pcount">'+p.length+'</span>':'')+'</button>'; }
 
 
+
+/* ---- Activity by date: any day's business, reusing the same event grouping ---- */
+let dayFilter='all';
+function setDayFilter(f){ dayFilter=f; renderDay(); }
+function dayLabel(k){ const a=(k||'').split('-'); if(a.length!==3)return k||'';
+  const d=new Date(Date.UTC(+a[0],+a[1]-1,+a[2]));
+  return isNaN(d)?k:d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}); }
+function dayExc(sN){ const st=_tlStats(sN);
+  const noRec=(sN.dir==='out')&&!sN.rows.some(function(r){return (r.customer||'').trim();});
+  return { noRec:noRec, unvalued:st.unvalued>0, any:noRec||st.unvalued>0 }; }
+function renderDay(){ const el=$('dayList'), pick=$('dayPick'); if(!el||!pick)return;
+  if(!pick.value)pick.value=IST();
+  if(pick.max!==IST())pick.max=IST();
+  const key=pick.value;
+  const all=_tlSessions([key]).slice().reverse();   // morning first: the day as it happened
+  _tl=all;
+  var iC=0,iP=0,iV=0,oC=0,oP=0,oV=0,exc=0;
+  all.forEach(function(sN){ const st=_tlStats(sN);
+    if(sN.dir==='out'){ oC++; oP+=st.pcs; oV+=st.val; } else { iC++; iP+=st.pcs; iV+=st.val; }
+    if(dayExc(sN).any)exc++; });
+  var h='<div class="csec"><h3>'+esc(dayLabel(key))+'</h3><span>'+all.length+' event'+(all.length===1?'':'s')+'</span></div>';
+  h+='<table class="dsum"><tr><th></th><th class="in">In</th><th class="out">Out</th></tr>'
+   +'<tr><td>Events</td><td>'+iC+'</td><td>'+oC+'</td></tr>'
+   +'<tr><td>Pieces</td><td>'+iP.toLocaleString('en-IN')+'</td><td>'+oP.toLocaleString('en-IN')+'</td></tr>'
+   +'<tr><td>Value</td><td>'+(iV?inr(iV):'—')+'</td><td>'+(oV?inr(oV):'—')+'</td></tr></table>';
+  const F=[['all','All',all.length],['in','In',iC],['out','Out',oC],['exc','Exceptions',exc]];
+  h+='<div class="fchips" style="margin-top:14px;padding-bottom:2px">'+F.map(function(f){
+    return '<button class="fchip'+(dayFilter===f[0]?' on':'')+'" onclick="setDayFilter(\''+f[0]+'\')">'+f[1]+(f[2]?' '+f[2]:'')+'</button>'; }).join('')+'</div>';
+  const list=all.filter(function(sN){ return dayFilter==='all'?true
+    : dayFilter==='in'?(sN.dir!=='out')
+    : dayFilter==='out'?(sN.dir==='out')
+    : dayExc(sN).any; });
+  h+= list.length ? list.map(function(sN){ return _tlCard(sN,all.indexOf(sN)); }).join('')
+    : '<div class="cclear">'+(all.length?('No '+(dayFilter==='exc'?'exceptions':dayFilter.toUpperCase()+' events')+' on this date.'):'No activity recorded on this date.')+'</div>';
+  el.innerHTML=h; }
 /* ---- Stock Statement: declares the truth, never estimates ---- */
 function stmtItems(){ const g={};
   stock.forEach(x=>{ const k=keyOf(x);
@@ -1090,8 +1135,10 @@ function _tlSessions(days){ const out=[]; const list=stock.slice().sort((a,b)=>(
     if(last&&last.day===day&&last.dir===x.direction&&last.who===who&&last.by===(x.logged_by||'')&&Math.abs(new Date(last.t)-new Date(x.created_at))<45*60000){ last.rows.push(x); last.t=x.created_at; }
     else out.push({day:day,dir:x.direction,who:who,by:x.logged_by||'',t:x.created_at,rows:[x]}); });
   return out; }
-function _tlCard(sN,i){ const pcs=sN.rows.reduce((x,r)=>x+(Number(r.qty)||0),0);
-  let val=0; sN.rows.forEach(r=>{ const rt=rates[keyOf(r)]||0; if(rt)val+=rt*(Number(r.qty)||0); });
+function _tlStats(sN){ var pcs=0,val=0,unv=0;
+  sN.rows.forEach(function(r){ const q=Number(r.qty)||0, rt=rates[keyOf(r)]||0; pcs+=q; if(rt)val+=rt*q; else unv++; });
+  return {pcs:pcs,val:val,unvalued:unv}; }
+function _tlCard(sN,i){ const _st=_tlStats(sN), pcs=_st.pcs, val=_st.val;
   const ph=sN.rows.some(r=>photosOf(r).length);
   const tm=new Date(sN.t).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kolkata'});
   const n=sN.rows.length;
