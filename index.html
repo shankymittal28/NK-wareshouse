@@ -210,6 +210,58 @@ button,input,select{font-family:inherit;font-size:16px}
 .wctag.din{color:var(--mint);border-color:rgba(52,211,153,.4)}
 .wctag.dout{color:var(--rose);border-color:rgba(251,113,133,.4)}
 .wctag.item{color:var(--ink)}
+
+/* ---- Stock Statement: a document, not a screen ---- */
+#stmt{position:fixed;inset:0;overflow:auto;background:#e9e9e6;z-index:70;display:none}
+#stmt.on{display:block}
+.stbar{position:sticky;top:0;display:flex;justify-content:space-between;gap:8px;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;background:#e9e9e6}
+.stbar .iconlink{background:#fff;border:1px solid #c9c9c4;color:#222;min-height:40px}
+.doc{background:#fff;color:#111;max-width:820px;margin:0 auto 30px;padding:26px 20px 34px;font-size:13.5px;line-height:1.45;font-variant-numeric:tabular-nums}
+.doc .biz{font-size:19px;font-weight:800;letter-spacing:-.01em}
+.doc .bizsub{font-size:12.5px;color:#555;margin-top:1px}
+.doc .dtitle{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-top:16px}
+.doc .meta{margin-top:8px;font-size:12.5px;color:#333}
+.doc .meta div{display:flex;gap:8px;padding:1.5px 0}
+.doc .meta span{flex:0 0 128px;color:#666}
+.doc h2{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:#111;margin:22px 0 7px;padding-bottom:5px;border-bottom:1.5px solid #111}
+.doc .sum{width:100%;border-collapse:collapse}
+.doc .sum td{padding:4px 0;vertical-align:baseline}
+.doc .sum td+td{text-align:right;font-weight:700;white-space:nowrap}
+.doc .sum td .qual{display:block;font-weight:400;font-size:11.5px;color:#666}
+.doc .big td{font-size:17px;font-weight:800}
+.stbl{width:100%;border-collapse:collapse;margin-bottom:4px}
+.stbl th{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#666;text-align:left;padding:5px 0;border-bottom:1px solid #bbb}
+.stbl th.n{text-align:right}
+.stbl td{padding:4px 0;border-bottom:1px solid #eee;vertical-align:baseline}
+.stbl td.n{text-align:right;white-space:nowrap}
+.stbl tr.grp td{padding-top:11px;font-weight:800;border-bottom:none}
+.stbl tr.sub td{border-top:1px solid #ccc;border-bottom:none;font-weight:700;padding-top:5px}
+.stbl tr.tot td{border-top:1.5px solid #111;border-bottom:none;font-weight:800;padding-top:6px;font-size:14px}
+.stbl .it{padding-left:14px}
+.stbl .nr{color:#777;font-style:italic}
+.stbl .neg{color:#a3001c;font-weight:700}
+.doc .gt{border-top:2.5px solid #111;border-bottom:2.5px solid #111;margin-top:20px;padding:9px 0}
+.doc .gt table{width:100%;border-collapse:collapse}
+.doc .gt td{font-size:17px;font-weight:800;padding:2px 0}
+.doc .gt td+td{text-align:right}
+.doc .notes{margin-top:20px;font-size:11.5px;color:#444}
+.doc .notes li{margin-bottom:4px}
+.doc .foot{margin-top:24px;padding-top:8px;border-top:1px solid #bbb;font-size:11px;color:#666;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.doc .none{color:#666;padding:3px 0}
+@media print{
+  body{background:#fff}
+  .noprint{display:none!important}
+  #stmt{position:static;overflow:visible;background:#fff;display:block!important}
+  .doc{max-width:none;margin:0;padding:0;font-size:11pt}
+  .stbl,.brk{break-inside:auto}
+  .stbl tr{break-inside:avoid}
+  .stbl thead{display:table-header-group}
+  h2{break-after:avoid}
+  @page{margin:14mm}
+}
+.attn{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid rgba(245,177,61,.45);color:var(--ink);border-radius:14px;padding:14px;font-size:15px;font-weight:700;margin-bottom:9px}
+.attn.red{border-color:rgba(251,113,133,.55);background:rgba(251,113,133,.07)}
+.allok{text-align:center;color:var(--mint);font-size:22px;font-weight:800;padding:26px 10px 20px}
 .qpnum{font-size:54px;font-weight:800;text-align:center;letter-spacing:-.02em;min-height:66px;font-variant-numeric:tabular-nums}
 .qpnum.empty{color:var(--mut2)}
 .qpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
@@ -313,18 +365,13 @@ button,input,select{font-family:inherit;font-size:16px}
 
 <div id="owner" class="wrap hide">
   <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" id="refreshBtn" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
-  <div class="valcard"><div class="vlab">Stock value</div><div class="vnum" id="stVal">&#8377;0</div><div class="vmeta"><b class="num" id="stQty">0</b> pcs &middot; today: <b class="num" id="stIn">0</b> in &middot; <b class="num" id="stOut">0</b> out <span id="stWarn" class="vnote bad"></span> <span id="stUnrated" class="vnote"></span> <span id="staleNote" class="vnote hide">&middot; old data &mdash; tap &#8635;</span></div></div>
-  <div class="obtns">
-    <button class="obtn go" onclick="logAsOwner()">+ Add stock</button>
-    <button class="obtn" onclick="newBill()">Give out</button>
-    <button class="obtn" onclick="showKhata()">Khata</button>
-    <button class="obtn" onclick="showManage()">Manage</button>
-  </div>
-  <div class="modew" id="ownerView"><button id="vwItems" class="on" onclick="setOwnerView('items')">Stock</button><button id="vwToday" onclick="setOwnerView('today')">Today</button><button id="vwLog" onclick="setOwnerView('log')">All entries</button></div>
+  <div class="valcard"><div class="vlab">Stock value</div><div class="vnum" id="stVal">&#8377;0</div><div class="vmeta"><b class="num" id="stQty">0</b> pcs &middot; today: <b class="num" id="stIn">0</b> in &middot; <b class="num" id="stOut">0</b> out <span id="staleNote" class="vnote hide">&middot; old data &mdash; tap &#8635;</span></div></div>
+  <div class="modew" id="ownerView"><button id="vwHome" class="on" onclick="setOwnerView('home')">आज</button><button id="vwItems" onclick="setOwnerView('items')">स्टॉक</button><button id="vwLog" onclick="setOwnerView('log')">सब</button></div>
   <input id="searchIn" class="searchbar" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
   <div class="fchips" id="filterChips"></div>
   <div class="gbrow" id="groupChips"></div>
-  <div id="itemList"></div>
+  <div id="homeList"></div>
+  <div id="itemList" class="hide"></div>
   <div id="stockList" class="hide"></div>
   <div id="todayList" class="hide"></div>
 </div>
@@ -367,6 +414,10 @@ button,input,select{font-family:inherit;font-size:16px}
   <input id="billFileIn" type="file" accept="image/*" multiple class="hide" onchange="onBillPhoto(event)">
   <div class="valcard" style="margin-top:18px"><div class="vlab">Bill total <span id="billCount"></span></div><div class="vnum" id="billTotal">&#8377;0</div></div>
   <button class="save" id="billSaveBtn" style="width:100%;margin-top:14px" onclick="saveBill()">&#10003; Save &amp; give out</button>
+</div>
+<div id="stmt" class="hide">
+  <div class="stbar noprint"><button class="iconlink" onclick="backFromStmt()">&#8592; Back</button><button class="iconlink" onclick="window.print()">&#128424; Print / PDF</button></div>
+  <div class="doc" id="docBody"></div>
 </div>
 <div id="sheet" onclick="if(event.target.id==='sheet')closeSheet()"><div class="sheet" id="sheetInner" role="dialog" aria-modal="true"></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -626,7 +677,7 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   if(last){ lastId=last; $('undoBtn').classList.remove('hide'); }
   const kd=doorBatch[0].design; if(kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts()); }
   pushRecentItem({mode:'door',doortype:doorBatch[0].doortype,design:kd,size:doorBatch[0].size,name:[doorBatch[0].doortype,kd,doorBatch[0].size].filter(Boolean).join(' ')});
-  const n=doorBatch.length; toast(queued?('फ़ोन में सेव ('+queued+') — बाद में'):('सेव हुआ ✓ '+n+' साइज़'),queued?'err':'ok');
+  const n=doorBatch.length;
   _lastSave={txt:(kd||'Door')+' — '+n+' साइज़', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+n+' साइज़ सेव');
   doorBatch=[]; resetItemAll(); refreshToday(); wizGo(loopStart()); }
 
@@ -685,10 +736,10 @@ function stepHTML(k){
     +'<button class="bigopt" onclick="setMode(\'plywood\')"><span class="ic">🪵</span><span class="tx">प्लाईवुड<span class="sub">ब्रांड · मोटाई · साइज़ · Plywood</span></span></button>'
     +'<button class="bigopt" onclick="setMode(\'door\')"><span class="ic">🚪</span><span class="tx">दरवाज़ा<span class="sub">डिज़ाइन · साइज़ · Door</span></span></button>'
     +'<button class="bigopt" onclick="setMode(\'other\')"><span class="ic">📦</span><span class="tx">अन्य<span class="sub">हार्डवेयर, लैमिनेट, ग्लास… · Other</span></span></button></div>'+recentQuickHTML();
-  if(k==='doortype'){ const l=(opts.doortype&&opts.doortype.door)||[]; return lastSaveHTML()+'<div class="wq">कौन सा दरवाज़ा?</div><div class="wqs">Door type</div><div class="ladder">'+l.map(o=>'<button class="chip'+(sel.doortype===o.name?' on':'')+'" onclick="setDoorType(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join('')+'<button class="chip add" onclick="newDoorType()">＋ नया</button></div>'; }
-  if(k==='brand') return lastSaveHTML()+'<div class="wq">कौन सा ब्रांड?</div><div class="wqs">Which brand?</div><div class="ladder">'+brandChipsHTML()+'</div>';
-  if(k==='thick') return '<div class="wq">मोटाई?</div><div class="wqs">Thickness</div><div class="ladder">'+optChips((opts.thickness&&opts.thickness.plywood),{key:'thickness',fn:'setThick'})+'<button class="chip add" onclick="newOpt(\'thickness\')">＋</button></div>';
-  if(k==='size') return '<div class="wq">साइज़?</div><div class="wqs">Size</div><div class="ladder">'+optChips((opts.size&&opts.size.plywood),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
+  if(k==='doortype'){ const l=(opts.doortype&&opts.doortype.door)||[]; return lastSaveHTML()+'<div class="wq">कौन सा दरवाज़ा?</div><div class="ladder">'+l.map(o=>'<button class="chip'+(sel.doortype===o.name?' on':'')+'" onclick="setDoorType(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join('')+'<button class="chip add" onclick="newDoorType()">＋ नया</button></div>'; }
+  if(k==='brand') return lastSaveHTML()+'<div class="wq">कौन सा ब्रांड?</div><div class="ladder">'+brandChipsHTML()+'</div>';
+  if(k==='thick') return '<div class="wq">मोटाई?</div><div class="ladder">'+optChips((opts.thickness&&opts.thickness.plywood),{key:'thickness',fn:'setThick'})+'<button class="chip add" onclick="newOpt(\'thickness\')">＋</button></div>';
+  if(k==='size') return '<div class="wq">साइज़?</div><div class="ladder">'+optChips((opts.size&&opts.size.plywood),{key:'size',fn:'setSize'})+'<button class="chip add" onclick="newOpt(\'size\')">＋</button></div>';
   if(k==='design') return '<div class="wq">डिज़ाइन कोड</div><div class="wqs">टाइप करें या नीचे से चुनें · Design</div><input id="designVis" class="wqbig" placeholder="जैसे KP7098" autocapitalize="characters" autocomplete="off" value="'+esc(sel.design||'')+'" oninput="onDesignType(this.value)">'
     +'<div class="wsub">पुराने डिज़ाइन · Recent</div><div class="chips">'+designRecentHTML()+'</div><button class="wnext" id="designNext" onclick="wizNext()"'+(sel.design?'':' disabled')+'>आगे ›</button>';
   if(k==='doorsizes') return '<div class="wq">साइज़ भरें</div><div class="wqs">ऊँचाई × चौड़ाई · Height × width</div>'
@@ -697,8 +748,8 @@ function stepHTML(k){
     +'<div class="wsub">आम साइज़ · Common</div><div class="chips">'+doorPresetHTML()+'</div>'
     +(doorBatch.length?('<div class="wsub">जोड़े गए · '+doorBatch.length+'</div>'+doorRowsHTML()):'')
     +'<button class="wnext" onclick="doorNext()">'+(dir==='in'?'आगे ›':'आगे › देखें और दें')+(doorBatch.length?(' ('+doorBatch.length+')'):'')+'</button>';
-  if(k==='cat') return lastSaveHTML()+'<div class="wq">क्या चीज़ है?</div><div class="wqs">What is it?</div><div class="ladder">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
-  if(k==='qty'){ const q=Number($('qtyIn').value)||''; return '<div class="wqitem">'+esc(itemText())+'</div><div class="wq">कितने?</div>'
+  if(k==='cat') return lastSaveHTML()+'<div class="wq">क्या चीज़ है?</div><div class="ladder">'+CATS.map(c=>'<button class="chip'+(sel.cat===c?' on':'')+'" onclick="setCat(\''+c+'\')">'+c+'</button>').join('')+'</div>';
+  if(k==='qty'){ const q=Number($('qtyIn').value)||''; return '<div class="wqitem">'+esc(itemText())+'</div>'
     +(mode==='other'?'<input id="descVis" class="optin" style="margin-bottom:10px" placeholder="नाम / detail (optional)" value="'+esc(($('descIn')&&$('descIn').value)||'')+'" oninput="if($(\'descIn\'))$(\'descIn\').value=this.value;renderCtx();updQSave()">':'')
     +'<div class="qpnum'+(q?'':' empty')+'" id="qpNum">'+(q||'0')+'</div>'
     +'<div class="qbtns">'+QTYQUICK.map(x=>'<button class="chip" onclick="setQtyQuick('+x+')">'+x+'</button>').join('')+'</div>'
@@ -734,8 +785,8 @@ async function saveIn(){
   if(window._saving)return; window._saving=true;
   const b=$('saveBtn')||$('qsave'); if(b){b.disabled=true;b.textContent='Saving…';}
   const row=await pushEntry(entry);
-  if(row){ toast('सेव हुआ ✓ '+item_name,'ok'); lastId=row.id; $('undoBtn').classList.remove('hide'); }
-  else { queue(entry); toast('नेट नहीं — फ़ोन में सेव','err'); }
+  if(row){ lastId=row.id; $('undoBtn').classList.remove('hide'); }
+  else { queue(entry); }
   _lastSave={txt:item_name+' ×'+qty, ok:!!row}; showStamp((row?'✓ सेव':'⏳ फ़ोन में सेव')+' · '+item_name+' ×'+qty);
   pushRecent(entry); pushRecentItem({mode:mode,brand:sel.brand||null,thickness:sel.thickness||null,size:sel.size||null,design:sel.design||null,cat:(mode==='other'?category:null),name:item_name});
   const kd=sel.design;
@@ -756,7 +807,6 @@ async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(
     const row=await pushEntry(entry); if(!row){ queue(entry); queued++; } pushRecent(entry); }
   if(b)b.disabled=false;
   outCart=[]; sel.photos=[]; sel.customer=''; if($('outCust'))$('outCust').value=''; resetItemAll(); refreshToday();
-  toast(queued?('फ़ोन में सेव ('+queued+') — बाद में'):('दे दिया ✓ '+lines.length+' आइटम'),queued?'err':'ok');
   _lastSave={txt:lines.length+' आइटम दिए', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+lines.length+' आइटम दिए');
   wizRestart(); }
 let _doorStock=[];
@@ -838,7 +888,7 @@ let recent=[];
 function renderRecent(){ $('recentStrip').innerHTML=recent.map(r=>`<div class="r">${esc(r.name)} <span>&times;${r.qty}</span></div>`).join(''); }
 function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),todayCount); refreshToday(); recent.unshift({name:e.item_name,qty:e.qty}); recent=recent.slice(0,10); renderRecent(); }
 
-let ownerView='items', groups=[], rates={};
+let ownerView='home', groups=[], rates={};
 const inr=n=>{const v=Math.round(Number(n)||0);return (v<0?'-₹':'₹')+Math.abs(v).toLocaleString('en-IN');};
 async function showOwner(){ ['gate','add','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
 async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('busy'); if(!stock.length){ $('itemList').innerHTML='<div class="empty">Loading&hellip;</div>'; }
@@ -851,13 +901,13 @@ async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('bu
   else { stock=[]; rates={}; }
   buildFilters(); updateStats(); document.querySelector('#owner .vmeta').classList.toggle('hide',loadFailed); if(loadFailed){ $('stVal').textContent='—'; } renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
-function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net.toLocaleString('en-IN'); let tIn=0,tOut=0; stock.forEach(s=>{ if(IST(s.created_at)===IST()){ if(s.direction==='out')tOut+=Number(s.qty)||0; else tIn+=Number(s.qty)||0; } }); $('stIn').textContent=tIn; $('stOut').textContent=tOut; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); const os=Object.keys(g).filter(k=>g[k]<0).length; $('stWarn').textContent=os?('· '+os+' oversold'):''; const un=Object.keys(g).filter(k=>g[k]>0&&!(rates[k]>0)).length; $('stUnrated').textContent=un?('· '+un+' without rate'):''; }
+function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net.toLocaleString('en-IN'); let tIn=0,tOut=0; stock.forEach(s=>{ if(IST(s.created_at)===IST()){ if(s.direction==='out')tOut+=Number(s.qty)||0; else tIn+=Number(s.qty)||0; } }); $('stIn').textContent=tIn; $('stOut').textContent=tOut; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); }
 function setOwnerView(v){ ownerView=v;
-  $('vwItems').classList.toggle('on',v==='items'); $('vwToday').classList.toggle('on',v==='today'); $('vwLog').classList.toggle('on',v==='log');
-  $('itemList').classList.toggle('hide',v!=='items'); $('todayList').classList.toggle('hide',v!=='today'); $('stockList').classList.toggle('hide',v!=='log');
-  $('groupChips').classList.toggle('hide',v!=='items'); $('filterChips').classList.toggle('hide',v==='today'); $('searchIn').classList.toggle('hide',v==='today');
+  $('vwHome').classList.toggle('on',v==='home'); $('vwItems').classList.toggle('on',v==='items'); $('vwLog').classList.toggle('on',v==='log');
+  $('homeList').classList.toggle('hide',v!=='home'); $('itemList').classList.toggle('hide',v!=='items'); $('stockList').classList.toggle('hide',v!=='log'); $('todayList').classList.add('hide');
+  $('groupChips').classList.toggle('hide',v!=='items'); $('filterChips').classList.toggle('hide',v!=='items'); $('searchIn').classList.toggle('hide',v==='home');
   renderOwner(); }
-function renderOwner(){ ownerView==='items'?renderItems():ownerView==='today'?renderToday():renderStock(); }
+function renderOwner(){ ownerView==='home'?renderHome():ownerView==='items'?renderItems():renderStock(); }
 const IST=t=>{ const d=t?new Date(t):new Date(); return isNaN(d)?'':new Date(d.getTime()+19800000).toISOString().slice(0,10); };
 function photosOf(s){ return (Array.isArray(s.photos)&&s.photos.length)?s.photos:(s.photo_url?[s.photo_url]:[]); }
 function stPath(u){ const m=(''+u).split('/nkg-photos/')[1]; return m?m.split('?')[0]:(''+u); }
@@ -883,6 +933,152 @@ function thumbHTML(s,cls){ const p=photosOf(s); const emoji=(s.direction==='out'
   if(!p.length) return '<div class="'+cls+' ph">'+emoji+'</div>';
   const paths=p.map(stPath);
   return '<button class="'+cls+' imgbtn" onclick="openPhotos(\''+paths.join('|')+'\')"><img data-p="'+esc(paths[0])+'" loading="lazy">'+(p.length>1?'<span class="pcount">'+p.length+'</span>':'')+'</button>'; }
+
+
+/* ---- Stock Statement: declares the truth, never estimates ---- */
+function stmtItems(){ const g={};
+  stock.forEach(x=>{ const k=keyOf(x);
+    if(!g[k])g[k]={k:k,cat:(x.category||'Uncategorised'),brand:(x.brand||''),design:(x.design||''),thickness:(x.thickness||''),size:(x.size||''),name:(x.item_name||x.category||'-'),net:0};
+    g[k].net+=(x.direction==='out'?-1:1)*(Number(x.qty)||0); });
+  const out=Object.values(g);
+  out.forEach(i=>{ i.rate=rates[i.k]||0; i.rated=i.rate>0; i.val=i.rated?i.net*i.rate:0;
+    i.sub=i.brand||i.design||'Unbranded';
+    i.spec=[i.thickness,i.size].filter(Boolean).join(' ')||i.name; });
+  return out; }
+function _ist(t){ return new Date(t+19800000); }
+function stmtNo(t){ const d=_ist(t),p=n=>String(n).padStart(2,'0');
+  return 'NKW/STK/'+d.getUTCFullYear()+p(d.getUTCMonth()+1)+p(d.getUTCDate())+'-'+p(d.getUTCHours())+p(d.getUTCMinutes()); }
+function stmtWhen(t){ const MM=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const d=_ist(t),p=n=>String(n).padStart(2,'0');
+  return d.getUTCDate()+' '+MM[d.getUTCMonth()]+' '+d.getUTCFullYear()+', '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+' IST'; }
+function showStatement(){ ['gate','add','owner','manage','khata','bill','dstock'].forEach(i=>{ const e=$(i); if(e)e.classList.add('hide'); });
+  $('stmt').classList.add('on'); renderStatement(); window.scrollTo(0,0);
+  try{ document.title=stmtNo(Date.now()).replace(/\//g,'-'); }catch(e){} }
+function backFromStmt(){ $('stmt').classList.remove('on'); $('owner').classList.remove('hide'); try{ document.title='NK Warehouse'; }catch(e){} }
+function renderStatement(){ const now=Date.now(), items=stmtItems();
+  const live=items.filter(i=>i.net>0), neg=items.filter(i=>i.net<0);
+  const ratedLive=live.filter(i=>i.rated), unrated=live.filter(i=>!i.rated);
+  const value=ratedLive.reduce((x,i)=>x+i.val,0);
+  const pcs=live.reduce((x,i)=>x+i.net,0), unrPcs=unrated.reduce((x,i)=>x+i.net,0);
+  const cov=live.length?Math.round(100*ratedLive.length/live.length):0;
+  const pend=(function(){try{return pending().length;}catch(e){return 0;}})();
+  const sync=loadFailed?'Not current - last refresh failed':'Live - synced '+stmtWhen(_lastLoad||now).split(', ')[1];
+
+  var h='<div class="biz">MITTAL HARDWARE &amp; PLYWOOD</div><div class="bizsub">NK Warehouse - godown register</div>'
+   +'<div class="dtitle">Stock Statement</div>'
+   +'<div class="meta">'
+   +'<div><span>Statement No.</span><b>'+stmtNo(now)+'</b></div>'
+   +'<div><span>As on</span><b>'+stmtWhen(now)+'</b></div>'
+   +'<div><span>Prepared from</span>NK Warehouse register &middot; '+stock.length+' movement entries</div>'
+   +'<div><span>Data status</span>'+esc(sync)+(pend?(' &middot; '+pend+' entr'+(pend===1?'y':'ies')+' not yet synced'):'')+'</div>'
+   +'<div><span>Prepared by</span>'+esc((me_&&me_.name)||'Owner')+'</div>'
+   +'</div>';
+
+  h+='<h2>Summary</h2><table class="sum"><tr class="big"><td>Inventory value</td><td>'+inr(value)+'</td></tr>'
+   +'<tr><td>Valuation coverage<span class="qual">Items priced at owner’s rates</span></td><td>'+ratedLive.length+' of '+live.length+' items<span class="qual">'+cov+'% of items valued</span></td></tr>'
+   +'<tr><td>Items in stock</td><td>'+live.length+'</td></tr>'
+   +'<tr><td>Pieces in stock</td><td>'+pcs.toLocaleString('en-IN')+'</td></tr>'
+   +'<tr><td>Items awaiting rate<span class="qual">Not included in inventory value</span></td><td>'+unrated.length+'<span class="qual">'+unrPcs.toLocaleString('en-IN')+' pcs</span></td></tr>'
+   +'<tr><td>Items with negative balance</td><td'+(neg.length?' class="neg"':'')+'>'+neg.length+'</td></tr></table>';
+
+  h+='<h2>Attention</h2>';
+  if(!neg.length&&!unrated.length&&!pend&&!loadFailed){ h+='<div class="none">No exceptions. This statement values every item in stock.</div>'; }
+  else{
+    h+='<table class="stbl">';
+    if(neg.length){ h+='<tr class="grp"><td colspan="4">Negative balances - register shows more issued than received. Physical verification required.</td></tr>'
+      +'<tr><th>Item</th><th class="n">Balance</th><th class="n">Rate</th><th class="n">Value</th></tr>'
+      +neg.map(function(i){ return '<tr><td class="it">'+esc(i.sub+' '+i.spec)+'</td><td class="n neg">'+i.net+' pcs</td><td class="n">'+(i.rated?inr(i.rate):'-')+'</td><td class="n neg">'+(i.rated?inr(i.val):'-')+'</td></tr>'; }).join(''); }
+    if(unrated.length){ h+='<tr class="grp"><td colspan="4">Items awaiting rate - held in stock, excluded from inventory value.</td></tr>'
+      +unrated.slice(0,40).map(function(i){ return '<tr><td class="it">'+esc(i.sub+' '+i.spec)+'</td><td class="n">'+i.net+' pcs</td><td class="n nr" colspan="2">no rate on record</td></tr>'; }).join('')
+      +(unrated.length>40?('<tr><td class="it nr" colspan="4">... and '+(unrated.length-40)+' further items awaiting rate</td></tr>'):''); }
+    if(pend){ h+='<tr class="grp"><td colspan="4">'+pend+' entr'+(pend===1?'y':'ies')+' recorded on a handset and not yet synced - not reflected above.</td></tr>'; }
+    if(loadFailed){ h+='<tr class="grp"><td colspan="4">Last refresh failed - figures may not reflect the latest entries.</td></tr>'; }
+    h+='</table>';
+  }
+
+  var cats={}; live.forEach(function(i){ (cats[i.cat]=cats[i.cat]||[]).push(i); });
+  var catVal={}, catPcs={};
+  Object.keys(cats).forEach(function(c){ catVal[c]=cats[c].reduce(function(x,i){return x+i.val;},0); catPcs[c]=cats[c].reduce(function(x,i){return x+i.net;},0); });
+  var order=Object.keys(cats).sort(function(a,b){ return (catVal[b]-catVal[a])||(a>b?1:-1); });
+  var num=function(v){ var n=parseFloat(String(v==null?'':v)); return isNaN(n)?0:n; };
+  var area=function(z){ var p=String(z||'').split(/[x×X*]/); return p.length<2?0:num(p[0])*num(p[1]); };
+
+  h+='<h2>Inventory</h2>';
+  order.forEach(function(c,ci){
+    var subs={}; cats[c].forEach(function(i){ (subs[i.sub]=subs[i.sub]||[]).push(i); });
+    var sv={}; Object.keys(subs).forEach(function(k){ sv[k]=subs[k].reduce(function(x,i){return x+i.val;},0); });
+    var so=Object.keys(subs).sort(function(a,b){ return (sv[b]-sv[a])||(a>b?1:-1); });
+    h+='<table class="stbl"><thead><tr><th>'+(ci+1)+'. '+esc(c)+'</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Value</th></tr></thead><tbody>';
+    so.forEach(function(k){
+      var list=subs[k].slice().sort(function(a,b){ return num(a.thickness)-num(b.thickness)||area(a.size)-area(b.size)||(String(a.spec)>String(b.spec)?1:-1); });
+      var kp=list.reduce(function(x,i){return x+i.net;},0);
+      h+='<tr class="grp"><td colspan="4">'+esc(k)+'</td></tr>';
+      h+=list.map(function(i){ return '<tr><td class="it">'+esc(i.spec)+'</td><td class="n">'+i.net+'</td><td class="n'+(i.rated?'':' nr')+'">'+(i.rated?inr(i.rate):'no rate')+'</td><td class="n'+(i.rated?'':' nr')+'">'+(i.rated?inr(i.val):'-')+'</td></tr>'; }).join('');
+      var kr=list.some(function(i){return i.rated;});
+      h+='<tr class="sub"><td>'+esc(k)+' total</td><td class="n">'+kp+'</td><td class="n"></td><td class="n'+(kr?'':' nr')+'">'+(kr?inr(sv[k]):'not valued')+'</td></tr>';
+    });
+    h+='<tr class="tot"><td>'+esc(c)+' total</td><td class="n">'+catPcs[c].toLocaleString('en-IN')+'</td><td class="n"></td><td class="n">'+inr(catVal[c])+'</td></tr>';
+    h+='</tbody></table>';
+  });
+  if(!live.length)h+='<div class="none">No stock on record.</div>';
+
+  h+='<div class="gt"><table><tr><td>Grand total</td><td>'+inr(value)+'</td></tr>'
+   +'<tr><td style="font-size:12px;font-weight:400;color:#555">'+live.length+' items &middot; '+pcs.toLocaleString('en-IN')+' pieces</td>'
+   +'<td style="font-size:12px;font-weight:400;color:#555">'+(unrated.length?('excludes '+unrated.length+' item'+(unrated.length===1?'':'s')+' awaiting rate'):'all items valued')+'</td></tr></table></div>';
+
+  h+='<div class="notes"><h2>Notes &amp; basis of preparation</h2><ol>'
+   +'<li>Prepared from the NK Warehouse movement register (goods received less goods issued). It is a book statement and does not represent a physical stock count.</li>'
+   +'<li>Valuation uses rates recorded by the owner. Items with no rate on record are shown at quantity only and are excluded from inventory value - no estimate has been substituted.</li>'
+   +'<li>Items with a nil balance are not listed. Items with a negative balance are listed under Attention and excluded from inventory value and piece totals.</li>'
+   +'<li>Storage location (rack / zone) is not recorded against stock; warehouse organisation is in progress.</li>'
+   +'<li>Categories and brands are ordered by value, highest first; items within a brand by thickness and size.</li>'
+   +'<li>Figures are as at the date and time stated in the header.</li>'
+   +'</ol></div>';
+
+  h+='<div class="foot"><span>Mittal Hardware &amp; Plywood &middot; NK Warehouse</span><span>'+stmtNo(now)+'</span><span>Generated '+stmtWhen(now)+' &middot; MAIOS</span></div>';
+  $('docBody').innerHTML=h; }
+/* ---- Owner OS: attention cards (source-agnostic, Decision-Queue-ready) ---- */
+function attentionCards(){ const cards=[]; const g={};
+  stock.forEach(x=>{ const d=(x.direction==='out'?-1:1)*(Number(x.qty)||0); const k=keyOf(x); g[k]=(g[k]||0)+d; });
+  const names={}; stock.forEach(x=>{ names[keyOf(x)]=x.item_name||x.category||'—'; });
+  Object.keys(g).forEach(k=>{ if(g[k]<0)cards.push({domain:'warehouse',sev:'red',txt:names[k]+' — '+g[k]+' pcs (ज़्यादा निकला)',act:"findItem('"+esc(names[k])+"')"}); });
+  const un=Object.keys(g).filter(k=>g[k]>0&&!(rates[k]>0));
+  if(un.length)cards.push({domain:'warehouse',sev:'amber',txt:un.length+' आइटम बिना रेट — value अधूरी',act:"findItem('"+esc(names[un[0]])+"')"});
+  const day=IST(); const noname=stock.filter(x=>x.direction==='out'&&IST(x.created_at)===day&&!(x.customer||'').trim()).length;
+  if(noname)cards.push({domain:'warehouse',sev:'amber',txt:noname+' आज की एंट्री बिना नाम — किसको गया?',act:"setOwnerView('log')"});
+  const pend=(function(){try{return JSON.parse(localStorage.getItem('nkg_pending')||'[]').length;}catch(e){return 0;}})();
+  if(pend)cards.push({domain:'warehouse',sev:'amber',txt:pend+' एंट्री सिर्फ़ फ़ोन में — नेट आने पर sync होगी',act:'syncPending()'});
+  if(loadFailed&&stock.length)cards.push({domain:'warehouse',sev:'red',txt:'पुराना data दिख रहा है — refresh नहीं हुआ',act:'loadStock()'});
+  return cards; }
+function findItem(n){ setOwnerView('items'); const si=$('searchIn'); if(si){si.value=n;} renderOwner(); }
+function _tlSessions(days){ const out=[]; const list=stock.slice().sort((a,b)=>(a.created_at<b.created_at?1:-1));
+  list.forEach(x=>{ const day=IST(x.created_at); if(!days.includes(day))return;
+    const who=x.direction==='out'?((x.customer||'').trim()||'बिना नाम'):((x.source_godown||'').trim()||'माल आया');
+    const last=out[out.length-1];
+    if(last&&last.day===day&&last.dir===x.direction&&last.who===who&&last.by===(x.logged_by||'')&&Math.abs(new Date(last.t)-new Date(x.created_at))<45*60000){ last.rows.push(x); last.t=x.created_at; }
+    else out.push({day:day,dir:x.direction,who:who,by:x.logged_by||'',t:x.created_at,rows:[x]}); });
+  return out; }
+function _tlCard(sN,i){ const pcs=sN.rows.reduce((x,r)=>x+(Number(r.qty)||0),0);
+  let val=0; sN.rows.forEach(r=>{ const rt=rates[keyOf(r)]||0; if(rt)val+=rt*(Number(r.qty)||0); });
+  const ph=sN.rows.some(r=>photosOf(r).length);
+  const tm=new Date(sN.t).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kolkata'});
+  return '<button class="khrow" onclick="tlOpen('+i+')"><div class="khn">'+(sN.dir==='out'?'📤 ':'🚚 ')+esc(sN.who)
+   +'<span style="display:block;font-size:12px;color:var(--mut);font-weight:600;margin-top:2px">'+sN.rows.length+' आइटम · '+pcs+' pcs'+(val?' · '+inr(val):'')+(ph?' · 📷':'')+' · '+esc(sN.by)+' · '+tm+'</span></div><span class="chev">›</span></button>'; }
+let _tl=[];
+function tlOpen(i){ const sN=_tl[i]; if(!sN)return;
+  sheetHTML('<div class="grab"></div><h4>'+(sN.dir==='out'?'📤 ':'🚚 ')+esc(sN.who)+' <span style="color:var(--mut);font-size:13px;font-weight:600">'+esc(sN.by)+'</span></h4>'
+   +'<div class="revcart">'+sN.rows.map(r=>{ const p=photosOf(r); return '<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc(r.item_name||r.category||'—')+'</div><div class="bl-s">'+r.qty+' pcs'+(p.length?' · <button class="khphoto" onclick="openPhotos(\''+esc(p.join('|'))+'\',0)">📷 '+p.length+'</button>':'')+'</div></div></div>'; }).join('')+'</div>'); openSheet(); }
+function renderHome(){ const el=$('homeList'); if(!el)return;
+  const cards=attentionCards();
+  const attn=cards.length?('<div class="wsub" style="margin-top:2px">ध्यान चाहिए</div>'+cards.map(c=>'<button class="attn '+c.sev+'" onclick="'+c.act+'">'+(c.sev==='red'?'🔴 ':'🟠 ')+c.txt+'</button>').join(''))
+    :'<div class="allok">सब ठीक ✓</div>';
+  const today=IST(); const y=new Date(Date.now()+19800000-86400000).toISOString().slice(0,10);
+  _tl=_tlSessions([today,y]);
+  const tToday=_tl.filter(x=>x.day===today), tY=_tl.filter(x=>x.day===y);
+  const tl='<div class="wsub">आज हुआ</div>'+(tToday.length?tToday.map((x)=>_tlCard(x,_tl.indexOf(x))).join(''):'<div class="empty" style="padding:14px">अभी कुछ नहीं।</div>')
+    +(tY.length?('<div class="wsub">कल</div>'+tY.map((x)=>_tlCard(x,_tl.indexOf(x))).join('')):'');
+  const acts='<div class="obtns" style="margin-top:16px"><button class="obtn go" onclick="logAsOwner()">+ Add stock</button><button class="obtn" onclick="newBill()">Give out</button><button class="obtn" onclick="showKhata()">Khata</button><button class="obtn" onclick="showManage()">Manage</button><button class="obtn" onclick="showStatement()">📄 Stock Statement</button></div>';
+  el.innerHTML=attn+tl+acts; }
 function renderToday(){
   const day=IST(); const list=stock.filter(s=>IST(s.created_at)===day).slice().sort((a,b)=>(a.created_at<b.created_at?1:-1));
   const inN=list.filter(s=>s.direction!=='out').reduce((x,s)=>x+(Number(s.qty)||0),0);
@@ -901,7 +1097,7 @@ function buildFilters(){ const cats=[...new Set(stock.map(s=>s.category).filter(
   $('filterChips').innerHTML=cats.length<2?'':['<button class="fchip'+(!filter.category?' on':'')+'" onclick="clearFilter()">All</button>'].concat(cats.map(c=>`<button class="fchip${filter.category===c?' on':''}" onclick="setFilter('category','${esc(c)}')">${esc(c)}</button>`)).join(''); }
 function clearFilter(){ filter={}; buildFilters(); renderOwner(); }
 function setFilter(k,v){ filter[k]=filter[k]===v?'':v; buildFilters(); renderOwner(); }
-function matchF(s,q){ if(filter.category&&s.category!==filter.category)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q))return false;} return true; }
+function matchF(s,q){ if(filter.category&&s.category!==filter.category)return false; if(q){const h=[s.item_name,s.brand,s.thickness,s.size,s.design,s.customer,s.category,s.zone_name,s.source_godown,s.logged_by].join(' ').toLowerCase(); if(!h.includes(q)&&fuzzyHit(q,h)<2)return false;} return true; }
 let groupBy='brand';
 const GROUPERS=[{k:'brand',label:'Brand'},{k:'size',label:'Size'},{k:'thickness',label:'Thickness'},{k:'design',label:'Design'},{k:'category',label:'Type'},{k:'',label:'None'}];
 let collapsed={}, _buckets=[];
