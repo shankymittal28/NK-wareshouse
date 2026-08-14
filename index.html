@@ -211,6 +211,41 @@ button,input,select{font-family:inherit;font-size:16px}
 .wctag.dout{color:var(--rose);border-color:rgba(251,113,133,.4)}
 .wctag.item{color:var(--ink)}
 
+
+/* ---- Console: the owner's analytical surface. Inherits the Stock
+   Statement's discipline (density, numeric spine, typographic
+   hierarchy), never the staff window's operational language. ---- */
+.csum{border-bottom:1px solid var(--hair2);padding-bottom:13px;margin-bottom:2px}
+.csum-r{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.csum-r .cl{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--mut)}
+.cvbig{font-size:27px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cvbig.neg{color:var(--rose)}
+.cmeta{font-size:12px;color:var(--mut);margin-top:5px;font-variant-numeric:tabular-nums}
+.cmeta b{color:var(--ink);font-weight:700}
+.csec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 0 2px;padding-bottom:5px;border-bottom:1px solid var(--hair2)}
+.csec h3{margin:0;font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--mut)}
+.csec span{font-size:11px;color:var(--mut2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.crow{display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--hair);padding:11px 2px;color:var(--ink);cursor:pointer}
+.crow:active{background:rgba(255,255,255,.03)}
+.crow .cm{flex:1;min-width:0}
+.crow .cn{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow .ctxt{display:block;font-size:14px;font-weight:600;line-height:1.35}
+.crow .cs{display:block;font-size:11.5px;color:var(--mut);margin-top:3px;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow .cv{flex:0 0 auto;text-align:right;font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.crow .cv.nil{color:var(--mut2);font-weight:600}
+.crow .cx{flex:0 0 auto;color:var(--mut2);font-size:15px;line-height:1}
+.flag{flex:0 0 auto;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;min-width:52px}
+.flag.red{color:var(--rose)}.flag.amber{color:var(--amber)}
+.dirf{flex:0 0 auto;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;min-width:28px}
+.dirf.in{color:var(--mint)}.dirf.out{color:var(--rose)}
+.cclear{font-size:13px;color:var(--mut);padding:13px 2px;border-bottom:1px solid var(--hair)}
+.cacts{display:flex;gap:7px;flex-wrap:wrap;margin-top:24px}
+.cacts button{flex:1;min-width:30%;background:none;border:1px solid var(--hair2);color:var(--mut);border-radius:10px;padding:11px 8px;font-size:13px;font-weight:600;min-height:44px}
+.cacts button.pri{color:var(--ink);border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.12)}
+/* console tabs: underline, not pill */
+#ownerView{background:none;border:none;border-radius:0;padding:0;gap:0;border-bottom:1px solid var(--hair2)}
+#ownerView button{border-radius:0;padding:12px 4px;font-size:13px;font-weight:700;letter-spacing:.05em;color:var(--mut2);border-bottom:2px solid transparent;box-shadow:none;background:none}
+#ownerView button.on{background:none;box-shadow:none;color:var(--ink);border-bottom-color:var(--indigo)}
 /* ---- Stock Statement: a document, not a screen ---- */
 #stmt{position:fixed;inset:0;overflow:auto;background:#e9e9e6;z-index:70;display:none}
 #stmt.on{display:block}
@@ -259,9 +294,6 @@ button,input,select{font-family:inherit;font-size:16px}
   h2{break-after:avoid}
   @page{margin:14mm}
 }
-.attn{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid rgba(245,177,61,.45);color:var(--ink);border-radius:14px;padding:14px;font-size:15px;font-weight:700;margin-bottom:9px}
-.attn.red{border-color:rgba(251,113,133,.55);background:rgba(251,113,133,.07)}
-.allok{text-align:center;color:var(--mint);font-size:22px;font-weight:800;padding:26px 10px 20px}
 .qpnum{font-size:54px;font-weight:800;text-align:center;letter-spacing:-.02em;min-height:66px;font-variant-numeric:tabular-nums}
 .qpnum.empty{color:var(--mut2)}
 .qpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
@@ -365,11 +397,11 @@ button,input,select{font-family:inherit;font-size:16px}
 
 <div id="owner" class="wrap hide">
   <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" id="refreshBtn" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
-  <div class="valcard"><div class="vlab">Stock value</div><div class="vnum" id="stVal">&#8377;0</div><div class="vmeta"><b class="num" id="stQty">0</b> pcs &middot; today: <b class="num" id="stIn">0</b> in &middot; <b class="num" id="stOut">0</b> out <span id="staleNote" class="vnote hide">&middot; old data &mdash; tap &#8635;</span></div></div>
-  <div class="modew" id="ownerView"><button id="vwHome" class="on" onclick="setOwnerView('home')">आज</button><button id="vwItems" onclick="setOwnerView('items')">स्टॉक</button><button id="vwLog" onclick="setOwnerView('log')">सब</button></div>
-  <input id="searchIn" class="searchbar" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
-  <div class="fchips" id="filterChips"></div>
-  <div class="gbrow" id="groupChips"></div>
+  <div class="csum"><div class="csum-r"><span class="cl">Stock value</span><b class="cvbig num" id="stVal">&#8377;0</b></div><div class="cmeta"><b id="stQty">0</b> pcs in stock &middot; today <b id="stIn">0</b> in / <b id="stOut">0</b> out<span id="staleNote" class="vnote hide"> &middot; older data &mdash; tap &#8635;</span></div></div>
+  <div class="modew" id="ownerView"><button id="vwHome" class="on" onclick="setOwnerView('home')">Today</button><button id="vwItems" onclick="setOwnerView('items')">Stock</button><button id="vwLog" onclick="setOwnerView('log')">All</button></div>
+  <input id="searchIn" class="searchbar hide" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
+  <div class="fchips hide" id="filterChips"></div>
+  <div class="gbrow hide" id="groupChips"></div>
   <div id="homeList"></div>
   <div id="itemList" class="hide"></div>
   <div id="stockList" class="hide"></div>
@@ -415,7 +447,7 @@ button,input,select{font-family:inherit;font-size:16px}
   <div class="valcard" style="margin-top:18px"><div class="vlab">Bill total <span id="billCount"></span></div><div class="vnum" id="billTotal">&#8377;0</div></div>
   <button class="save" id="billSaveBtn" style="width:100%;margin-top:14px" onclick="saveBill()">&#10003; Save &amp; give out</button>
 </div>
-<div id="stmt" class="hide">
+<div id="stmt">
   <div class="stbar noprint"><button class="iconlink" onclick="backFromStmt()">&#8592; Back</button><button class="iconlink" onclick="window.print()">&#128424; Print / PDF</button></div>
   <div class="doc" id="docBody"></div>
 </div>
@@ -899,7 +931,7 @@ async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('bu
   if(sn)sn.classList.add('hide');
   if(!loadFailed){ stock=s; rates={}; rt.forEach(r=>rates[r.k]=Number(r.rate)||0); _lastLoad=Date.now(); }
   else { stock=[]; rates={}; }
-  buildFilters(); updateStats(); document.querySelector('#owner .vmeta').classList.toggle('hide',loadFailed); if(loadFailed){ $('stVal').textContent='—'; } renderOwner(); }
+  buildFilters(); updateStats(); document.querySelector('#owner .cmeta').classList.toggle('hide',loadFailed); if(loadFailed){ $('stVal').textContent='—'; } renderOwner(); }
 function keyOf(s){ return [s.category,s.brand||'',s.thickness||'',s.size||'',s.design||''].join('|'); }
 function updateStats(){ let net=0, val=0; const g={}; stock.forEach(s=>{ const d=(s.direction==='out'?-1:1)*(Number(s.qty)||0); net+=d; const k=keyOf(s); g[k]=(g[k]||0)+d; }); Object.keys(g).forEach(k=>{ val+=g[k]*(rates[k]||0); }); $('stQty').textContent=net.toLocaleString('en-IN'); let tIn=0,tOut=0; stock.forEach(s=>{ if(IST(s.created_at)===IST()){ if(s.direction==='out')tOut+=Number(s.qty)||0; else tIn+=Number(s.qty)||0; } }); $('stIn').textContent=tIn; $('stOut').textContent=tOut; $('stVal').textContent=inr(val); $('stVal').classList.toggle('neg',val<0); }
 function setOwnerView(v){ ownerView=v;
@@ -952,7 +984,7 @@ function stmtWhen(t){ const MM=['January','February','March','April','May','June
   const d=_ist(t),p=n=>String(n).padStart(2,'0');
   return d.getUTCDate()+' '+MM[d.getUTCMonth()]+' '+d.getUTCFullYear()+', '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+' IST'; }
 function showStatement(){ ['gate','add','owner','manage','khata','bill','dstock'].forEach(i=>{ const e=$(i); if(e)e.classList.add('hide'); });
-  $('stmt').classList.add('on'); renderStatement(); window.scrollTo(0,0);
+  $('stmt').classList.remove('hide'); $('stmt').classList.add('on'); renderStatement(); window.scrollTo(0,0);
   try{ document.title=stmtNo(Date.now()).replace(/\//g,'-'); }catch(e){} }
 function backFromStmt(){ $('stmt').classList.remove('on'); $('owner').classList.remove('hide'); try{ document.title='NK Warehouse'; }catch(e){} }
 function renderStatement(){ const now=Date.now(), items=stmtItems();
@@ -1041,19 +1073,19 @@ function renderStatement(){ const now=Date.now(), items=stmtItems();
 function attentionCards(){ const cards=[]; const g={};
   stock.forEach(x=>{ const d=(x.direction==='out'?-1:1)*(Number(x.qty)||0); const k=keyOf(x); g[k]=(g[k]||0)+d; });
   const names={}; stock.forEach(x=>{ names[keyOf(x)]=x.item_name||x.category||'—'; });
-  Object.keys(g).forEach(k=>{ if(g[k]<0)cards.push({domain:'warehouse',sev:'red',txt:names[k]+' — '+g[k]+' pcs (ज़्यादा निकला)',act:"findItem('"+esc(names[k])+"')"}); });
+  Object.keys(g).forEach(k=>{ if(g[k]<0)cards.push({domain:'warehouse',sev:'red',txt:names[k]+' — '+g[k]+' pcs, issued more than received',act:"findItem('"+esc(names[k])+"')"}); });
   const un=Object.keys(g).filter(k=>g[k]>0&&!(rates[k]>0));
-  if(un.length)cards.push({domain:'warehouse',sev:'amber',txt:un.length+' आइटम बिना रेट — value अधूरी',act:"findItem('"+esc(names[un[0]])+"')"});
+  if(un.length)cards.push({domain:'warehouse',sev:'amber',txt:un.length+' item'+(un.length===1?'':'s')+' without a rate — inventory value incomplete',act:"findItem('"+esc(names[un[0]])+"')"});
   const day=IST(); const noname=stock.filter(x=>x.direction==='out'&&IST(x.created_at)===day&&!(x.customer||'').trim()).length;
-  if(noname)cards.push({domain:'warehouse',sev:'amber',txt:noname+' आज की एंट्री बिना नाम — किसको गया?',act:"setOwnerView('log')"});
+  if(noname)cards.push({domain:'warehouse',sev:'amber',txt:noname+' dispatch'+(noname===1?'':'es')+' today with no recipient recorded',act:"setOwnerView('log')"});
   const pend=(function(){try{return JSON.parse(localStorage.getItem('nkg_pending')||'[]').length;}catch(e){return 0;}})();
-  if(pend)cards.push({domain:'warehouse',sev:'amber',txt:pend+' एंट्री सिर्फ़ फ़ोन में — नेट आने पर sync होगी',act:'syncPending()'});
-  if(loadFailed&&stock.length)cards.push({domain:'warehouse',sev:'red',txt:'पुराना data दिख रहा है — refresh नहीं हुआ',act:'loadStock()'});
+  if(pend)cards.push({domain:'warehouse',sev:'amber',txt:pend+' entr'+(pend===1?'y':'ies')+' held on a handset, not yet synced',act:'syncPending()'});
+  if(loadFailed&&stock.length)cards.push({domain:'warehouse',sev:'red',txt:'Showing older data — last refresh failed',act:'loadStock()'});
   return cards; }
 function findItem(n){ setOwnerView('items'); const si=$('searchIn'); if(si){si.value=n;} renderOwner(); }
 function _tlSessions(days){ const out=[]; const list=stock.slice().sort((a,b)=>(a.created_at<b.created_at?1:-1));
   list.forEach(x=>{ const day=IST(x.created_at); if(!days.includes(day))return;
-    const who=x.direction==='out'?((x.customer||'').trim()||'बिना नाम'):((x.source_godown||'').trim()||'माल आया');
+    const who=x.direction==='out'?((x.customer||'').trim()||'No recipient recorded'):((x.source_godown||'').trim()||'Goods received');
     const last=out[out.length-1];
     if(last&&last.day===day&&last.dir===x.direction&&last.who===who&&last.by===(x.logged_by||'')&&Math.abs(new Date(last.t)-new Date(x.created_at))<45*60000){ last.rows.push(x); last.t=x.created_at; }
     else out.push({day:day,dir:x.direction,who:who,by:x.logged_by||'',t:x.created_at,rows:[x]}); });
@@ -1062,23 +1094,32 @@ function _tlCard(sN,i){ const pcs=sN.rows.reduce((x,r)=>x+(Number(r.qty)||0),0);
   let val=0; sN.rows.forEach(r=>{ const rt=rates[keyOf(r)]||0; if(rt)val+=rt*(Number(r.qty)||0); });
   const ph=sN.rows.some(r=>photosOf(r).length);
   const tm=new Date(sN.t).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Kolkata'});
-  return '<button class="khrow" onclick="tlOpen('+i+')"><div class="khn">'+(sN.dir==='out'?'📤 ':'🚚 ')+esc(sN.who)
-   +'<span style="display:block;font-size:12px;color:var(--mut);font-weight:600;margin-top:2px">'+sN.rows.length+' आइटम · '+pcs+' pcs'+(val?' · '+inr(val):'')+(ph?' · 📷':'')+' · '+esc(sN.by)+' · '+tm+'</span></div><span class="chev">›</span></button>'; }
+  const n=sN.rows.length;
+  return '<button class="crow" onclick="tlOpen('+i+')">'
+   +'<span class="dirf '+(sN.dir==='out'?'out':'in')+'">'+(sN.dir==='out'?'Out':'In')+'</span>'
+   +'<span class="cm"><span class="cn">'+esc(sN.who)+'</span><span class="cs">'+n+' item'+(n===1?'':'s')+' · '+pcs.toLocaleString('en-IN')+' pcs · '+esc(sN.by||'—')+' · '+tm+(ph?' · photo':'')+'</span></span>'
+   +'<span class="cv'+(val?'':' nil')+'">'+(val?inr(val):'—')+'</span>'
+   +'<span class="cx">›</span></button>'; }
 let _tl=[];
 function tlOpen(i){ const sN=_tl[i]; if(!sN)return;
   sheetHTML('<div class="grab"></div><h4>'+(sN.dir==='out'?'📤 ':'🚚 ')+esc(sN.who)+' <span style="color:var(--mut);font-size:13px;font-weight:600">'+esc(sN.by)+'</span></h4>'
    +'<div class="revcart">'+sN.rows.map(r=>{ const p=photosOf(r); return '<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc(r.item_name||r.category||'—')+'</div><div class="bl-s">'+r.qty+' pcs'+(p.length?' · <button class="khphoto" onclick="openPhotos(\''+esc(p.join('|'))+'\',0)">📷 '+p.length+'</button>':'')+'</div></div></div>'; }).join('')+'</div>'); openSheet(); }
+function _csec(t,r){ return '<div class="csec"><h3>'+t+'</h3>'+(r?('<span>'+r+'</span>'):'')+'</div>'; }
 function renderHome(){ const el=$('homeList'); if(!el)return;
   const cards=attentionCards();
-  const attn=cards.length?('<div class="wsub" style="margin-top:2px">ध्यान चाहिए</div>'+cards.map(c=>'<button class="attn '+c.sev+'" onclick="'+c.act+'">'+(c.sev==='red'?'🔴 ':'🟠 ')+c.txt+'</button>').join(''))
-    :'<div class="allok">सब ठीक ✓</div>';
-  const today=IST(); const y=new Date(Date.now()+19800000-86400000).toISOString().slice(0,10);
+  var h=_csec('Needs attention', cards.length?String(cards.length):'');
+  h+= cards.length
+    ? cards.map(function(c){ return '<button class="crow" onclick="'+c.act+'"><span class="flag '+c.sev+'">'+(c.sev==='red'?'Critical':'Review')+'</span><span class="cm"><span class="ctxt">'+esc(c.txt)+'</span></span><span class="cx">›</span></button>'; }).join('')
+    : '<div class="cclear">All clear — nothing needs your attention.</div>';
+  const today=IST(), y=new Date(Date.now()+19800000-86400000).toISOString().slice(0,10);
   _tl=_tlSessions([today,y]);
-  const tToday=_tl.filter(x=>x.day===today), tY=_tl.filter(x=>x.day===y);
-  const tl='<div class="wsub">आज हुआ</div>'+(tToday.length?tToday.map((x)=>_tlCard(x,_tl.indexOf(x))).join(''):'<div class="empty" style="padding:14px">अभी कुछ नहीं।</div>')
-    +(tY.length?('<div class="wsub">कल</div>'+tY.map((x)=>_tlCard(x,_tl.indexOf(x))).join('')):'');
-  const acts='<div class="obtns" style="margin-top:16px"><button class="obtn go" onclick="logAsOwner()">+ Add stock</button><button class="obtn" onclick="newBill()">Give out</button><button class="obtn" onclick="showKhata()">Khata</button><button class="obtn" onclick="showManage()">Manage</button><button class="obtn" onclick="showStatement()">📄 Stock Statement</button></div>';
-  el.innerHTML=attn+tl+acts; }
+  const tT=_tl.filter(function(x){return x.day===today;}), tY=_tl.filter(function(x){return x.day===y;});
+  h+=_csec('Today', tT.length?(tT.length+' event'+(tT.length===1?'':'s')):'');
+  h+= tT.length ? tT.map(function(x){ return _tlCard(x,_tl.indexOf(x)); }).join('') : '<div class="cclear">No movements recorded today.</div>';
+  if(tY.length){ h+=_csec('Yesterday', tY.length+' event'+(tY.length===1?'':'s'));
+    h+= tY.map(function(x){ return _tlCard(x,_tl.indexOf(x)); }).join(''); }
+  h+='<div class="cacts"><button class="pri" onclick="logAsOwner()">Add stock</button><button onclick="newBill()">Give out</button><button onclick="showKhata()">Khata</button><button onclick="showManage()">Manage</button><button onclick="showStatement()">Stock Statement</button></div>';
+  el.innerHTML=h; }
 function renderToday(){
   const day=IST(); const list=stock.filter(s=>IST(s.created_at)===day).slice().sort((a,b)=>(a.created_at<b.created_at?1:-1));
   const inN=list.filter(s=>s.direction!=='out').reduce((x,s)=>x+(Number(s.qty)||0),0);

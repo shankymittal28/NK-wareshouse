@@ -186,3 +186,19 @@ A new document may not be built until every line is ticked.
 - [ ] Phone check: no horizontal overflow at 390px
 - [ ] Filename convention wired to the document number
 - [ ] Nothing interactive inside the document body
+
+---
+
+## 11. Language rule (MAIOS-wide)
+
+Each surface family has one language, never two:
+
+| Surface | Language | Why |
+|---|---|---|
+| **Staff workspace** | 100% Hindi | The men on the floor read Hindi; a second language is a second reading tax on every screen, hundreds of times a day |
+| **Owner console** | 100% English | An analytical surface, read the way business is read here |
+| **Business documents** | 100% English by default | They leave the building — auditors, bankers, suppliers, archives |
+
+No surface is bilingual. A string's language is decided by the surface it appears on,
+never by the developer's convenience or the shared function it happens to live in — a
+helper used by both families must take its wording from its caller.
