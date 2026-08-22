@@ -472,6 +472,10 @@ button,input,select{font-family:inherit;font-size:16px}
 
 <script>
 const SB="https://enjlgflisuywkaorxetv.supabase.co";
+// Project Zero — the shop's witness. The warehouse never recreates orders,
+// customers or rates; it only READS open door commitments from here and
+// WRITES the operator's manual attach decision back. Two routes, nothing else.
+const PZ="https://project-zero-lkjw.onrender.com";
 const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuamxnZmxpc3V5d2thb3J4ZXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5OTU3NjAsImV4cCI6MjA5ODU3MTc2MH0.qKoUBQonv1FYSSrIGfInqXzSWGZHRrGWWHtwgGfL9DQ";
 const OWNER_EMAIL="shankymittal28@gmail.com";
 let TOKEN=KEY;          // anon key by default (staff); becomes the owner's login token after sign-in
@@ -556,8 +560,9 @@ async function doOwnerLogin(){
 function logAsOwner(){ me_={name:'Owner'}; origin='owner'; showAdd(); }
 
 /* ===== Staff entry — step-by-step wizard ===== */
-let dir='in', outCart=[], _pk={}, wizKey='dir', doorBatch=[], _lastSave=null;
-function lastSaveHTML(){ if(!_lastSave)return ''; return '<div class="lastsave'+(_lastSave.ok?'':' q')+'">'+(_lastSave.ok?'✓ सेव हुआ: ':'⏳ फ़ोन में सेव: ')+esc(_lastSave.txt)+'</div>'; }
+let dir='in', outCart=[], _pk={}, wizKey='dir', doorBatch=[], _lastSave=null, _lastArr=null;
+function lastSaveHTML(){ if(!_lastSave)return ''; return '<div class="lastsave'+(_lastSave.ok?'':' q')+'">'+(_lastSave.ok?'✓ सेव हुआ: ':'⏳ फ़ोन में सेव: ')+esc(_lastSave.txt)+'</div>'
+  +((_lastArr&&_lastArr.lines&&_lastArr.lines.length)?'<button class="obtn go" style="width:100%;margin:-8px 0 12px" onclick="openAttach()">&#128206; ऑर्डर से जोड़ें · Attach to Order</button>':''); }
 function persistWiz(){ try{ localStorage.setItem('nkg_wiz', JSON.stringify({t:Date.now(), me:me_&&me_.name, dir:dir, mode:mode, wizKey:wizKey, sel:{brand:sel.brand,thickness:sel.thickness,size:sel.size,design:sel.design,cat:sel.cat,doortype:sel.doortype,zone:sel.zone}, src:src, qty:($('qtyIn')&&$('qtyIn').value)||'', outCart:outCart, doorBatch:doorBatch, lastSave:_lastSave})); }catch(e){} }
 let _resume=null;
 function tryResume(n){ try{ const d=JSON.parse(localStorage.getItem('nkg_wiz')||'null');
@@ -688,7 +693,7 @@ function loopStart(){ return mode==='plywood'?'brand':(mode==='door'?'doortype':
 function wizGo(k){ wizKey=k; renderWiz(); }
 function wizNext(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>=0&&i<f.length-1)wizGo(f[i+1]); }
 function wizPrev(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>0)wizGo(f[i-1]); else wizGo('dir'); }
-function wizRestart(){ dir='in'; mode='plywood'; outCart=[]; doorBatch=[]; sel.customer=''; _lastSave=null; resetItemAll(); if($('outCust'))$('outCust').value=''; wizGo('dir'); }
+function wizRestart(){ dir='in'; mode='plywood'; outCart=[]; doorBatch=[]; sel.customer=''; _lastSave=null; _lastArr=null; resetItemAll(); if($('outCust'))$('outCust').value=''; wizGo('dir'); }
 
 function doorPresetHTML(){ const l=(opts.size&&opts.size.door)||[]; return l.length?l.map(o=>'<button class="chip sm" onclick="doorPreset(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2);font-size:13px">कोई नहीं</span>'; }
 function doorRowsHTML(){ return '<div class="revcart">'+doorBatch.map((d,i)=>'<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc([d.doortype,d.design,d.size].filter(Boolean).join(' '))+'</div><div class="bl-s">'+d.qty+' pcs'+(d.customer?(' · 👤 '+esc(d.customer)):'')+'</div></div><button class="bl-x" onclick="rmDoor('+i+')">×</button></div>').join('')+'</div>'; }
@@ -714,13 +719,59 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   const photos=(sel.photos||[]).slice(); let queued=0,last=null;
   for(let i=0;i<doorBatch.length;i++){ const d=doorBatch[i];
     const entry={brand:d.doortype||null,thickness:null,size:d.size,design:d.design,customer:null,item_name:[d.doortype,d.design,d.size].filter(Boolean).join(' '),category:'Door',item_desc:null,qty:d.qty,unit:'pcs',direction:'in',source_godown:src||null,zone_name:sel.zone||null,logged_by:me_.name,_photos:(i===0?photos:[]),_ts:Date.now()+i};
-    const row=await pushEntry(entry); if(!row){ queue(entry); queued++; } else { last=row.id; } pushRecent(entry); }
+    const row=await pushEntry(entry); if(!row){ queue(entry); queued++; } else { last=row.id; } d._id=row?row.id:null; pushRecent(entry); }
   if(last){ lastId=last; $('undoBtn').classList.remove('hide'); }
   const kd=doorBatch[0].design; if(kd&&!((opts.design&&opts.design.door)||[]).some(o=>o.name===kd)){ api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind:'design',name:kd,sort:99,product:'door'})}).then(()=>loadOpts()); }
   pushRecentItem({mode:'door',doortype:doorBatch[0].doortype,design:kd,size:doorBatch[0].size,name:[doorBatch[0].doortype,kd,doorBatch[0].size].filter(Boolean).join(' ')});
   const n=doorBatch.length;
   _lastSave={txt:(kd||'Door')+' — '+n+' साइज़', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+n+' साइज़ सेव');
+  // the arrival just witnessed, kept so the operator can ATTACH it to an
+  // open shop order (a human decision - the software never matches)
+  _lastArr={lines:doorBatch.map(d=>({design:d.design,size:d.size,qty:d.qty,doortype:d.doortype||null,id:d._id||null}))};
   doorBatch=[]; resetItemAll(); refreshToday(); wizGo(loopStart()); }
+
+/* ---- Attach arrival to a shop order (Commitment Receipts v1) ----
+   The warehouse witnessed doors arriving; the SHOP witnessed the order.
+   This sheet records the operator's manual decision that these doors
+   answer that order. The software never chooses, never suggests, never
+   reserves - it lists OPEN door orders (read from Project Zero) and
+   writes down exactly what the human decided. */
+let _att={line:null,pick:null},_attT=null,_attRows=[];
+function openAttach(){ if(!_lastArr||!_lastArr.lines||!_lastArr.lines.length)return;
+  if(_lastArr.lines.length===1) return attachLine(0);
+  sheetHTML('<div class="grab"></div><h4>कौन सी लाइन जोड़नी है?</h4><div class="pklist">'
+    +_lastArr.lines.map((l,i)=>'<button class="pkrow" onclick="attachLine('+i+')">'+esc([l.doortype,l.design,l.size].filter(Boolean).join(' '))+'<span>'+l.qty+' pcs</span></button>').join('')+'</div>');
+  openSheet(); }
+function attachLine(i){ const l=_lastArr.lines[i]; if(!l)return; _att={line:l,pick:null};
+  sheetHTML('<div class="grab"></div><h4>&#128206; ऑर्डर से जोड़ें</h4>'
+   +'<div style="font-size:16px;font-weight:800">'+esc([l.design,l.size].filter(Boolean).join(' · '))+' — '+l.qty+' pcs आए</div>'
+   +'<div style="font-size:12.5px;color:var(--mut)">दुकान के खुले डोर ऑर्डर — design, size ya naam se khojo</div>'
+   +'<input id="atq" class="optin" style="margin-top:10px" placeholder="&#128269; design / size / customer" autocomplete="off" oninput="attSearch(this.value)">'
+   +'<div id="atRes" class="pklist"><div class="empty">खोज रहे…</div></div>');
+  openSheet(); attSearch(''); const el=$('atq'); if(el){try{el.focus();}catch(e){}} }
+function attSearch(q){ clearTimeout(_attT); _attT=setTimeout(async()=>{
+  const el=$('atRes'); if(!el)return;
+  try{ const r=await fetch(PZ+'/api/cl/open?q='+encodeURIComponent(q||'')); if(!r.ok)throw 0; _attRows=await r.json();
+    el.innerHTML=_attRows.length?_attRows.map((c,i)=>'<button class="pkrow" onclick="attPick('+i+')"><span style="min-width:0;text-align:left"><b>'+esc(c.tally_name)+'</b><br><span style="font-size:12px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · '))+(c.site?' · '+esc(c.site):'')+'</span></span><span>बाकी '+c.remaining+'/'+c.ordered+'</span></button>').join('')
+      :'<div class="empty">कोई खुला डोर ऑर्डर नहीं मिला</div>';
+  }catch(e){ el.innerHTML='<div class="empty">दुकान का ऑर्डर बुक नहीं खुला — नेट देखें, दोबारा खोजें</div>'; } },250); }
+function attPick(i){ const c=_attRows[i]; if(!c)return; _att.pick=c;
+  sheetHTML('<div class="grab"></div><h4>कितने इस ऑर्डर के हैं?</h4>'
+   +'<div style="font-size:16px;font-weight:800">'+esc(c.tally_name)+'</div>'
+   +'<div style="font-size:13px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · '))+' — ऑर्डर '+c.ordered+' · आ चुके '+c.received+' · बाकी '+c.remaining+'</div>'
+   +'<div style="font-size:13px;color:var(--mut);margin-top:4px">ट्रक से आए: '+_att.line.qty+' pcs ('+esc([_att.line.design,_att.line.size].filter(Boolean).join(' '))+')</div>'
+   +'<div class="lab" style="margin-top:12px">कितने जोड़ें?</div><input id="atn" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने">'
+   +'<button class="pri" style="max-width:none;margin-top:12px" onclick="attSave(false)">&#10003; जोड़ें</button>');
+  openSheet(); setTimeout(()=>{const el=$('atn'); if(el)el.focus();},100); }
+async function attSave(force){ const n=Number($('atn')&&$('atn').value)||0; if(n<=0){toast('कितने? भरें','err');return;}
+  const c=_att.pick,l=_att.line; if(!c||!l)return;
+  try{ const r=await fetch(PZ+'/api/cl/receipt',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({line_id:c.id,qty:n,design_no:l.design||null,size:l.size||null,arrival_ref:l.id||null,noted_by:(me_&&me_.name)||'Warehouse',force:!!force})});
+    const d=await r.json();
+    if(d&&d.over){ if(confirm('इस ऑर्डर में बाकी सिर्फ '+d.over.remaining+' हैं ('+d.over.ordered+' में से '+d.over.received+' आ चुके)। फिर भी '+n+' जोड़ें?')) return attSave(true); return; }
+    if(!d||!d.ok){ toast((d&&d.error)||'जुड़ा नहीं — दोबारा','err'); return; }
+    closeSheet(); toast('✓ जुड़ गया — '+c.tally_name,'ok');
+  }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 
 function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
   if(mode==='door')return [sel.design,sel.size].filter(Boolean).join(' ');
