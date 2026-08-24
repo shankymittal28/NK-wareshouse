@@ -192,8 +192,9 @@ button,input,select{font-family:inherit;font-size:16px}
 .blrow .bl-x{flex:0 0 auto;width:26px;height:26px;background:none;border:none;color:var(--mut2);font-size:22px;font-weight:700;line-height:1;padding:0 2px}
 .obtn.addln{border-style:dashed;color:var(--mut);background:transparent}
 .pklist{display:flex;flex-direction:column;max-height:52vh;overflow:auto;margin-top:6px}
-.pkrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--hair);color:var(--ink);padding:13px 4px;font-size:15px;font-weight:600}
+.pkrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--hair);color:var(--ink);padding:13px 4px;font-size:15px;font-weight:600;cursor:pointer;box-sizing:border-box}
 .pkrow span{color:var(--mut);font-size:13px;font-weight:600;flex:0 0 auto}
+.pkeye{flex:0 0 auto;background:none;border:1px solid var(--hair);border-radius:9px;color:var(--mut);font-size:12.5px;font-weight:700;padding:6px 9px;cursor:pointer}
 .pkrow:active{background:rgba(255,255,255,.04)}
 .khphoto{margin-top:7px;background:var(--panel);border:1px solid var(--hair2);color:var(--sky);border-radius:8px;font-size:12px;font-weight:600;padding:5px 10px}
 /* ---- staff wizard ---- */
@@ -730,12 +731,14 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   _lastArr={lines:doorBatch.map(d=>({design:d.design,size:d.size,qty:d.qty,doortype:d.doortype||null,id:d._id||null}))};
   doorBatch=[]; resetItemAll(); refreshToday(); wizGo(loopStart()); }
 
-/* ---- Attach arrival to a shop order (Commitment Receipts v1) ----
-   The warehouse witnessed doors arriving; the SHOP witnessed the order.
-   This sheet records the operator's manual decision that these doors
-   answer that order. The software never chooses, never suggests, never
-   reserves - it lists OPEN door orders (read from Project Zero) and
-   writes down exactly what the human decided. */
+/* ---- Attach arrival to a shop order (Phase 3: canonical stream) ----
+   The warehouse witnessed doors arriving; the SHOP witnessed the order -
+   as a ring on the bill photograph. This sheet records the operator's
+   manual decision that these doors answer that ring. The software never
+   chooses, never suggests, never reserves - it lists the SAME open door
+   orders the shop's Order Book shows (Project Zero's one reader) and
+   writes down exactly what the human decided. When unsure, 👁 बिल opens
+   the original handwritten bill read-only - paper stays the authority. */
 let _att={line:null,pick:null},_attT=null,_attRows=[];
 function openAttach(){ if(!_lastArr||!_lastArr.lines||!_lastArr.lines.length)return;
   if(_lastArr.lines.length===1) return attachLine(0);
@@ -752,13 +755,19 @@ function attachLine(i){ const l=_lastArr.lines[i]; if(!l)return; _att={line:l,pi
 function attSearch(q){ clearTimeout(_attT); _attT=setTimeout(async()=>{
   const el=$('atRes'); if(!el)return;
   try{ const r=await fetch(PZ+'/api/cl/open?q='+encodeURIComponent(q||'')); if(!r.ok)throw 0; _attRows=await r.json();
-    el.innerHTML=_attRows.length?_attRows.map((c,i)=>'<button class="pkrow" onclick="attPick('+i+')"><span style="min-width:0;text-align:left"><b>'+esc(c.tally_name)+'</b><br><span style="font-size:12px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · '))+(c.site?' · '+esc(c.site):'')+'</span></span><span>बाकी '+c.remaining+'/'+c.ordered+'</span></button>').join('')
+    // rows come from the shop's ONE Door Commitment reader - the same open
+    // orders the shop's Order Book shows, nothing re-interpreted here
+    el.innerHTML=_attRows.length?_attRows.map((c,i)=>'<div class="pkrow" onclick="attPick('+i+')"><span style="min-width:0;text-align:left"><b>'+esc(c.tally_name||'? — नाम बिल पर है')+'</b><br><span style="font-size:12px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · ')||'? दरवाज़ा')+(c.book_number?' · बही '+esc(c.book_number)+' पन्ना '+c.page_number:'')+'</span></span><span style="display:flex;align-items:center;gap:8px">'+(c.ordered!=null?'बाकी '+c.remaining+'/'+c.ordered:'गिनती ?')+(c.book_number?'<button class="pkeye" onclick="event.stopPropagation();attView('+i+')">&#128065; बिल</button>':'')+'</span></div>').join('')
       :'<div class="empty">कोई खुला डोर ऑर्डर नहीं मिला</div>';
   }catch(e){ el.innerHTML='<div class="empty">दुकान का ऑर्डर बुक नहीं खुला — नेट देखें, दोबारा खोजें</div>'; } },250); }
+function attView(i){ const c=_attRows[i]; if(!c||!c.book_number)return;
+  // read-only window onto the original handwritten bill - the highest
+  // authority when the list is unclear; no actions live there
+  window.open(PZ+'/billview?book='+encodeURIComponent(c.book_number)+'&page='+c.page_number+'&mark='+c.id,'_blank'); }
 function attPick(i){ const c=_attRows[i]; if(!c)return; _att.pick=c;
   sheetHTML('<div class="grab"></div><h4>कितने इस ऑर्डर के हैं?</h4>'
-   +'<div style="font-size:16px;font-weight:800">'+esc(c.tally_name)+'</div>'
-   +'<div style="font-size:13px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · '))+' — ऑर्डर '+c.ordered+' · आ चुके '+c.received+' · बाकी '+c.remaining+'</div>'
+   +'<div style="font-size:16px;font-weight:800">'+esc(c.tally_name||'? — नाम बिल पर है')+'</div>'
+   +'<div style="font-size:13px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · ')||'? दरवाज़ा')+' — '+(c.ordered!=null?'ऑर्डर '+c.ordered+' · आ चुके '+c.received+' · बाकी '+c.remaining:'गिनती अभी बिल पर ही है')+'</div>'
    +'<div style="font-size:13px;color:var(--mut);margin-top:4px">ट्रक से आए: '+_att.line.qty+' pcs ('+esc([_att.line.design,_att.line.size].filter(Boolean).join(' '))+')</div>'
    +'<div class="lab" style="margin-top:12px">कितने जोड़ें?</div><input id="atn" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने">'
    +'<button class="pri" style="max-width:none;margin-top:12px" onclick="attSave(false)">&#10003; जोड़ें</button>');
@@ -766,11 +775,11 @@ function attPick(i){ const c=_attRows[i]; if(!c)return; _att.pick=c;
 async function attSave(force){ const n=Number($('atn')&&$('atn').value)||0; if(n<=0){toast('कितने? भरें','err');return;}
   const c=_att.pick,l=_att.line; if(!c||!l)return;
   try{ const r=await fetch(PZ+'/api/cl/receipt',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({line_id:c.id,qty:n,design_no:l.design||null,size:l.size||null,arrival_ref:l.id||null,noted_by:(me_&&me_.name)||'Warehouse',force:!!force})});
+      body:JSON.stringify({mark_id:c.id,qty:n,design_no:l.design||null,size:l.size||null,arrival_ref:l.id||null,noted_by:(me_&&me_.name)||'Warehouse',force:!!force})});
     const d=await r.json();
     if(d&&d.over){ if(confirm('इस ऑर्डर में बाकी सिर्फ '+d.over.remaining+' हैं ('+d.over.ordered+' में से '+d.over.received+' आ चुके)। फिर भी '+n+' जोड़ें?')) return attSave(true); return; }
     if(!d||!d.ok){ toast((d&&d.error)||'जुड़ा नहीं — दोबारा','err'); return; }
-    closeSheet(); toast('✓ जुड़ गया — '+c.tally_name,'ok');
+    closeSheet(); toast('✓ जुड़ गया — '+(c.tally_name||('बही '+(c.book_number||'')+' पन्ना '+(c.page_number||''))),'ok');
   }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 
 function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
