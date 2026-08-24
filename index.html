@@ -1446,6 +1446,61 @@ let tt; function toast(m,k){ const t=$('toast'); t.textContent=m; t.className=''
 loadSession();
 loadStaff();
 if('serviceWorker' in navigator){ let _rf=false; navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_rf)return;_rf=true;location.reload();}); navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+
+/* ================= TEMPORARY DIAGNOSTIC — remove after the 487/81 bug is
+   closed. Activated ONLY by ?debug=1 in the URL. Shows the exact JSON this
+   phone receives from Project Zero; infers nothing. ===================== */
+(function(){
+  if(!/[?&]debug=1/.test(location.search)) return;
+  var BUILD='nkw-dbg1 2026-08-24 (canonical-attach)';
+  var LASTERR='none';
+  var realFetch=window.fetch;
+  window.fetch=function(){ var a=arguments;
+    return realFetch.apply(this,a).then(function(r){
+      if(!r.ok) LASTERR=String(a[0])+' -> HTTP '+r.status; return r;
+    },function(e){ LASTERR=String(a[0])+' -> '+e; throw e; }); };
+  var b=document.createElement('button');
+  b.id='dbgbtn'; b.textContent='🐞';
+  b.style.cssText='position:fixed;right:10px;bottom:76px;z-index:9999;font-size:20px;background:#222;color:#fff;border:1px solid #555;border-radius:50%;width:46px;height:46px';
+  var p=document.createElement('div');
+  p.id='dbgpanel';
+  p.style.cssText='display:none;position:fixed;inset:8px;overflow:auto;z-index:9998;background:#0b0d10;color:#9fe89f;font:12px/1.5 monospace;padding:12px;border:1px solid #444;border-radius:10px;white-space:pre-wrap;word-break:break-all';
+  document.body.appendChild(p); document.body.appendChild(b);
+  function grab(u){ return realFetch(u,{cache:'no-store'}).then(function(r){
+      return r.text().then(function(t){ return {status:r.status,text:t}; });
+    },function(e){ return {status:'FETCH-FAIL',text:String(e)}; }); }
+  function ids(t,key){ try{ var d=JSON.parse(t); var arr=Array.isArray(d)?d:(d[key]||[]);
+      return {n:arr.length,ids:arr.map(function(x){return x.id;})};
+    }catch(e){ return {n:'parse-fail',ids:[]}; } }
+  b.onclick=function(){
+    if(p.style.display==='block'){ p.style.display='none'; return; }
+    p.style.display='block'; p.textContent='loading…';
+    Promise.all([grab(PZ+'/api/cl/open?q='),grab(PZ+'/api/bbk/orders?q='),grab(PZ+'/api/version')]).then(function(rs){
+      var cl=rs[0],ob=rs[1],ver=rs[2];
+      var i1=ids(cl.text,'open'),i2=ids(ob.text,'open');
+      p.textContent=[
+        '== TEMPORARY DIAGNOSTIC (NK Warehouse) ==',
+        'time: '+new Date().toISOString(),
+        'app build: '+BUILD,
+        'this page served from: '+location.origin,
+        'backend in use (PZ): '+PZ,
+        'server /api/version: '+ver.status+' '+ver.text,
+        'environment: '+(location.host.indexOf('localhost')>=0||location.host.indexOf('127.')>=0?'local':'production ('+location.host+')'),
+        'service worker: '+((navigator.serviceWorker&&navigator.serviceWorker.controller)?'controlling this page (PZ requests bypass it)':'not controlling'),
+        'attach search box now: '+JSON.stringify((document.getElementById('atq')||{}).value||''),
+        'active filters: none in the app (search only; filtering is server-side)',
+        'last network error: '+LASTERR,
+        '',
+        '== GET '+PZ+'/api/cl/open?q=   HTTP '+cl.status+'   returned='+i1.n+'   ids='+JSON.stringify(i1.ids)+' ==',
+        cl.text.slice(0,4000),
+        '',
+        '== GET '+PZ+'/api/bbk/orders?q=   HTTP '+ob.status+'   open='+i2.n+'   open ids='+JSON.stringify(i2.ids)+' ==',
+        ob.text.slice(0,4000)
+      ].join('\n');
+    });
+  };
+})();
+/* =============== END TEMPORARY DIAGNOSTIC =============== */
 </script>
 </body>
 </html>
