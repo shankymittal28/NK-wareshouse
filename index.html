@@ -374,6 +374,7 @@ button,input,select{font-family:inherit;font-size:16px}
   <div class="top">
     <button class="srcbtn" id="srcBtn" onclick="openSource()"><span class="lbl">From</span> <span id="srcLbl">Pick source</span> &#9662;</button>
     <button class="iconlink" id="dsBtn" onclick="showDoorStock()">&#128682; डोर स्टॉक</button>
+    <button class="iconlink" id="doBtn" onclick="showDoorOrders()">&#128203; ऑर्डर</button>
     <button class="iconlink" id="addBack" onclick="addBack()">Switch</button>
   </div>
   <div class="card">
@@ -401,6 +402,16 @@ button,input,select{font-family:inherit;font-size:16px}
   <input id="dsSearch" class="searchbar" placeholder="डिज़ाइन / साइज़ / ग्राहक खोजें…" oninput="renderDoorStock()">
   <div class="tdsum"><div><b id="dsTotal">0</b><span>डोर पीस</span></div><div><b id="dsKinds">0</b><span>तरह</span></div></div>
   <div id="dsList"></div>
+</div>
+
+<div id="dorders" class="wrap hide">
+  <div class="top">
+    <button class="iconlink" onclick="backFromDoorOrders()">&#8249; वापस</button>
+    <div class="who"><b>&#128203; डोर ऑर्डर</b> &middot; Door orders</div>
+    <button class="iconlink" onclick="doLoad(($('doSearch')&&$('doSearch').value)||'')">&#8635;</button>
+  </div>
+  <input id="doSearch" class="searchbar" placeholder="डिज़ाइन / साइज़ / ग्राहक खोजें…" oninput="doSearchIn(this.value)">
+  <div id="doList"></div>
 </div>
 
 <div id="owner" class="wrap hide">
@@ -561,9 +572,8 @@ async function doOwnerLogin(){
 function logAsOwner(){ me_={name:'Owner'}; origin='owner'; showAdd(); }
 
 /* ===== Staff entry — step-by-step wizard ===== */
-let dir='in', outCart=[], _pk={}, wizKey='dir', doorBatch=[], _lastSave=null, _lastArr=null;
-function lastSaveHTML(){ if(!_lastSave)return ''; return '<div class="lastsave'+(_lastSave.ok?'':' q')+'">'+(_lastSave.ok?'✓ सेव हुआ: ':'⏳ फ़ोन में सेव: ')+esc(_lastSave.txt)+'</div>'
-  +((_lastArr&&_lastArr.lines&&_lastArr.lines.length)?'<button class="obtn go" style="width:100%;margin:-8px 0 12px" onclick="openAttach()">&#128206; ऑर्डर से जोड़ें · Attach to Order</button>':''); }
+let dir='in', outCart=[], _pk={}, wizKey='dir', doorBatch=[], _lastSave=null;
+function lastSaveHTML(){ if(!_lastSave)return ''; return '<div class="lastsave'+(_lastSave.ok?'':' q')+'">'+(_lastSave.ok?'✓ सेव हुआ: ':'⏳ फ़ोन में सेव: ')+esc(_lastSave.txt)+'</div>'; }
 function persistWiz(){ try{ localStorage.setItem('nkg_wiz', JSON.stringify({t:Date.now(), me:me_&&me_.name, dir:dir, mode:mode, wizKey:wizKey, sel:{brand:sel.brand,thickness:sel.thickness,size:sel.size,design:sel.design,cat:sel.cat,doortype:sel.doortype,zone:sel.zone}, src:src, qty:($('qtyIn')&&$('qtyIn').value)||'', outCart:outCart, doorBatch:doorBatch, lastSave:_lastSave})); }catch(e){} }
 let _resume=null;
 function tryResume(n){ try{ const d=JSON.parse(localStorage.getItem('nkg_wiz')||'null');
@@ -694,7 +704,7 @@ function loopStart(){ return mode==='plywood'?'brand':(mode==='door'?'doortype':
 function wizGo(k){ wizKey=k; renderWiz(); }
 function wizNext(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>=0&&i<f.length-1)wizGo(f[i+1]); }
 function wizPrev(){ const f=flowFor(),i=f.indexOf(wizKey); if(i>0)wizGo(f[i-1]); else wizGo('dir'); }
-function wizRestart(){ dir='in'; mode='plywood'; outCart=[]; doorBatch=[]; sel.customer=''; _lastSave=null; _lastArr=null; resetItemAll(); if($('outCust'))$('outCust').value=''; wizGo('dir'); }
+function wizRestart(){ dir='in'; mode='plywood'; outCart=[]; doorBatch=[]; sel.customer=''; _lastSave=null; resetItemAll(); if($('outCust'))$('outCust').value=''; wizGo('dir'); }
 
 function doorPresetHTML(){ const l=(opts.size&&opts.size.door)||[]; return l.length?l.map(o=>'<button class="chip sm" onclick="doorPreset(\''+esc(o.name)+'\')">'+esc(o.name)+'</button>').join(''):'<span class="opt" style="color:var(--mut2);font-size:13px">कोई नहीं</span>'; }
 function doorRowsHTML(){ return '<div class="revcart">'+doorBatch.map((d,i)=>'<div class="blrow"><div class="bl-m"><div class="bl-n">'+esc([d.doortype,d.design,d.size].filter(Boolean).join(' '))+'</div><div class="bl-s">'+d.qty+' pcs'+(d.customer?(' · 👤 '+esc(d.customer)):'')+'</div></div><button class="bl-x" onclick="rmDoor('+i+')">×</button></div>').join('')+'</div>'; }
@@ -726,60 +736,48 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   pushRecentItem({mode:'door',doortype:doorBatch[0].doortype,design:kd,size:doorBatch[0].size,name:[doorBatch[0].doortype,kd,doorBatch[0].size].filter(Boolean).join(' ')});
   const n=doorBatch.length;
   _lastSave={txt:(kd||'Door')+' — '+n+' साइज़', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+n+' साइज़ सेव');
-  // the arrival just witnessed, kept so the operator can ATTACH it to an
-  // open shop order (a human decision - the software never matches)
-  _lastArr={lines:doorBatch.map(d=>({design:d.design,size:d.size,qty:d.qty,doortype:d.doortype||null,id:d._id||null}))};
   doorBatch=[]; resetItemAll(); refreshToday(); wizGo(loopStart()); }
 
-/* ---- Attach arrival to a shop order (Phase 3: canonical stream) ----
-   The warehouse witnessed doors arriving; the SHOP witnessed the order -
-   as a ring on the bill photograph. This sheet records the operator's
-   manual decision that these doors answer that ring. The software never
-   chooses, never suggests, never reserves - it lists the SAME open door
-   orders the shop's Order Book shows (Project Zero's one reader) and
-   writes down exactly what the human decided. When unsure, 👁 बिल opens
-   the original handwritten bill read-only - paper stays the authority. */
-let _att={line:null,pick:null},_attT=null,_attRows=[];
-function openAttach(){ if(!_lastArr||!_lastArr.lines||!_lastArr.lines.length)return;
-  if(_lastArr.lines.length===1) return attachLine(0);
-  sheetHTML('<div class="grab"></div><h4>कौन सी लाइन जोड़नी है?</h4><div class="pklist">'
-    +_lastArr.lines.map((l,i)=>'<button class="pkrow" onclick="attachLine('+i+')">'+esc([l.doortype,l.design,l.size].filter(Boolean).join(' '))+'<span>'+l.qty+' pcs</span></button>').join('')+'</div>');
-  openSheet(); }
-function attachLine(i){ const l=_lastArr.lines[i]; if(!l)return; _att={line:l,pick:null};
-  sheetHTML('<div class="grab"></div><h4>&#128206; ऑर्डर से जोड़ें</h4>'
-   +'<div style="font-size:16px;font-weight:800">'+esc([l.design,l.size].filter(Boolean).join(' · '))+' — '+l.qty+' pcs आए</div>'
-   +'<div style="font-size:12.5px;color:var(--mut)">दुकान के खुले डोर ऑर्डर — design, size ya naam se khojo</div>'
-   +'<input id="atq" class="optin" style="margin-top:10px" placeholder="&#128269; design / size / customer" autocomplete="off" oninput="attSearch(this.value)">'
-   +'<div id="atRes" class="pklist"><div class="empty">खोज रहे…</div></div>');
-  openSheet(); attSearch(''); const el=$('atq'); if(el){try{el.focus();}catch(e){}} }
-function attSearch(q){ clearTimeout(_attT); _attT=setTimeout(async()=>{
-  const el=$('atRes'); if(!el)return;
-  try{ const r=await fetch(PZ+'/api/cl/open?q='+encodeURIComponent(q||'')); if(!r.ok)throw 0; _attRows=await r.json();
+/* ---- 📋 Door Orders: the warehouse's permanent window onto the shop's
+   ONE Door Commitment stream. Always reachable from the top bar, always
+   fetched fresh from the canonical reader - no saved arrival, no session
+   memory, no local cache. Tapping an order records the operator's manual
+   receipt (the software never matches, never suggests, never reserves);
+   👁 बिल opens the handwritten bill read-only - paper stays the authority. */
+let _doT=null,_doRows=[],_doPick=null;
+function showDoorOrders(){ ['gate','add','owner','manage','khata','bill','dstock'].forEach(i=>{const e=$(i); if(e)e.classList.add('hide');});
+  $('dorders').classList.remove('hide'); if($('doSearch'))$('doSearch').value='';
+  doLoad(''); }
+function backFromDoorOrders(){ $('dorders').classList.add('hide'); $('add').classList.remove('hide'); }
+function doSearchIn(v){ clearTimeout(_doT); _doT=setTimeout(()=>doLoad(v),250); }
+async function doLoad(q){ const el=$('doList'); if(!el)return;
+  el.innerHTML='<div class="empty">लोड हो रहा है…</div>';
+  try{ const r=await fetch(PZ+'/api/cl/open?q='+encodeURIComponent(q||''),{cache:'no-store'}); if(!r.ok)throw 0; _doRows=await r.json();
     // rows come from the shop's ONE Door Commitment reader - the same open
-    // orders the shop's Order Book shows, nothing re-interpreted here
-    el.innerHTML=_attRows.length?_attRows.map((c,i)=>'<div class="pkrow" onclick="attPick('+i+')"><span style="min-width:0;text-align:left"><b>'+esc(c.tally_name||'? — नाम बिल पर है')+'</b><br><span style="font-size:12px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · ')||'? दरवाज़ा')+(c.book_number?' · बही '+esc(c.book_number)+' पन्ना '+c.page_number:'')+'</span></span><span style="display:flex;align-items:center;gap:8px">'+(c.ordered!=null?'बाकी '+c.remaining+'/'+c.ordered:'गिनती ?')+(c.book_number?'<button class="pkeye" onclick="event.stopPropagation();attView('+i+')">&#128065; बिल</button>':'')+'</span></div>').join('')
-      :'<div class="empty">कोई खुला डोर ऑर्डर नहीं मिला</div>';
-  }catch(e){ el.innerHTML='<div class="empty">दुकान का ऑर्डर बुक नहीं खुला — नेट देखें, दोबारा खोजें</div>'; } },250); }
-function attView(i){ const c=_attRows[i]; if(!c||!c.book_number)return;
+    // orders the shop's Order Book shows, nothing re-interpreted, nothing kept
+    el.innerHTML=_doRows.length?_doRows.map((c,i)=>'<div class="pkrow" onclick="doPick('+i+')"><span style="min-width:0;text-align:left"><b>'+esc(c.tally_name||'? — नाम बिल पर है')+'</b><br><span style="font-size:12px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · ')||'? दरवाज़ा')+(c.book_number?' · बही '+esc(c.book_number)+' पन्ना '+c.page_number:'')+'</span></span><span style="display:flex;align-items:center;gap:8px">'+(c.ordered!=null?'बाकी '+c.remaining+'/'+c.ordered:'गिनती ?')+(c.book_number?'<button class="pkeye" onclick="event.stopPropagation();doView('+i+')">&#128065; बिल</button>':'')+'</span></div>').join('')
+      :'<div class="empty">कोई खुला डोर ऑर्डर नहीं</div>';
+  }catch(e){ el.innerHTML='<div class="empty">दुकान का ऑर्डर बुक नहीं खुला — नेट देखें, दोबारा कोशिश करें</div>'; } }
+function doView(i){ const c=_doRows[i]; if(!c||!c.book_number)return;
   // read-only window onto the original handwritten bill - the highest
   // authority when the list is unclear; no actions live there
   window.open(PZ+'/billview?book='+encodeURIComponent(c.book_number)+'&page='+c.page_number+'&mark='+c.id,'_blank'); }
-function attPick(i){ const c=_attRows[i]; if(!c)return; _att.pick=c;
-  sheetHTML('<div class="grab"></div><h4>कितने इस ऑर्डर के हैं?</h4>'
+function doPick(i){ const c=_doRows[i]; if(!c)return; _doPick=c;
+  sheetHTML('<div class="grab"></div><h4>कितने आए इस ऑर्डर के?</h4>'
    +'<div style="font-size:16px;font-weight:800">'+esc(c.tally_name||'? — नाम बिल पर है')+'</div>'
    +'<div style="font-size:13px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · ')||'? दरवाज़ा')+' — '+(c.ordered!=null?'ऑर्डर '+c.ordered+' · आ चुके '+c.received+' · बाकी '+c.remaining:'गिनती अभी बिल पर ही है')+'</div>'
-   +'<div style="font-size:13px;color:var(--mut);margin-top:4px">ट्रक से आए: '+_att.line.qty+' pcs ('+esc([_att.line.design,_att.line.size].filter(Boolean).join(' '))+')</div>'
-   +'<div class="lab" style="margin-top:12px">कितने जोड़ें?</div><input id="atn" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने">'
-   +'<button class="pri" style="max-width:none;margin-top:12px" onclick="attSave(false)">&#10003; जोड़ें</button>');
-  openSheet(); setTimeout(()=>{const el=$('atn'); if(el)el.focus();},100); }
-async function attSave(force){ const n=Number($('atn')&&$('atn').value)||0; if(n<=0){toast('कितने? भरें','err');return;}
-  const c=_att.pick,l=_att.line; if(!c||!l)return;
+   +'<div class="lab" style="margin-top:12px">कितने जोड़ें?</div><input id="don" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने">'
+   +'<button class="pri" style="max-width:none;margin-top:12px" onclick="doSave(false)">&#10003; जोड़ें</button>');
+  openSheet(); setTimeout(()=>{const el=$('don'); if(el)el.focus();},100); }
+async function doSave(force){ const n=Number($('don')&&$('don').value)||0; if(n<=0){toast('कितने? भरें','err');return;}
+  const c=_doPick; if(!c)return;
   try{ const r=await fetch(PZ+'/api/cl/receipt',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mark_id:c.id,qty:n,design_no:l.design||null,size:l.size||null,arrival_ref:l.id||null,noted_by:(me_&&me_.name)||'Warehouse',force:!!force})});
+      body:JSON.stringify({mark_id:c.id,qty:n,design_no:null,size:null,arrival_ref:null,noted_by:(me_&&me_.name)||'Warehouse',force:!!force})});
     const d=await r.json();
-    if(d&&d.over){ if(confirm('इस ऑर्डर में बाकी सिर्फ '+d.over.remaining+' हैं ('+d.over.ordered+' में से '+d.over.received+' आ चुके)। फिर भी '+n+' जोड़ें?')) return attSave(true); return; }
+    if(d&&d.over){ if(confirm('इस ऑर्डर में बाकी सिर्फ '+d.over.remaining+' हैं ('+d.over.ordered+' में से '+d.over.received+' आ चुके)। फिर भी '+n+' जोड़ें?')) return doSave(true); return; }
     if(!d||!d.ok){ toast((d&&d.error)||'जुड़ा नहीं — दोबारा','err'); return; }
     closeSheet(); toast('✓ जुड़ गया — '+(c.tally_name||('बही '+(c.book_number||'')+' पन्ना '+(c.page_number||''))),'ok');
+    doLoad(($('doSearch')&&$('doSearch').value)||'');   // always re-read the canonical reader, never local state
   }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 
 function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
@@ -911,7 +909,7 @@ async function giveOutAll(){ let cur=null; if(_itemStarted()){ cur=_currentItem(
   _lastSave={txt:lines.length+' आइटम दिए', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+lines.length+' आइटम दिए');
   wizRestart(); }
 let _doorStock=[];
-async function showDoorStock(){ ['gate','add','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('dstock').classList.remove('hide'); if($('dsSearch'))$('dsSearch').value=''; $('dsList').innerHTML='<div class="empty">लोड हो रहा है…</div>'; try{await loadOpts();}catch(e){} await loadDoorStock(); }
+async function showDoorStock(){ ['gate','add','owner','manage','khata','bill','dorders'].forEach(i=>$(i).classList.add('hide')); $('dstock').classList.remove('hide'); if($('dsSearch'))$('dsSearch').value=''; $('dsList').innerHTML='<div class="empty">लोड हो रहा है…</div>'; try{await loadOpts();}catch(e){} await loadDoorStock(); }
 function backFromDoorStock(){ $('dstock').classList.add('hide'); $('add').classList.remove('hide'); }
 async function loadDoorStock(){ try{ _doorStock=(await api("/rest/v1/nkg_door_stock?select=id,door_type,design,size,item_name,customer,qty,direction,zone_name,source_godown&order=created_at.desc"))||[]; }catch(e){ _doorStock=[]; $('dsList').innerHTML='<div class="empty">लोड नहीं हुआ — दोबारा कोशिश करें</div>'; } renderDoorStock(); }
 function renderDoorStock(){
@@ -1088,7 +1086,7 @@ function stmtNo(t){ const d=_ist(t),p=n=>String(n).padStart(2,'0');
 function stmtWhen(t){ const MM=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const d=_ist(t),p=n=>String(n).padStart(2,'0');
   return d.getUTCDate()+' '+MM[d.getUTCMonth()]+' '+d.getUTCFullYear()+', '+p(d.getUTCHours())+':'+p(d.getUTCMinutes())+' IST'; }
-function showStatement(){ ['gate','add','owner','manage','khata','bill','dstock'].forEach(i=>{ const e=$(i); if(e)e.classList.add('hide'); });
+function showStatement(){ ['gate','add','owner','manage','khata','bill','dstock','dorders'].forEach(i=>{ const e=$(i); if(e)e.classList.add('hide'); });
   $('stmt').classList.remove('hide'); $('stmt').classList.add('on'); renderStatement(); window.scrollTo(0,0);
   try{ document.title=stmtNo(Date.now()).replace(/\//g,'-'); }catch(e){} }
 function backFromStmt(){ $('stmt').classList.remove('on'); $('owner').classList.remove('hide'); try{ document.title='NK Warehouse'; }catch(e){} }
