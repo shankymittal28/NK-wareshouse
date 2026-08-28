@@ -195,6 +195,18 @@ button,input,select{font-family:inherit;font-size:16px}
 .pkrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--hair);color:var(--ink);padding:13px 4px;font-size:15px;font-weight:600;cursor:pointer;box-sizing:border-box}
 .pkrow span{color:var(--mut);font-size:13px;font-weight:600;flex:0 0 auto}
 .pkeye{flex:0 0 auto;background:none;border:1px solid var(--hair);border-radius:9px;color:var(--mut);font-size:12.5px;font-weight:700;padding:6px 9px;cursor:pointer}
+.wbcard{border:1px solid var(--hair);border-left:4px solid var(--hair);border-radius:14px;padding:12px;margin:10px 0;cursor:pointer}
+.wbcard .t{display:flex;justify-content:space-between;font-weight:800;font-size:16px;gap:8px}
+.wbcard .m{color:var(--mut);font-size:12.5px;margin-top:3px}
+.wbh-red{border-left-color:#e5484d}.wbh-yellow{border-left-color:#e8b73a}.wbh-new{border-left-color:#34d399}.wbh-green{border-left-color:#34d399}
+.wbbar{height:6px;background:rgba(127,127,127,.18);border-radius:4px;margin-top:8px;overflow:hidden}
+.wbbar i{display:block;height:100%;background:#34d399}
+.wbsec{color:var(--mut);font-size:12.5px;font-weight:800;letter-spacing:.4px;margin:16px 0 4px}
+.wbrow{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:56px;padding:10px 4px;border-bottom:1px solid var(--hair);cursor:pointer}
+.wbday{color:var(--mut);font-size:12px;font-weight:800;margin:10px 0 2px}
+.wbev{font-size:13.5px;padding:2px 0}
+.wbhl{background:rgba(232,183,58,.18);border-radius:8px}
+.wbif{width:100%;height:330px;border:1px solid var(--hair);border-radius:12px;background:#000}
 .pkrow:active{background:rgba(255,255,255,.04)}
 .khphoto{margin-top:7px;background:var(--panel);border:1px solid var(--hair2);color:var(--sky);border-radius:8px;font-size:12px;font-weight:600;padding:5px 10px}
 /* ---- staff wizard ---- */
@@ -406,12 +418,12 @@ button,input,select{font-family:inherit;font-size:16px}
 
 <div id="dorders" class="wrap hide">
   <div class="top">
-    <button class="iconlink" onclick="backFromDoorOrders()">&#8249; वापस</button>
-    <div class="who"><b>&#128203; डोर ऑर्डर</b> &middot; Door orders</div>
-    <button class="iconlink" onclick="doLoad(($('doSearch')&&$('doSearch').value)||'')">&#8635;</button>
+    <button class="iconlink" onclick="wbBack()">&#8249; वापस</button>
+    <div class="who" id="wbTitle"><b>&#128203; ऑर्डर</b></div>
+    <button class="iconlink" onclick="wbReload()">&#8635;</button>
   </div>
-  <input id="doSearch" class="searchbar" placeholder="डिज़ाइन / साइज़ / ग्राहक खोजें…" oninput="doSearchIn(this.value)">
-  <div id="doList"></div>
+  <input id="wbSearch" class="searchbar" placeholder="बही / पन्ना / ग्राहक / डिज़ाइन / साइज़ खोजें…" oninput="wbSearchIn(this.value)">
+  <div id="wbBody"></div>
 </div>
 
 <div id="owner" class="wrap hide">
@@ -588,6 +600,7 @@ function showStamp(t){ let el=$('stamp'); if(!el){ el=document.createElement('di
 
 async function showAdd(){
   ['gate','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('add').classList.remove('hide');
+  if(wbSeg()[0]==='o') wbRoute();   // deep link (#o/...) survives reload: route once staff is known
   $('addBack').textContent=origin==='owner'?'← Owner':'Switch';
   const sb=$('srcBtn'); if(sb)sb.classList.add('hide'); // source is asked inside the wizard now
   await Promise.all([loadZones(),loadSources(),loadOpts()]);
@@ -738,47 +751,179 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   _lastSave={txt:(kd||'Door')+' — '+n+' साइज़', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+n+' साइज़ सेव');
   doorBatch=[]; resetItemAll(); refreshToday(); wizGo(loopStart()); }
 
-/* ---- 📋 Door Orders: the warehouse's permanent window onto the shop's
-   ONE Door Commitment stream. Always reachable from the top bar, always
-   fetched fresh from the canonical reader - no saved arrival, no session
-   memory, no local cache. Tapping an order records the operator's manual
-   receipt (the software never matches, never suggests, never reserves);
-   👁 बिल opens the handwritten bill read-only - paper stays the authority. */
-let _doT=null,_doRows=[],_doPick=null;
-function showDoorOrders(){ ['gate','add','owner','manage','khata','bill','dstock'].forEach(i=>{const e=$(i); if(e)e.classList.add('hide');});
-  $('dorders').classList.remove('hide'); if($('doSearch'))$('doSearch').value='';
-  doLoad(''); }
-function backFromDoorOrders(){ $('dorders').classList.add('hide'); $('add').classList.remove('hide'); }
-function doSearchIn(v){ clearTimeout(_doT); _doT=setTimeout(()=>doLoad(v),250); }
-async function doLoad(q){ const el=$('doList'); if(!el)return;
+/* ---- 📋 Orders — the Warehouse Workbench (v5) --------------------------
+   The warehouse's permanent window onto the shop's ONE commitment stream,
+   organised the way reality is organised: Work Queue -> Book -> Page ->
+   Receive. Every level re-reads the canonical feed fresh (no local cache,
+   no session state); grouping, piles, health and progress are PRESENTATION
+   over canonical numbers, computed by one shared calculation - the
+   software never matches, never suggests, never reinterprets. */
+let _wbT=null,_wbRows=null,_wbHl=null;
+function wbDays(iso){ if(!iso)return null; const t=Date.parse(iso); return isFinite(t)?(Date.now()-t)/86400000:null; }
+function wbOrd(c){ /* ONE calculation per order; page/book/queue only sum it */
+  const q=c.qty==null?null:Number(c.qty), r=Number(c.received)||0;
+  const st= q==null ? (r>0?'blue':'grey') : (r>q?'red': r>=q?'green': r>0?'blue':'grey');
+  return {q,r,st,age:wbDays(c.agreed_on||c.marked_at)}; }
+function wbAgg(rows){ let pend=0,done=0,over=0,oldest=null,newest=null,last=null,qsum=0,rsum=0;
+  rows.forEach(c=>{ const o=wbOrd(c);
+    if(o.st==='red')over++; else if(o.st==='green')done++; else pend++;
+    if(o.st!=='green'&&o.st!=='red'){ if(o.age!=null&&(oldest==null||o.age>oldest))oldest=o.age;
+      const m=wbDays(c.marked_at); if(m!=null&&(newest==null||m<newest))newest=m; }
+    if(o.q!=null){ qsum+=o.q; rsum+=Math.min(o.r,o.q); }
+    let la=wbDays(c.marked_at); (c.receipts||[]).forEach(x=>{const d=wbDays(x.noted_at); if(d!=null&&(la==null||d<la))la=d;});
+    if(la!=null&&(last==null||la<last))last=la; });
+  const health = (over>0||(oldest!=null&&oldest>14)) ? 'red'
+    : (pend>0 ? ((newest!=null&&newest<=2)?'new':'yellow') : 'green');
+  return {pend,done,over,oldest,newest,last,qsum,rsum,pct:qsum>0?Math.round(rsum/qsum*100):null,health}; }
+function wbGroup(rows){ const bks={};
+  rows.forEach(c=>{ const b=String(c.book_number||'?'); (bks[b]=bks[b]||{}); (bks[b][c.page_number]=bks[b][c.page_number]||[]).push(c); });
+  return Object.keys(bks).map(b=>{ const pages=Object.keys(bks[b]).map(p=>{ const rs=bks[b][p];
+      return {page:Number(p),rows:rs,agg:wbAgg(rs),cust:(rs.find(c=>c.tally_name)||{}).tally_name||null}; });
+    const all=[].concat.apply([],pages.map(p=>p.rows));
+    const custs=new Set(pages.filter(p=>p.cust).map(p=>p.cust));
+    return {book:b,pages,agg:wbAgg(all),ncust:custs.size,total:all.length}; }); }
+
+/* ---- navigation: #o -> queue · #o/<book> -> book · #o/<book>/<page> ---- */
+function wbSeg(){ return location.hash.replace(/^#/,'').split('/').filter(Boolean); }
+function showDoorOrders(){ if(wbSeg()[0]!=='o') location.hash='#o'; else wbRoute(); }
+function wbBack(){ const g=wbSeg(); location.hash = g.length>=3 ? '#o/'+g[1] : (g.length===2?'#o':''); }
+window.addEventListener('hashchange',wbRoute);
+function wbRoute(){ const g=wbSeg();
+  if(g[0]!=='o'){ if($('dorders')&&!$('dorders').classList.contains('hide')){ $('dorders').classList.add('hide'); $('add').classList.remove('hide'); } return; }
+  if(!me_)return; /* staff gate first; re-routed after name pick */
+  ['gate','add','owner','manage','khata','bill','dstock'].forEach(i=>{const e=$(i); if(e)e.classList.add('hide');});
+  $('dorders').classList.remove('hide');
+  wbLoad(); }
+function wbTitleSet(h){ if($('wbTitle'))$('wbTitle').innerHTML=h; }
+function wbReload(){ wbLoad(); }
+async function wbLoad(){ const el=$('wbBody'); if(!el)return;
   el.innerHTML='<div class="empty">लोड हो रहा है…</div>';
-  try{ const r=await fetch(PZ+'/api/cl/open?q='+encodeURIComponent(q||''),{cache:'no-store'}); if(!r.ok)throw 0; _doRows=await r.json();
-    // rows come from the shop's ONE Door Commitment reader - the same open
-    // orders the shop's Order Book shows, nothing re-interpreted, nothing kept
-    el.innerHTML=_doRows.length?_doRows.map((c,i)=>'<div class="pkrow" onclick="doPick('+i+')"><span style="min-width:0;text-align:left"><b>'+esc(c.tally_name||'? — नाम बिल पर है')+'</b><br><span style="font-size:12px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · ')||'? दरवाज़ा')+(c.book_number?' · बही '+esc(c.book_number)+' पन्ना '+c.page_number:'')+'</span></span><span style="display:flex;align-items:center;gap:8px">'+(c.ordered!=null?'बाकी '+c.remaining+'/'+c.ordered:'गिनती ?')+(c.book_number?'<button class="pkeye" onclick="event.stopPropagation();doView('+i+')">&#128065; बिल</button>':'')+'</span></div>').join('')
-      :'<div class="empty">कोई खुला डोर ऑर्डर नहीं</div>';
+  try{ const r=await fetch(PZ+'/api/cl/orders',{cache:'no-store'}); if(!r.ok)throw 0;
+    _wbRows=await r.json(); wbRender();
   }catch(e){ el.innerHTML='<div class="empty">दुकान का ऑर्डर बुक नहीं खुला — नेट देखें, दोबारा कोशिश करें</div>'; } }
-function doView(i){ const c=_doRows[i]; if(!c||!c.book_number)return;
-  // read-only window onto the original handwritten bill - the highest
-  // authority when the list is unclear; no actions live there
-  window.open(PZ+'/billview?book='+encodeURIComponent(c.book_number)+'&page='+c.page_number+'&mark='+c.id,'_blank'); }
-function doPick(i){ const c=_doRows[i]; if(!c)return; _doPick=c;
-  sheetHTML('<div class="grab"></div><h4>कितने आए इस ऑर्डर के?</h4>'
-   +'<div style="font-size:16px;font-weight:800">'+esc(c.tally_name||'? — नाम बिल पर है')+'</div>'
-   +'<div style="font-size:13px;color:var(--mut)">'+esc([c.design_no,c.size].filter(Boolean).join(' · ')||'? दरवाज़ा')+' — '+(c.ordered!=null?'ऑर्डर '+c.ordered+' · आ चुके '+c.received+' · बाकी '+c.remaining:'गिनती अभी बिल पर ही है')+'</div>'
-   +'<div class="lab" style="margin-top:12px">कितने जोड़ें?</div><input id="don" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने">'
-   +'<button class="pri" style="max-width:none;margin-top:12px" onclick="doSave(false)">&#10003; जोड़ें</button>');
+function wbRender(){ const g=wbSeg(), books=wbGroup(_wbRows||[]);
+  if(g.length<=1) return wbQueue(books);
+  const bk=books.find(b=>b.book===g[1]);
+  if(!bk){ wbTitleSet('<b>&#128203; ऑर्डर</b>'); $('wbBody').innerHTML='<div class="empty">बही '+esc(g[1])+' में कोई खुला ऑर्डर नहीं</div>'; return; }
+  if(g.length===2) return wbBook(bk);
+  const pg=bk.pages.find(p=>String(p.page)===g[2]);
+  if(!pg){ $('wbBody').innerHTML='<div class="empty">पन्ना नहीं मिला</div>'; return; }
+  wbPage(bk,pg); }
+
+/* ---- Screen 1: the Work Queue ("aaj kya kaam baaki hai?") -------------- */
+function wbAgo(d){ return d==null?'':(d<1?'आज':d<2?'कल':Math.floor(d)+' दिन पहले'); }
+function wbCard(b){ const a=b.agg;
+  return '<div class="wbcard wbh-'+a.health+'" onclick="location.hash=\'#o/'+esc(b.book)+'\'">'
+   +'<div class="t"><span>&#128216; बही '+esc(b.book)+'</span><span>'+(a.pend>0?('बाकी '+a.pend):'पूरा')+(a.over?' ⚠':'')+'</span></div>'
+   +'<div class="m">'+b.pages.length+' पन्ने · '+b.ncust+' ग्राहक · कुल '+b.total+' · पूरे '+(a.done+a.over)
+   +(a.last!=null?' · आख़िरी काम: '+wbAgo(a.last):'')+'</div>'
+   +(a.pct!=null?'<div class="wbbar"><i style="width:'+a.pct+'%"></i></div>':'')+'</div>'; }
+function wbQueue(books){ wbTitleSet('<b>&#128203; ऑर्डर</b>');
+  const red=books.filter(b=>b.agg.health==='red'), nw=books.filter(b=>b.agg.health==='new'),
+        wait=books.filter(b=>b.agg.health==='yellow'), done=books.filter(b=>b.agg.health==='green');
+  let h='';
+  if(red.length) h+='<div class="wbsec">🔴 ध्यान दें</div>'+red.map(wbCard).join('');
+  if(nw.length) h+='<div class="wbsec">🟢 नया आया</div>'+nw.map(wbCard).join('');
+  if(wait.length) h+='<div class="wbsec">🟡 बाकी</div>'+wait.map(wbCard).join('');
+  if(done.length) h+='<div class="wbsec" style="cursor:pointer" onclick="this.nextElementSibling.classList.toggle(\'hide\')">▸ ✔ पूरा हुआ ('+done.length+')</div><div class="hide">'+done.map(wbCard).join('')+'</div>';
+  $('wbBody').innerHTML=h||'<div class="empty">कोई खुला ऑर्डर नहीं</div>'; }
+
+/* ---- Screen 2: the Book ("is bahi mein kaun-sa grahak pehle?") --------- */
+function wbDot(h){ return h==='red'?'🔴':h==='yellow'?'🟡':'🟢'; }
+function wbBill(b,p,m){ window.open(PZ+'/billview?book='+encodeURIComponent(b)+'&page='+p+(m?'&mark='+m:''),'_blank'); }
+function wbBook(bk){ const a=bk.agg;
+  wbTitleSet('<b>&#128216; बही '+esc(bk.book)+'</b>'+(a.pct!=null?' · '+a.pct+'%':''));
+  const ord={red:0,yellow:1,'new':2,green:3};
+  const pages=bk.pages.slice().sort((x,y)=>(ord[x.agg.health]-ord[y.agg.health])||((y.agg.oldest||-1)-(x.agg.oldest||-1))||(x.page-y.page));
+  $('wbBody').innerHTML=pages.map(p=>'<div class="wbrow" onclick="location.hash=\'#o/'+esc(bk.book)+'/'+p.page+'\'">'
+   +'<span style="min-width:0"><b>पन्ना '+p.page+'</b> · '+esc(p.cust||'? — नाम बिल पर है')
+   +'<br><span style="font-size:12px;color:var(--mut)">'+(p.agg.pend>0?('बाकी '+p.agg.pend):'पूरा')+(p.agg.over?' · ⚠ ज़्यादा आया':'')+'</span></span>'
+   +'<span style="display:flex;align-items:center;gap:8px">'+wbDot(p.agg.health)
+   +'<button class="pkeye" onclick="event.stopPropagation();wbBill(\''+esc(bk.book)+'\','+p.page+')">&#128065;</button></span></div>').join(''); }
+
+/* ---- Screen 3: the Page workspace (the customer's digital bill) -------- */
+function wbStatusTxt(o){ if(o.st==='red')return 'ज़्यादा आया — '+o.r+'/'+o.q;
+  if(o.st==='green')return 'पूरा';
+  if(o.q==null)return o.r>0?('आया '+o.r+' — गिनती बिल पर'):'गिनती बिल पर है';
+  return o.r>0?('आया '+o.r+'/'+o.q):('बाकी '+o.q); }
+function wbJourney(pg){ const ev=[];
+  pg.rows.forEach(c=>{ (c.receipts||[]).forEach(x=>ev.push({t:x.noted_at,txt:'✓ '+(x.qty||0)+' आए'+(x.noted_by?' ('+esc(x.noted_by)+')':'')}));
+    if(c.marked_at) ev.push({t:c.marked_at,txt:'बिल पर ऑर्डर लिखा गया'+(c.marked_by?' ('+esc(c.marked_by)+')':'')}); });
+  const d0=(pg.rows.find(c=>c.agreed_on)||{}).agreed_on;
+  if(d0) ev.push({t:d0,txt:'ग्राहक का बिल बना'});
+  ev.sort((a,b)=>Date.parse(b.t||0)-Date.parse(a.t||0));
+  const seen={},out=[]; let day=null;
+  ev.forEach(e=>{ const d=wbAgo(wbDays(e.t)); const k=d+'|'+e.txt;
+    if(seen[k])return; seen[k]=1;
+    if(d!==day){ out.push('<div class="wbday">'+(d||'—')+'</div>'); day=d; }
+    out.push('<div class="wbev">'+e.txt+'</div>'); });
+  return out.join('')||'<div class="empty">अभी कुछ नहीं</div>'; }
+function wbPage(bk,pg){ const a=pg.agg;
+  wbTitleSet('<b>पन्ना '+pg.page+'</b> · बही '+esc(bk.book));
+  const date=(pg.rows.find(c=>c.agreed_on)||{}).agreed_on;
+  let h='<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 10px">'
+   +'<span><b style="font-size:16px">'+esc(pg.cust||'? — नाम बिल पर है')+'</b>'
+   +(date?'<span style="color:var(--mut);font-size:12.5px"> · '+esc(date)+'</span>':'')+'</span>'
+   +'<span>'+wbDot(a.health)+'</span></div>';
+  h+='<iframe class="wbif" src="'+PZ+'/billview?book='+encodeURIComponent(bk.book)+'&page='+pg.page+'"></iframe>';
+  h+='<div style="text-align:right;margin-top:4px"><button class="pkeye" onclick="wbBill(\''+esc(bk.book)+'\','+pg.page+')">&#128065; बड़ा देखें</button></div>';
+  h+='<div class="wbsec">ऑर्डर</div>';
+  h+=pg.rows.map(c=>{ const o=wbOrd(c);
+    return '<div class="wbrow'+(_wbHl===c.id?' wbhl':'')+'" id="wbo'+c.id+'" onclick="wbPick('+c.id+')">'
+     +'<span style="min-width:0"><b>'+esc(c.design_no||'? — नाम बिल पर है')+'</b>'+(c.size?' · '+esc(c.size):'')
+     +'<br><span style="font-size:12px;color:var(--mut)">'+wbStatusTxt(o)+'</span></span>'
+     +'<span>'+(o.st==='red'?'⚠':o.st==='green'?'●':o.st==='blue'?'◐':'○')+'</span></div>'; }).join('');
+  if(a.pct!=null) h+='<div class="wbbar"><i style="width:'+a.pct+'%"></i></div><div style="color:var(--mut);font-size:12px;margin-top:4px">'+(a.done+a.over)+'/'+pg.rows.length+' पूरे</div>';
+  h+='<div class="wbsec">अब तक</div>'+wbJourney(pg);
+  $('wbBody').innerHTML=h;
+  if(_wbHl){ const el=$('wbo'+_wbHl); if(el)el.scrollIntoView({block:'center'}); _wbHl=null; } }
+
+/* ---- Receive ("kitne aaye?") — human decides, prefilled never auto ----- */
+let _wbPickC=null;
+function wbPick(id){ const c=(_wbRows||[]).find(x=>x.id===id); if(!c)return; _wbPickC=c;
+  const o=wbOrd(c), rem=(o.q!=null&&o.q>o.r)?(o.q-o.r):'';
+  sheetHTML('<div class="grab"></div><h4>कितने आए?</h4>'
+   +'<div style="font-size:16px;font-weight:800">'+esc(c.design_no||'? — नाम बिल पर है')+(c.size?' · '+esc(c.size):'')+'</div>'
+   +'<div style="font-size:13px;color:var(--mut)">'+esc(c.tally_name||'? — नाम बिल पर है')+' — '+wbStatusTxt(o)+'</div>'
+   +'<div class="lab" style="margin-top:12px">कितने जोड़ें?</div><input id="don" class="qtyin num" type="number" inputmode="numeric" placeholder="कितने" value="'+rem+'">'
+   +'<button class="pri" style="max-width:none;margin-top:12px" onclick="wbSave(false)">&#10003; इतने आए</button>');
   openSheet(); setTimeout(()=>{const el=$('don'); if(el)el.focus();},100); }
-async function doSave(force){ const n=Number($('don')&&$('don').value)||0; if(n<=0){toast('कितने? भरें','err');return;}
-  const c=_doPick; if(!c)return;
+async function wbSave(force){ const n=Number($('don')&&$('don').value)||0; if(n<=0){toast('कितने? भरें','err');return;}
+  const c=_wbPickC; if(!c)return;
   try{ const r=await fetch(PZ+'/api/cl/receipt',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({mark_id:c.id,qty:n,design_no:null,size:null,arrival_ref:null,noted_by:(me_&&me_.name)||'Warehouse',force:!!force})});
     const d=await r.json();
-    if(d&&d.over){ if(confirm('इस ऑर्डर में बाकी सिर्फ '+d.over.remaining+' हैं ('+d.over.ordered+' में से '+d.over.received+' आ चुके)। फिर भी '+n+' जोड़ें?')) return doSave(true); return; }
+    if(d&&d.over){ if(confirm('इस ऑर्डर में बाकी सिर्फ '+d.over.remaining+' हैं ('+d.over.ordered+' में से '+d.over.received+' आ चुके)। फिर भी '+n+' जोड़ें?')) return wbSave(true); return; }
     if(!d||!d.ok){ toast((d&&d.error)||'जुड़ा नहीं — दोबारा','err'); return; }
-    closeSheet(); toast('✓ जुड़ गया — '+(c.tally_name||('बही '+(c.book_number||'')+' पन्ना '+(c.page_number||''))),'ok');
-    doLoad(($('doSearch')&&$('doSearch').value)||'');   // always re-read the canonical reader, never local state
+    closeSheet(); toast('✓ जुड़ गया','ok');
+    wbLoad();   /* workspace, book and queue all re-read the canonical reader */
   }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
+
+/* ---- Global search ("mujhe yeh chahiye — kahin bhi ho") ---------------- */
+function wbSearchIn(v){ clearTimeout(_wbT); _wbT=setTimeout(()=>wbFind(v.trim()),300); }
+function wbFind(q){ if(!q){ wbRender(); return; }
+  const rows=_wbRows||[], books=wbGroup(rows);
+  const norm=s=>String(s||'').toLowerCase().replace(/[^0-9a-z\u0900-\u097F]/g,'').replace(/o/g,'0').replace(/[il]/g,'1');
+  const qn=norm(q); if(!qn){ wbRender(); return; }
+  const go=(c,hl)=>{ _wbHl=hl?c.id:null; $('wbSearch').value='';
+    const h='#o/'+c.book_number+'/'+c.page_number;
+    if(location.hash===h) wbRender(); else location.hash=h; };
+  const bk=books.find(b=>norm(b.book)===qn);
+  if(bk){ $('wbSearch').value=''; const h='#o/'+bk.book; if(location.hash===h)wbRender(); else location.hash=h; return; }
+  const des=rows.find(c=>norm(c.design_no)===qn)||(qn.length>=3?rows.find(c=>norm(c.design_no).indexOf(qn)>=0):null);
+  if(des) return go(des,true);
+  if(/^\d+$/.test(q)){ const pgs={}; rows.forEach(c=>{ if(String(c.page_number)===q) pgs[c.book_number]=c; });
+    const ks=Object.keys(pgs);
+    if(ks.length===1) return go(pgs[ks[0]],false);
+    if(ks.length>1){ $('wbBody').innerHTML='<div class="wbsec">पन्ना '+esc(q)+' — किस बही में?</div>'
+      +ks.map(k=>{const c=pgs[k]; return '<div class="wbrow" onclick="$(\'wbSearch\').value=\'\';location.hash=\'#o/'+esc(String(c.book_number))+'/'+c.page_number+'\'">&#128216; बही '+esc(String(c.book_number))+' · पन्ना '+c.page_number+' · '+esc(c.tally_name||'?')+'</div>';}).join(''); return; } }
+  const cust=rows.find(c=>norm(c.tally_name).indexOf(qn)>=0);
+  if(cust) return go(cust,false);
+  const sz=rows.find(c=>{ const t=norm(c.size); if(!t)return false;
+    const rev=norm(String(c.size||'').replace(/^(\D*)(\d+(?:\.\d+)?)(\D+)(\d+(?:\.\d+)?)(.*)$/,'$4x$2'));
+    return t.indexOf(qn)>=0||rev.indexOf(qn)>=0; });
+  if(sz) return go(sz,true);
+  $('wbBody').innerHTML='<div class="empty">कुछ नहीं मिला — बही, पन्ना, ग्राहक, डिज़ाइन या साइज़ लिखें</div>'; }
 
 function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
   if(mode==='door')return [sel.design,sel.size].filter(Boolean).join(' ');
