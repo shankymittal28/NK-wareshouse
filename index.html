@@ -207,6 +207,10 @@ button,input,select{font-family:inherit;font-size:16px}
 .wbev{font-size:13.5px;padding:2px 0}
 .wbhl{background:rgba(232,183,58,.18);border-radius:8px}
 .wbif{width:100%;height:330px;border:1px solid var(--hair);border-radius:12px;background:#000}
+.wbtabs{display:flex;gap:8px;overflow-x:auto;padding:6px 0 2px}
+.wbtab{flex:0 0 auto;min-height:40px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--hair);background:none;color:var(--mut);font-weight:700;font-size:14px}
+.wbtab.on{border-color:#34d399;color:var(--ink);background:rgba(52,211,153,.12)}
+.wbtag{display:inline-block;font-size:11px;font-weight:700;color:var(--mut);border:1px solid var(--hair);border-radius:999px;padding:2px 8px;margin:0 4px 4px 0}
 .pkrow:active{background:rgba(255,255,255,.04)}
 .khphoto{margin-top:7px;background:var(--panel);border:1px solid var(--hair2);color:var(--sky);border-radius:8px;font-size:12px;font-weight:600;padding:5px 10px}
 /* ---- staff wizard ---- */
@@ -423,6 +427,7 @@ button,input,select{font-family:inherit;font-size:16px}
     <button class="iconlink" onclick="wbReload()">&#8635;</button>
   </div>
   <input id="wbSearch" class="searchbar" placeholder="बही / पन्ना / ग्राहक / डिज़ाइन / साइज़ खोजें…" oninput="wbSearchIn(this.value)">
+  <div class="wbtabs" id="wbTabs"></div>
   <div id="wbBody"></div>
 </div>
 
@@ -561,7 +566,7 @@ async function refreshSession(){
 }
 function ownerLogout(){ saveSession(null); backToGate(); toast('Logged out','ok'); }
 
-async function loadStaff(){ staff=(await api("/rest/v1/nkg_staff?select=id,name&active=eq.true&order=name.asc"))||[]; renderStaffBtns(); }
+async function loadStaff(){ staff=(await api("/rest/v1/nkg_staff?select=id,name,order_tags&active=eq.true&order=name.asc"))||[]; renderStaffBtns(); }
 function renderStaffBtns(){ if(!staff.length){$('staffBtns').innerHTML='';$('noStaff').classList.remove('hide');return;} $('noStaff').classList.add('hide');
   const last=(()=>{try{return localStorage.getItem('nkg_last_staff');}catch(e){return null;}})();
   const list=staff.slice().sort((a,b)=>(a.name===last?-1:0)-(b.name===last?-1:0));
@@ -753,10 +758,11 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
 
 /* ---- 📋 Orders — the digital bill book -----------------------------------
    Book -> Pages -> Orders, exactly like the paper on the counter. Always
-   fetched fresh from the canonical feed (no cache, no session state);
-   counts and progress are presentation over canonical numbers. Receiving
-   and 👁 बिल are the existing flows, reused untouched. */
-let _wbT=null,_wbRows=null,_wbHl=null;
+   fetched fresh from the canonical feeds (no cache, no session state).
+   Page Tags v1: 'Order' is the master tag; category tabs filter as pure
+   presentation. Pages with live door orders count as Order+Door
+   automatically (the canonical stream is never re-classified by hand). */
+let _wbT=null,_wbRows=null,_wbTagged=[],_wbTags=[],_wbTab='All',_wbHl=null;
 function wbOrd(c){ const q=c.qty==null?null:Number(c.qty), r=Number(c.received)||0;
   const st= q==null ? (r>0?'blue':'grey') : (r>q?'red': r>=q?'green': r>0?'blue':'grey');
   return {q,r,st}; }
@@ -765,10 +771,24 @@ function wbAgg(rows){ let pend=0,done=0,over=0,qsum=0,rsum=0;
     if(o.st==='red')over++; else if(o.st==='green')done++; else pend++;
     if(o.q!=null){ qsum+=o.q; rsum+=Math.min(o.r,o.q); } });
   return {pend,done,over,pct:qsum>0?Math.round(rsum/qsum*100):null}; }
+function wbPageTags(pg){ const t=new Set(pg.explicit||[]); if(pg.rows.length){ t.add('Order'); t.add('Door'); } return t; }
+function wbAllow(){ if(typeof origin!=='undefined'&&origin==='owner') return null;
+  const a=me_&&me_.order_tags; return (Array.isArray(a)&&a.length)?new Set(a):null; }
+function wbVisible(pg){ const t=wbPageTags(pg), allow=wbAllow();
+  if(!t.has('Order')) return false;
+  if(allow){ const cats=Array.from(t).filter(x=>x!=='Order');
+    if(!cats.some(c=>allow.has(c))) return false; }
+  if(_wbTab!=='All' && !t.has(_wbTab)) return false;
+  return true; }
 function wbGroup(rows){ const bks={};
-  rows.forEach(c=>{ const b=String(c.book_number||'?'); (bks[b]=bks[b]||{}); (bks[b][c.page_number]=bks[b][c.page_number]||[]).push(c); });
-  return Object.keys(bks).map(b=>{ const pages=Object.keys(bks[b]).map(p=>{ const rs=bks[b][p];
-      return {page:Number(p),rows:rs,agg:wbAgg(rs),cust:(rs.find(c=>c.tally_name)||{}).tally_name||null}; })
+  const slot=(b,p)=>{ (bks[b]=bks[b]||{}); return (bks[b][p]=bks[b][p]||{rows:[],explicit:null,cust:null}); };
+  rows.forEach(c=>{ const e=slot(String(c.book_number||'?'),c.page_number);
+    e.rows.push(c); if(!e.explicit&&c.tags&&c.tags.length)e.explicit=c.tags;
+    if(!e.cust&&c.tally_name)e.cust=c.tally_name; });
+  (_wbTagged||[]).forEach(t=>{ const e=slot(String(t.book_number||'?'),t.page_number);
+    if(t.tags&&t.tags.length)e.explicit=t.tags; if(!e.cust&&t.tally_name)e.cust=t.tally_name; });
+  return Object.keys(bks).map(b=>{ const pages=Object.keys(bks[b]).map(p=>{ const e=bks[b][p];
+      return {page:Number(p),rows:e.rows,agg:wbAgg(e.rows),cust:e.cust,explicit:e.explicit||[]}; })
       .sort((x,y)=>x.page-y.page);
     const all=[].concat.apply([],pages.map(p=>p.rows));
     return {book:b,pages,agg:wbAgg(all),total:all.length}; })
@@ -790,9 +810,21 @@ function wbTitleSet(h){ if($('wbTitle'))$('wbTitle').innerHTML=h; }
 function wbReload(){ wbLoad(); }
 async function wbLoad(){ const el=$('wbBody'); if(!el)return;
   el.innerHTML='<div class="empty">लोड हो रहा है…</div>';
-  try{ const r=await fetch(PZ+'/api/cl/orders',{cache:'no-store'}); if(!r.ok)throw 0;
-    _wbRows=await r.json(); wbRender();
+  try{ const rs=await Promise.all([
+      fetch(PZ+'/api/cl/orders',{cache:'no-store'}),
+      fetch(PZ+'/api/cl/tagged',{cache:'no-store'}),
+      fetch(PZ+'/api/cl/tags',{cache:'no-store'})]);
+    if(!rs[0].ok)throw 0;
+    _wbRows=await rs[0].json();
+    _wbTagged=rs[1].ok?await rs[1].json():[];
+    _wbTags=rs[2].ok?await rs[2].json():[];
+    wbTabsRender(); wbRender();
   }catch(e){ el.innerHTML='<div class="empty">दुकान का ऑर्डर बुक नहीं खुला — नेट देखें, दोबारा कोशिश करें</div>'; } }
+function wbTabsRender(){ const el=$('wbTabs'); if(!el)return; const allow=wbAllow();
+  const cats=(_wbTags||[]).map(t=>t.name).filter(n=>n!=='Order').filter(n=>!allow||allow.has(n));
+  if(_wbTab!=='All'&&cats.indexOf(_wbTab)<0)_wbTab='All';
+  el.innerHTML=['All'].concat(cats).map(n=>'<button class="wbtab'+(_wbTab===n?' on':'')+'" onclick="wbTabSet(this.dataset.t)" data-t="'+esc(n)+'">'+(n==='All'?'सभी':esc(n))+'</button>').join(''); }
+function wbTabSet(n){ _wbTab=n; if(wbSeg().length>2) location.hash='#o'; wbTabsRender(); wbRender(); }
 function wbRender(){ const g=wbSeg(), books=wbGroup(_wbRows||[]);
   if(g.length<=1) return wbBooks(books);
   const bk=books.find(b=>b.book===g[1]);
@@ -804,21 +836,28 @@ function wbRender(){ const g=wbSeg(), books=wbGroup(_wbRows||[]);
 
 /* ---- Screen 1: the books, like the shelf ------------------------------- */
 function wbBooks(books){ wbTitleSet('<b>&#128203; ऑर्डर</b>');
-  $('wbBody').innerHTML = books.length ? books.map(b=>{ const a=b.agg;
-    return '<div class="wbcard" onclick="location.hash=\'#o/'+esc(b.book)+'\'">'
-     +'<div class="t"><span>&#128216; बही '+esc(b.book)+'</span><span>'+(a.pend>0?('बाकी '+a.pend):'पूरा')+(a.over?' ⚠':'')+'</span></div>'
-     +'<div class="m">'+b.pages.length+' पन्ने · कुल '+b.total+' ऑर्डर</div>'
-     +(a.pct!=null?'<div class="wbbar"><i style="width:'+a.pct+'%"></i></div>':'')+'</div>'; }).join('')
-   : '<div class="empty">कोई ऑर्डर नहीं</div>'; }
+  const out=[];
+  books.forEach(b=>{ const vis=b.pages.filter(wbVisible); if(!vis.length)return;
+    const rows=[].concat.apply([],vis.map(p=>p.rows)); const a=wbAgg(rows);
+    const tagOnly=vis.length&&!rows.length;
+    out.push('<div class="wbcard" onclick="location.hash=\'#o/'+esc(b.book)+'\'">'
+     +'<div class="t"><span>&#128216; बही '+esc(b.book)+'</span><span>'+(a.pend>0?('बाकी '+a.pend):(tagOnly?'':'पूरा'))+(a.over?' ⚠':'')+'</span></div>'
+     +'<div class="m">'+vis.length+' पन्ने · कुल '+rows.length+' ऑर्डर</div>'
+     +(a.pct!=null?'<div class="wbbar"><i style="width:'+a.pct+'%"></i></div>':'')+'</div>'); });
+  $('wbBody').innerHTML=out.join('')||'<div class="empty">'+(_wbTab==='All'?'कोई ऑर्डर नहीं':esc(_wbTab)+' में कोई ऑर्डर नहीं')+'</div>'; }
 
 /* ---- Screen 2: inside a book, page by page ------------------------------ */
 function wbBill(b,p,m){ window.open(PZ+'/billview?book='+encodeURIComponent(b)+'&page='+p+(m?'&mark='+m:''),'_blank'); }
-function wbBook(bk){ const a=bk.agg;
+function wbBook(bk){ const vis=bk.pages.filter(wbVisible); const a=bk.agg;
   wbTitleSet('<b>&#128216; बही '+esc(bk.book)+'</b>'+(a.pct!=null?' · '+a.pct+'%':''));
-  $('wbBody').innerHTML=bk.pages.map(p=>'<div class="wbrow" onclick="location.hash=\'#o/'+esc(bk.book)+'/'+p.page+'\'">'
-   +'<span style="min-width:0"><b>पन्ना '+p.page+'</b> · '+esc(p.cust||'? — नाम बिल पर है')
-   +'<br><span style="font-size:12px;color:var(--mut)">'+p.rows.length+' ऑर्डर · '+(p.agg.pend>0?('बाकी '+p.agg.pend):'पूरा')+(p.agg.over?' · ⚠ ज़्यादा आया':'')+'</span></span>'
-   +'<button class="pkeye" onclick="event.stopPropagation();wbBill(\''+esc(bk.book)+'\','+p.page+')">&#128065;</button></div>').join(''); }
+  $('wbBody').innerHTML=vis.map(p=>{ const cats=Array.from(wbPageTags(p)).filter(t=>t!=='Order');
+    return '<div class="wbrow" onclick="location.hash=\'#o/'+esc(bk.book)+'/'+p.page+'\'">'
+     +'<span style="min-width:0"><b>पन्ना '+p.page+'</b> · '+esc(p.cust||'? — नाम बिल पर है')
+     +'<br><span style="font-size:12px;color:var(--mut)">'+(p.rows.length
+        ? (p.rows.length+' ऑर्डर · '+(p.agg.pend>0?('बाकी '+p.agg.pend):'पूरा')+(p.agg.over?' · ⚠ ज़्यादा आया':''))
+        : (cats.map(esc).join(' · ')||'—'))+'</span></span>'
+     +'<button class="pkeye" onclick="event.stopPropagation();wbBill(\''+esc(bk.book)+'\','+p.page+')">&#128065;</button></div>'; }).join('')
+   ||'<div class="empty">इस श्रेणी में कोई पन्ना नहीं</div>'; }
 
 /* ---- Screen 3: the customer's bill -------------------------------------- */
 function wbStatusTxt(o){ if(o.st==='red')return 'ज़्यादा आया — '+o.r+'/'+o.q;
@@ -827,17 +866,20 @@ function wbStatusTxt(o){ if(o.st==='red')return 'ज़्यादा आया
   return o.r>0?('आया '+o.r+'/'+o.q):('बाकी '+o.q); }
 function wbPage(bk,pg){
   wbTitleSet('<b>पन्ना '+pg.page+'</b> · बही '+esc(bk.book));
-  const date=(pg.rows.find(c=>c.agreed_on)||{}).agreed_on;
+  const date=(pg.rows.find(c=>c.agreed_on)||{}).agreed_on||null;
+  const cats=Array.from(wbPageTags(pg)).filter(t=>t!=='Order');
   let h='<div style="margin:4px 0 10px"><b style="font-size:16px">'+esc(pg.cust||'? — नाम बिल पर है')+'</b>'
-   +(date?'<span style="color:var(--mut);font-size:12.5px"> · '+esc(date)+'</span>':'')+'</div>';
+   +(date?'<span style="color:var(--mut);font-size:12.5px"> · '+esc(date)+'</span>':'')
+   +(cats.length?'<div style="margin-top:6px">'+cats.map(t=>'<span class="wbtag">'+esc(t)+'</span>').join('')+'</div>':'')+'</div>';
   h+='<iframe class="wbif" src="'+PZ+'/billview?book='+encodeURIComponent(bk.book)+'&page='+pg.page+'"></iframe>';
   h+='<div style="text-align:right;margin-top:4px"><button class="pkeye" onclick="wbBill(\''+esc(bk.book)+'\','+pg.page+')">&#128065; बड़ा देखें</button></div>';
   h+='<div class="wbsec">ऑर्डर</div>';
-  h+=pg.rows.map(c=>{ const o=wbOrd(c);
+  h+=pg.rows.length?pg.rows.map(c=>{ const o=wbOrd(c);
     return '<div class="wbrow'+(_wbHl===c.id?' wbhl':'')+'" id="wbo'+c.id+'" onclick="wbPick('+c.id+')">'
      +'<span style="min-width:0"><b>'+esc(c.design_no||'? — नाम बिल पर है')+'</b>'+(c.size?' · '+esc(c.size):'')
      +'<br><span style="font-size:12px;color:var(--mut)">'+wbStatusTxt(o)+'</span></span>'
-     +'<span>'+(o.st==='red'?'⚠':o.st==='green'?'●':o.st==='blue'?'◐':'○')+'</span></div>'; }).join('');
+     +'<span>'+(o.st==='red'?'⚠':o.st==='green'?'●':o.st==='blue'?'◐':'○')+'</span></div>'; }).join('')
+   :'<div class="empty">इस बिल में गिनने लायक़ कुछ नहीं — &#128065; बिल देखें</div>';
   $('wbBody').innerHTML=h;
   if(_wbHl){ const el=$('wbo'+_wbHl); if(el)el.scrollIntoView({block:'center'}); _wbHl=null; } }
 
@@ -866,6 +908,7 @@ async function wbSave(force){ const n=Number($('don')&&$('don').value)||0; if(n<
 function wbSearchIn(v){ clearTimeout(_wbT); _wbT=setTimeout(()=>wbFind(v.trim()),300); }
 function wbFind(q){ if(!q){ wbRender(); return; }
   const rows=_wbRows||[], books=wbGroup(rows);
+  const pgflat=[].concat.apply([],books.map(b=>b.pages.map(p=>({book_number:b.book,page_number:p.page,tally_name:p.cust}))));
   const norm=s=>String(s||'').toLowerCase().replace(/[^0-9a-z\u0900-\u097F]/g,'').replace(/o/g,'0').replace(/[il]/g,'1');
   const qn=norm(q); if(!qn){ wbRender(); return; }
   const go=(c,hl)=>{ _wbHl=hl?c.id:null; $('wbSearch').value='';
@@ -875,12 +918,12 @@ function wbFind(q){ if(!q){ wbRender(); return; }
   if(bk){ $('wbSearch').value=''; const h='#o/'+bk.book; if(location.hash===h)wbRender(); else location.hash=h; return; }
   const des=rows.find(c=>norm(c.design_no)===qn)||(qn.length>=3?rows.find(c=>norm(c.design_no).indexOf(qn)>=0):null);
   if(des) return go(des,true);
-  if(/^\d+$/.test(q)){ const pgs={}; rows.forEach(c=>{ if(String(c.page_number)===q) pgs[c.book_number]=c; });
+  if(/^\d+$/.test(q)){ const pgs={}; pgflat.forEach(c=>{ if(String(c.page_number)===q) pgs[c.book_number]=c; });
     const ks=Object.keys(pgs);
     if(ks.length===1) return go(pgs[ks[0]],false);
     if(ks.length>1){ $('wbBody').innerHTML='<div class="wbsec">पन्ना '+esc(q)+' — किस बही में?</div>'
       +ks.map(k=>{const c=pgs[k]; return '<div class="wbrow" onclick="$(\'wbSearch\').value=\'\';location.hash=\'#o/'+esc(String(c.book_number))+'/'+c.page_number+'\'">&#128216; बही '+esc(String(c.book_number))+' · पन्ना '+c.page_number+' · '+esc(c.tally_name||'?')+'</div>';}).join(''); return; } }
-  const cust=rows.find(c=>norm(c.tally_name).indexOf(qn)>=0);
+  const cust=pgflat.find(c=>norm(c.tally_name).indexOf(qn)>=0);
   if(cust) return go(cust,false);
   const sz=rows.find(c=>{ const t=norm(c.size); if(!t)return false;
     const rev=norm(String(c.size||'').replace(/^(\D*)(\d+(?:\.\d+)?)(\D+)(\d+(?:\.\d+)?)(.*)$/,'$4x$2'));
@@ -1526,8 +1569,29 @@ function renderManage(){
   const ocFav=(arr,el)=>{ $(el).innerHTML=(arr||[]).length?(arr).map(o=>`<div class="mchip">${esc(o.name)}<button class="edb" onclick="openBrandRename('${o.id}')" title="Edit name">&#9998;</button><button class="fav" onclick="toggleFav('${o.id}',${o.favorite?'true':'false'})" title="Fast-mover (pin to top)">${o.favorite?'&#9733;':'&#9734;'}</button><button class="del" onclick="delItem('nkg_options','${o.id}')">&times;</button></div>`).join(''):'<div style="font-size:12px;color:var(--mut2)">None</div>'; };
   ocFav(opts.brand,'mBrand'); oc(opts.thickness.plywood,'mPlyThick'); oc(opts.size.plywood,'mPlySize'); oc(opts.design.door,'mDesign'); oc(opts.size.door,'mDoorSize'); oc(opts.customer,'mCust');
   const ml=(arr,el,table)=>{ $(el).innerHTML=arr.length?arr.map(s=>`<div class="mitem"><span>${esc(s.name)}</span><button class="del" onclick="delItem('${table}','${s.id}')">&times;</button></div>`).join(''):'<div style="font-size:13px;color:var(--mut2)">None yet</div>'; };
-  ml(staff,'mStaff','nkg_staff'); ml(sources,'mSources','nkg_sources'); ml(zones,'mZones','nkg_zones');
+  const mlStaff=(arr,el)=>{ $(el).innerHTML=arr.length?arr.map(s=>`<div class="mitem"><span>${esc(s.name)}${(s.order_tags&&s.order_tags.length)?` <span style="font-size:11px;color:var(--mut2)">${s.order_tags.map(esc).join(' · ')}</span>`:''}</span><span><button class="edb" onclick="openStaffTags('${s.id}')" title="Order categories">&#127991;</button><button class="del" onclick="delItem('nkg_staff','${s.id}')">&times;</button></span></div>`).join(''):'<div style="font-size:13px;color:var(--mut2)">None yet</div>'; };
+  mlStaff(staff,'mStaff'); ml(sources,'mSources','nkg_sources'); ml(zones,'mZones','nkg_zones');
 }
+/* Page Tags v1: which order categories this staff member's Orders window
+   shows. Names come from Project Zero's one category registry; empty = all.
+   NOTE: staff identity here is a tapped name (no login), so this is a
+   convenience filter, not access control. */
+let _stg=null;
+async function openStaffTags(id){ const s=staff.find(x=>String(x.id)===String(id)); if(!s)return;
+  let cats=[]; try{ const r=await fetch(PZ+'/api/cl/tags',{cache:'no-store'}); if(r.ok)cats=(await r.json()).map(t=>t.name).filter(n=>n!=='Order'); }catch(e){}
+  _stg={id:s.id,sel:new Set(s.order_tags||[]),cats:cats};
+  sheetHTML('<div class="grab"></div><h4>&#127991; '+esc(s.name)+' — कौन-सी category दिखे?</h4>'
+   +'<div style="font-size:12.5px;color:var(--mut)">कुछ न चुनें = सब दिखेगा</div>'
+   +'<div class="chips big" id="stgChips" style="margin-top:10px"></div>'
+   +'<button class="pri" style="max-width:none;margin-top:12px" onclick="saveStaffTags()">&#10003; Save</button>');
+  openSheet(); stgRender(); }
+function stgRender(){ const el=$('stgChips'); if(!el||!_stg)return;
+  el.innerHTML=_stg.cats.map((n,i)=>'<button class="chip'+(_stg.sel.has(n)?' on':'')+'" onclick="stgTog('+i+')">'+esc(n)+'</button>').join('')||'<div style="font-size:12px;color:var(--mut2)">None</div>'; }
+function stgTog(i){ const n=_stg.cats[i]; if(_stg.sel.has(n))_stg.sel.delete(n); else _stg.sel.add(n); stgRender(); }
+async function saveStaffTags(){ if(!_stg)return;
+  const r=await api("/rest/v1/nkg_staff?id=eq."+_stg.id,{method:'PATCH',headers:HJ,body:JSON.stringify({order_tags:Array.from(_stg.sel)})});
+  if(r===null){toast('Failed — check signal','err');return;}
+  closeSheet(); await loadStaff(); renderManage(); toast('Saved ✓','ok'); }
 async function addOpt(kind,product,el){ const v=$(el).value.trim(); if(!v)return; await api("/rest/v1/nkg_options",{method:'POST',headers:HJ,body:JSON.stringify({kind,name:v,sort:99,product})}); $(el).value=''; await loadOpts(); renderManage(); toast('Added','ok'); }
 async function toggleFav(id,cur){ await api("/rest/v1/nkg_options?id=eq."+id,{method:'PATCH',headers:HJ,body:JSON.stringify({favorite:!cur})}); await loadOpts(); renderManage(); toast(cur?'Unpinned':'Pinned to top','ok'); }
 function openBrandRename(id){ const b=(opts.brand||[]).find(x=>x.id==id); if(!b)return; window.__bre={id:id,old:b.name};
