@@ -211,6 +211,15 @@ button,input,select{font-family:inherit;font-size:16px}
 .wbtab{flex:0 0 auto;min-height:40px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--hair);background:none;color:var(--mut);font-weight:700;font-size:14px}
 .wbtab.on{border-color:#34d399;color:var(--ink);background:rgba(52,211,153,.12)}
 .wbtag{display:inline-block;font-size:11px;font-weight:700;color:var(--mut);border:1px solid var(--hair);border-radius:999px;padding:2px 8px;margin:0 4px 4px 0}
+.wbsts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wbst{border-radius:999px;border:1.5px solid var(--hair);background:none;color:var(--ink);font-weight:700;font-size:13px;padding:7px 12px;min-height:36px;cursor:pointer}
+.wbst.pending{border-color:rgba(232,183,58,.7);background:rgba(232,183,58,.12)}
+.wbst.received{border-color:rgba(56,189,248,.7);background:rgba(56,189,248,.12)}
+.wbst.delivered{border-color:#34d399;background:rgba(52,211,153,.14)}
+.wbst.big{font-size:15px;min-height:44px;padding:10px 16px}
+.wbst.none{color:var(--mut);border-style:dashed;cursor:default}
+.wbdate{color:var(--mut);font-size:12.5px;font-weight:600;flex:0 0 auto}
+.wbtab.st{font-size:13px;min-height:34px;padding:6px 13px}
 .pkrow:active{background:rgba(255,255,255,.04)}
 .khphoto{margin-top:7px;background:var(--panel);border:1px solid var(--hair2);color:var(--sky);border-radius:8px;font-size:12px;font-weight:600;padding:5px 10px}
 /* ---- staff wizard ---- */
@@ -428,6 +437,7 @@ button,input,select{font-family:inherit;font-size:16px}
   </div>
   <input id="wbSearch" class="searchbar" placeholder="बही / पन्ना / ग्राहक / डिज़ाइन / साइज़ खोजें…" oninput="wbSearchIn(this.value)">
   <div class="wbtabs" id="wbTabs"></div>
+  <div class="wbtabs" id="wbSt"></div>
   <div id="wbBody"></div>
 </div>
 
@@ -571,7 +581,9 @@ function renderStaffBtns(){ if(!staff.length){$('staffBtns').innerHTML='';$('noS
   const last=(()=>{try{return localStorage.getItem('nkg_last_staff');}catch(e){return null;}})();
   const list=staff.slice().sort((a,b)=>(a.name===last?-1:0)-(b.name===last?-1:0));
   $('staffBtns').innerHTML=list.map(s=>`<button class="namebtn${s.name===last?' last':''}" onclick="pickStaff('${esc(s.name)}')"><span class="av">${esc((s.name||'?').slice(0,1).toUpperCase())}</span>${esc(s.name)}${s.name===last?'<span class="lastTag">पिछली बार</span>':''}</button>`).join(''); }
-function pickStaff(n){ me_={name:n}; origin='gate'; try{localStorage.setItem('nkg_last_staff',n);}catch(e){} tryResume(n); showAdd(); }
+/* The tapped name carries its Orders category assignment (owner Manage → 🏷)
+   so the Orders window can narrow to it. Still a tapped name, not a login. */
+function pickStaff(n){ const s=(staff||[]).find(x=>x.name===n)||{}; me_={name:n,order_tags:Array.isArray(s.order_tags)?s.order_tags:[]}; origin='gate'; try{localStorage.setItem('nkg_last_staff',n);}catch(e){} tryResume(n); showAdd(); }
 function backToGate(){ ['add','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('gate').classList.remove('hide'); loadStaff(); }
 function addBack(){ origin==='owner'?showOwner():backToGate(); }
 function ownerLogin(){
@@ -762,43 +774,42 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
    Page Tags v1: 'Order' is the master tag; category tabs filter as pure
    presentation. Pages with live door orders count as Order+Door
    automatically (the canonical stream is never re-classified by hand). */
-let _wbT=null,_wbRows=null,_wbTagged=[],_wbTags=[],_wbTab='All',_wbHl=null;
+/* ===== Orders — the Warehouse Work List (v1) ==============================
+   Staff see a FLAT list of order bills: one card per bill page, one status
+   chip per category — never the Bill Book shelf, page counts or progress.
+   The Bill Book stays the authority internally (every row is addressed as
+   book/page and every card says so); its storage hierarchy simply no
+   longer drives the screen.
+   Feed: PZ /api/cl/work — one row per (order page, category), status =
+   latest recorded act, 'pending' when none. Status change: POST
+   /api/cl/status — one explicit human act for ONE category of ONE bill;
+   Door never touches Glass. Receiving doors stays the line-level flow
+   below (/api/cl/orders + /api/cl/receipt), untouched. */
+let _wbT=null,_wbRows=null,_wbWork=null,_wbTags=[],_wbTab='All',_wbSt='pending',_wbQ='',_wbStPick=null;
+const WB_ST={pending:'बाकी',received:'आ गया',delivered:'दे दिया'};
+const WB_STEN={pending:'Pending',received:'Received',delivered:'Delivered'};
 function wbOrd(c){ const q=c.qty==null?null:Number(c.qty), r=Number(c.received)||0;
   const st= q==null ? (r>0?'blue':'grey') : (r>q?'red': r>=q?'green': r>0?'blue':'grey');
   return {q,r,st}; }
-function wbAgg(rows){ let pend=0,done=0,over=0,qsum=0,rsum=0;
-  rows.forEach(c=>{ const o=wbOrd(c);
-    if(o.st==='red')over++; else if(o.st==='green')done++; else pend++;
-    if(o.q!=null){ qsum+=o.q; rsum+=Math.min(o.r,o.q); } });
-  return {pend,done,over,pct:qsum>0?Math.round(rsum/qsum*100):null}; }
-function wbPageTags(pg){ const t=new Set(pg.explicit||[]); if(pg.rows.length){ t.add('Order'); t.add('Door'); } return t; }
+/* Staff category assignment (owner Manage → 🏷): a convenience filter over
+   the same feed — a tapped name is not a login, so this is not access
+   control. Owner and unassigned staff see every category. */
 function wbAllow(){ if(typeof origin!=='undefined'&&origin==='owner') return null;
   const a=me_&&me_.order_tags; return (Array.isArray(a)&&a.length)?new Set(a):null; }
-function wbVisible(pg){ const t=wbPageTags(pg), allow=wbAllow();
-  if(!t.has('Order')) return false;
-  if(allow){ const cats=Array.from(t).filter(x=>x!=='Order');
-    if(!cats.some(c=>allow.has(c))) return false; }
-  if(_wbTab!=='All' && !t.has(_wbTab)) return false;
-  return true; }
-function wbGroup(rows){ const bks={};
-  const slot=(b,p)=>{ (bks[b]=bks[b]||{}); return (bks[b][p]=bks[b][p]||{rows:[],explicit:null,cust:null}); };
-  rows.forEach(c=>{ const e=slot(String(c.book_number||'?'),c.page_number);
-    e.rows.push(c); if(!e.explicit&&c.tags&&c.tags.length)e.explicit=c.tags;
-    if(!e.cust&&c.tally_name)e.cust=c.tally_name; });
-  (_wbTagged||[]).forEach(t=>{ const e=slot(String(t.book_number||'?'),t.page_number);
-    if(t.tags&&t.tags.length)e.explicit=t.tags; if(!e.cust&&t.tally_name)e.cust=t.tally_name; });
-  return Object.keys(bks).map(b=>{ const pages=Object.keys(bks[b]).map(p=>{ const e=bks[b][p];
-      return {page:Number(p),rows:e.rows,agg:wbAgg(e.rows),cust:e.cust,explicit:e.explicit||[]}; })
-      .sort((x,y)=>x.page-y.page);
-    const all=[].concat.apply([],pages.map(p=>p.rows));
-    return {book:b,pages,agg:wbAgg(all),total:all.length}; })
-    .sort((x,y)=>{ const a=/^\d+$/.test(x.book), b2=/^\d+$/.test(y.book);
-      return a&&b2 ? Number(x.book)-Number(y.book) : a?-1:b2?1:(x.book<y.book?-1:1); }); }
+function wbCatOK(cat){ const allow=wbAllow(); return !allow || (!!cat&&allow.has(cat)); }
+/* all=true: every row this person may see (page workspace); otherwise the
+   list lens — category tab, then search (any status) or the status filter. */
+function wbItems(all){ return (_wbWork||[]).filter(it=>{ if(!wbCatOK(it.category)) return false; if(all) return true;
+    if(_wbTab!=='All' && it.category!==_wbTab) return false;
+    if(_wbQ) return wbMatch(it,_wbQ);
+    return _wbSt==='all' || (it.status||'pending')===_wbSt; }); }
 
-/* ---- navigation: #o -> books · #o/<book> -> pages · #o/<book>/<page> ---- */
+/* ---- navigation: #o -> the list · #o/<book>/<page> -> one bill --------- */
 function wbSeg(){ return location.hash.replace(/^#/,'').split('/').filter(Boolean); }
-function showDoorOrders(){ if(wbSeg()[0]!=='o') location.hash='#o'; else wbRoute(); }
-function wbBack(){ const g=wbSeg(); location.hash = g.length>=3 ? '#o/'+g[1] : (g.length===2?'#o':''); }
+/* The Orders button always opens the default view: Pending, every category, no search. */
+function showDoorOrders(){ _wbSt='pending'; _wbTab='All'; _wbQ=''; const sb=$('wbSearch'); if(sb)sb.value='';
+  if(wbSeg()[0]!=='o') location.hash='#o'; else wbRoute(); }
+function wbBack(){ location.hash = wbSeg().length>=3 ? '#o' : ''; }
 window.addEventListener('hashchange',wbRoute);
 function wbRoute(){ const g=wbSeg();
   if(g[0]!=='o'){ if($('dorders')&&!$('dorders').classList.contains('hide')){ $('dorders').classList.add('hide'); $('add').classList.remove('hide'); } return; }
@@ -811,79 +822,88 @@ function wbReload(){ wbLoad(); }
 async function wbLoad(){ const el=$('wbBody'); if(!el)return;
   el.innerHTML='<div class="empty">लोड हो रहा है…</div>';
   try{ const rs=await Promise.all([
+      fetch(PZ+'/api/cl/work',{cache:'no-store'}),
       fetch(PZ+'/api/cl/orders',{cache:'no-store'}),
-      fetch(PZ+'/api/cl/tagged',{cache:'no-store'}),
       fetch(PZ+'/api/cl/tags',{cache:'no-store'})]);
     if(!rs[0].ok)throw 0;
-    _wbRows=await rs[0].json();
-    _wbTagged=rs[1].ok?await rs[1].json():[];
+    _wbWork=await rs[0].json();
+    _wbRows=rs[1].ok?await rs[1].json():[];
     _wbTags=rs[2].ok?await rs[2].json():[];
     wbTabsRender(); wbRender();
   }catch(e){ el.innerHTML='<div class="empty">दुकान का ऑर्डर बुक नहीं खुला — नेट देखें, दोबारा कोशिश करें</div>'; } }
 function wbTabsRender(){ const el=$('wbTabs'); if(!el)return; const allow=wbAllow();
   const cats=(_wbTags||[]).map(t=>t.name).filter(n=>n!=='Order').filter(n=>!allow||allow.has(n));
   if(_wbTab!=='All'&&cats.indexOf(_wbTab)<0)_wbTab='All';
-  el.innerHTML=['All'].concat(cats).map(n=>'<button class="wbtab'+(_wbTab===n?' on':'')+'" onclick="wbTabSet(this.dataset.t)" data-t="'+esc(n)+'">'+(n==='All'?'सभी':esc(n))+'</button>').join(''); }
-function wbTabSet(n){ _wbTab=n; if(wbSeg().length>2) location.hash='#o'; wbTabsRender(); wbRender(); }
-function wbRender(){ const g=wbSeg(), books=wbGroup(_wbRows||[]);
-  if(g.length<=1) return wbBooks(books);
-  const bk=books.find(b=>b.book===g[1]);
-  if(!bk){ wbTitleSet('<b>&#128203; ऑर्डर</b>'); $('wbBody').innerHTML='<div class="empty">बही '+esc(g[1])+' में कोई ऑर्डर नहीं</div>'; return; }
-  if(g.length===2) return wbBook(bk);
-  const pg=bk.pages.find(p=>String(p.page)===g[2]);
-  if(!pg){ $('wbBody').innerHTML='<div class="empty">पन्ना नहीं मिला</div>'; return; }
-  wbPage(bk,pg); }
+  el.innerHTML=['All'].concat(cats).map(n=>'<button class="wbtab'+(_wbTab===n?' on':'')+'" onclick="wbTabSet(this.dataset.t)" data-t="'+esc(n)+'">'+(n==='All'?'सभी':esc(n))+'</button>').join('');
+  const st=$('wbSt'); if(st) st.innerHTML=['pending','received','delivered','all'].map(s=>'<button class="wbtab st'+(_wbSt===s?' on':'')+'" onclick="wbStSet(this.dataset.s)" data-s="'+s+'">'+(s==='all'?'सब':WB_ST[s])+'</button>').join(''); }
+function wbTabSet(n){ _wbTab=n; if(wbSeg().length>2) location.hash='#o'; else { wbTabsRender(); wbRender(); } }
+function wbStSet(s){ _wbSt=s; if(wbSeg().length>2) location.hash='#o'; else { wbTabsRender(); wbRender(); } }
+function wbChrome(list){ ['wbTabs','wbSt'].forEach(i=>{ const e=$(i); if(e)e.classList.toggle('hide',!list); }); }
+function wbRender(){ const g=wbSeg(); if(g.length<3) return wbList(); wbPage(g[1],Number(g[2])); }
 
-/* ---- Screen 1: the books, like the shelf ------------------------------- */
-function wbBooks(books){ wbTitleSet('<b>&#128203; ऑर्डर</b>');
-  const out=[];
-  books.forEach(b=>{ const vis=b.pages.filter(wbVisible); if(!vis.length)return;
-    const rows=[].concat.apply([],vis.map(p=>p.rows)); const a=wbAgg(rows);
-    const tagOnly=vis.length&&!rows.length;
-    out.push('<div class="wbcard" onclick="location.hash=\'#o/'+esc(b.book)+'\'">'
-     +'<div class="t"><span>&#128216; बही '+esc(b.book)+'</span><span>'+(a.pend>0?('बाकी '+a.pend):(tagOnly?'':'पूरा'))+(a.over?' ⚠':'')+'</span></div>'
-     +'<div class="m">'+vis.length+' पन्ने · कुल '+rows.length+' ऑर्डर</div>'
-     +(a.pct!=null?'<div class="wbbar"><i style="width:'+a.pct+'%"></i></div>':'')+'</div>'); });
-  $('wbBody').innerHTML=out.join('')||'<div class="empty">'+(_wbTab==='All'?'कोई ऑर्डर नहीं':esc(_wbTab)+' में कोई ऑर्डर नहीं')+'</div>'; }
+/* ---- the list: one card per bill, one chip per category --------------- */
+function wbDate(d){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d||'')); return m?(m[3]+'-'+m[2]+'-'+m[1]):''; }
+function wbCards(items){ const g={}, order=[];
+  items.forEach(it=>{ const k=String(it.book_number)+'/'+it.page_number;
+    if(!g[k]){ g[k]={book:String(it.book_number),page:it.page_number,cust:it.tally_name,date:it.agreed_on,items:[]}; order.push(k); }
+    g[k].items.push(it); });
+  return order.map(k=>g[k]); }
+function wbStChip(it,big){ if(!it.category) return '<span class="wbst none">विभाग चुना नहीं — दुकान पर टैग करें</span>';
+  const s=it.status||'pending';
+  return '<button class="wbst '+s+(big?' big':'')+'" data-cat="'+esc(it.category)+'" data-st="'+s+'" onclick="event.stopPropagation();wbStPick(\''+esc(String(it.book_number))+'\','+it.page_number+',\''+esc(it.category)+'\')">'+esc(it.category)+' · '+WB_ST[s]+'</button>'; }
+function wbList(){ wbTitleSet('<b>&#128203; ऑर्डर</b>'); wbChrome(true);
+  const cards=wbCards(wbItems(false));
+  $('wbBody').innerHTML=cards.map(c=>'<div class="wbcard wbbill" data-book="'+esc(c.book)+'" data-page="'+c.page+'" onclick="location.hash=\'#o/'+esc(c.book)+'/'+c.page+'\'">'
+    +'<div class="t"><span class="wbcust">'+esc(c.cust||'? — नाम बिल पर है')+'</span>'+(wbDate(c.date)?'<span class="wbdate">'+wbDate(c.date)+'</span>':'')+'</div>'
+    +'<div class="wbsts">'+c.items.map(it=>wbStChip(it,false)).join('')+'</div>'
+    +'<div class="m wbref">बही '+esc(c.book)+' · पन्ना '+c.page+'</div></div>').join('')
+   ||'<div class="empty">'+(_wbQ?'कुछ नहीं मिला — बही, पन्ना, ग्राहक, डिज़ाइन या साइज़ लिखें':(_wbSt==='pending'?'कोई बाकी ऑर्डर नहीं':'यहाँ कुछ नहीं'))+'</div>'; }
 
-/* ---- Screen 2: inside a book, page by page ------------------------------ */
+/* ---- status: one explicit act per category ---------------------------- */
+function wbStPick(b,p,cat){ const it=(_wbWork||[]).find(x=>String(x.book_number)===String(b)&&x.page_number===p&&x.category===cat);
+  if(!it||!wbCatOK(cat))return; _wbStPick=it; const cur=it.status||'pending';
+  sheetHTML('<div class="grab"></div><h4>'+esc(cat)+' — '+esc(it.tally_name||('बही '+b+' · पन्ना '+p))+'</h4>'
+   +'<div style="font-size:12.5px;color:var(--mut)">बही '+esc(String(b))+' · पन्ना '+p+' · सिर्फ़ '+esc(cat)+' का काम — बाकी विभाग जैसे हैं वैसे रहेंगे</div>'
+   +'<div class="ladder chips" id="wbStOpts" style="margin-top:10px">'+['pending','received','delivered'].map(s=>'<button class="chip'+(cur===s?' on':'')+'" data-s="'+s+'" onclick="wbStSave(\''+s+'\')">'+(cur===s?'&#10004; ':'')+WB_ST[s]+' <span style="font-size:13px;color:var(--mut);font-weight:600">'+WB_STEN[s]+'</span></button>').join('')+'</div>');
+  openSheet(); }
+async function wbStSave(s){ const it=_wbStPick; if(!it)return; if((it.status||'pending')===s){ closeSheet(); return; }
+  try{ const r=await fetch(PZ+'/api/cl/status',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({book_number:it.book_number,page_number:it.page_number,category:it.category,status:s,changed_by:(me_&&me_.name)||'Warehouse'})});
+    const d=await r.json();
+    if(!d||!d.ok){ toast((d&&d.error)||'सेव नहीं हुआ — दोबारा','err'); return; }
+    closeSheet(); toast('✓ '+it.category+': '+WB_ST[s],'ok');
+    wbLoad();
+  }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
+
+/* ---- one bill: photo, status per category, doors to receive ----------- */
 function wbBill(b,p,m){ window.open(PZ+'/billview?book='+encodeURIComponent(b)+'&page='+p+(m?'&mark='+m:''),'_blank'); }
-function wbBook(bk){ const vis=bk.pages.filter(wbVisible); const a=bk.agg;
-  wbTitleSet('<b>&#128216; बही '+esc(bk.book)+'</b>'+(a.pct!=null?' · '+a.pct+'%':''));
-  $('wbBody').innerHTML=vis.map(p=>{ const cats=Array.from(wbPageTags(p)).filter(t=>t!=='Order');
-    return '<div class="wbrow" onclick="location.hash=\'#o/'+esc(bk.book)+'/'+p.page+'\'">'
-     +'<span style="min-width:0"><b>पन्ना '+p.page+'</b> · '+esc(p.cust||'? — नाम बिल पर है')
-     +'<br><span style="font-size:12px;color:var(--mut)">'+(p.rows.length
-        ? (p.rows.length+' ऑर्डर · '+(p.agg.pend>0?('बाकी '+p.agg.pend):'पूरा')+(p.agg.over?' · ⚠ ज़्यादा आया':''))
-        : (cats.map(esc).join(' · ')||'—'))+'</span></span>'
-     +'<button class="pkeye" onclick="event.stopPropagation();wbBill(\''+esc(bk.book)+'\','+p.page+')">&#128065;</button></div>'; }).join('')
-   ||'<div class="empty">इस श्रेणी में कोई पन्ना नहीं</div>'; }
-
-/* ---- Screen 3: the customer's bill -------------------------------------- */
 function wbStatusTxt(o){ if(o.st==='red')return 'ज़्यादा आया — '+o.r+'/'+o.q;
   if(o.st==='green')return 'पूरा';
   if(o.q==null)return o.r>0?('आया '+o.r+' — गिनती बिल पर'):'गिनती बिल पर है';
   return o.r>0?('आया '+o.r+'/'+o.q):('बाकी '+o.q); }
-function wbPage(bk,pg){
-  wbTitleSet('<b>पन्ना '+pg.page+'</b> · बही '+esc(bk.book));
-  const date=(pg.rows.find(c=>c.agreed_on)||{}).agreed_on||null;
-  const cats=Array.from(wbPageTags(pg)).filter(t=>t!=='Order');
-  let h='<div style="margin:4px 0 10px"><b style="font-size:16px">'+esc(pg.cust||'? — नाम बिल पर है')+'</b>'
-   +(date?'<span style="color:var(--mut);font-size:12.5px"> · '+esc(date)+'</span>':'')
-   +(cats.length?'<div style="margin-top:6px">'+cats.map(t=>'<span class="wbtag">'+esc(t)+'</span>').join('')+'</div>':'')+'</div>';
-  h+='<iframe class="wbif" src="'+PZ+'/billview?book='+encodeURIComponent(bk.book)+'&page='+pg.page+'"></iframe>';
-  h+='<div style="text-align:right;margin-top:4px"><button class="pkeye" onclick="wbBill(\''+esc(bk.book)+'\','+pg.page+')">&#128065; बड़ा देखें</button></div>';
-  h+='<div class="wbsec">ऑर्डर</div>';
-  h+=pg.rows.length?pg.rows.map(c=>{ const o=wbOrd(c);
-    return '<div class="wbrow'+(_wbHl===c.id?' wbhl':'')+'" id="wbo'+c.id+'" onclick="wbPick('+c.id+')">'
-     +'<span style="min-width:0"><b>'+esc(c.design_no||'? — नाम बिल पर है')+'</b>'+(c.size?' · '+esc(c.size):'')
-     +'<br><span style="font-size:12px;color:var(--mut)">'+wbStatusTxt(o)+'</span></span>'
-     +'<span>'+(o.st==='red'?'⚠':o.st==='green'?'●':o.st==='blue'?'◐':'○')+'</span></div>'; }).join('')
-   :'<div class="empty">इस बिल में गिनने लायक़ कुछ नहीं — &#128065; बिल देखें</div>';
-  $('wbBody').innerHTML=h;
-  if(_wbHl){ const el=$('wbo'+_wbHl); if(el)el.scrollIntoView({block:'center'}); _wbHl=null; } }
+function wbPage(book,page){ wbChrome(false);
+  const items=wbItems(true).filter(it=>String(it.book_number)===String(book)&&it.page_number===page);
+  const rows=(_wbRows||[]).filter(c=>String(c.book_number)===String(book)&&c.page_number===page);
+  wbTitleSet('<b>पन्ना '+page+'</b> · बही '+esc(String(book)));
+  if(!items.length){ $('wbBody').innerHTML='<div class="empty">यह बिल आपकी सूची में नहीं है</div>'; return; }
+  const it0=items[0], date=wbDate(it0.agreed_on);
+  let h='<div style="margin:4px 0 10px"><b style="font-size:16px">'+esc(it0.tally_name||'? — नाम बिल पर है')+'</b>'
+   +(date?'<span class="wbdate"> · '+date+'</span>':'')
+   +'<div class="wbref" style="color:var(--mut);font-size:12.5px;margin-top:2px">बही '+esc(String(book))+' · पन्ना '+page+'</div></div>';
+  h+='<div class="wbsec">काम की हालत</div><div class="wbsts">'+items.map(it=>wbStChip(it,true)).join('')+'</div>';
+  h+='<iframe class="wbif" src="'+PZ+'/billview?book='+encodeURIComponent(book)+'&page='+page+'"></iframe>';
+  h+='<div style="text-align:right;margin-top:4px"><button class="pkeye" onclick="wbBill(\''+esc(String(book))+'\','+page+')">&#128065; बड़ा देखें</button></div>';
+  if(rows.length||items.some(it=>it.category==='Door')){
+    h+='<div class="wbsec">दरवाज़े — कितने आए</div>';
+    h+=rows.length?rows.map(c=>{ const o=wbOrd(c);
+      return '<div class="wbrow" id="wbo'+c.id+'" onclick="wbPick('+c.id+')">'
+       +'<span style="min-width:0"><b>'+esc(c.design_no||'? — नाम बिल पर है')+'</b>'+(c.size?' · '+esc(c.size):'')
+       +'<br><span style="font-size:12px;color:var(--mut)">'+wbStatusTxt(o)+'</span></span>'
+       +'<span>'+(o.st==='red'?'⚠':o.st==='green'?'●':o.st==='blue'?'◐':'○')+'</span></div>'; }).join('')
+     :'<div class="empty">इस बिल में गिनने लायक़ कुछ नहीं — &#128065; बिल देखें</div>'; }
+  $('wbBody').innerHTML=h; }
 
-/* ---- Receive — the existing flow, reused -------------------------------- */
+/* ---- Receive — the existing flow, unchanged ---------------------------- */
 let _wbPickC=null;
 function wbPick(id){ const c=(_wbRows||[]).find(x=>x.id===id); if(!c)return; _wbPickC=c;
   const o=wbOrd(c), rem=(o.q!=null&&o.q>o.r)?(o.q-o.r):'';
@@ -904,32 +924,16 @@ async function wbSave(force){ const n=Number($('don')&&$('don').value)||0; if(n<
     wbLoad();
   }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 
-/* ---- Search: book / page / customer / design / size --------------------- */
-function wbSearchIn(v){ clearTimeout(_wbT); _wbT=setTimeout(()=>wbFind(v.trim()),300); }
-function wbFind(q){ if(!q){ wbRender(); return; }
-  const rows=_wbRows||[], books=wbGroup(rows);
-  const pgflat=[].concat.apply([],books.map(b=>b.pages.map(p=>({book_number:b.book,page_number:p.page,tally_name:p.cust}))));
-  const norm=s=>String(s||'').toLowerCase().replace(/[^0-9a-z\u0900-\u097F]/g,'').replace(/o/g,'0').replace(/[il]/g,'1');
-  const qn=norm(q); if(!qn){ wbRender(); return; }
-  const go=(c,hl)=>{ _wbHl=hl?c.id:null; $('wbSearch').value='';
-    const h='#o/'+c.book_number+'/'+c.page_number;
-    if(location.hash===h) wbRender(); else location.hash=h; };
-  const bk=books.find(b=>norm(b.book)===qn);
-  if(bk){ $('wbSearch').value=''; const h='#o/'+bk.book; if(location.hash===h)wbRender(); else location.hash=h; return; }
-  const des=rows.find(c=>norm(c.design_no)===qn)||(qn.length>=3?rows.find(c=>norm(c.design_no).indexOf(qn)>=0):null);
-  if(des) return go(des,true);
-  if(/^\d+$/.test(q)){ const pgs={}; pgflat.forEach(c=>{ if(String(c.page_number)===q) pgs[c.book_number]=c; });
-    const ks=Object.keys(pgs);
-    if(ks.length===1) return go(pgs[ks[0]],false);
-    if(ks.length>1){ $('wbBody').innerHTML='<div class="wbsec">पन्ना '+esc(q)+' — किस बही में?</div>'
-      +ks.map(k=>{const c=pgs[k]; return '<div class="wbrow" onclick="$(\'wbSearch\').value=\'\';location.hash=\'#o/'+esc(String(c.book_number))+'/'+c.page_number+'\'">&#128216; बही '+esc(String(c.book_number))+' · पन्ना '+c.page_number+' · '+esc(c.tally_name||'?')+'</div>';}).join(''); return; } }
-  const cust=pgflat.find(c=>norm(c.tally_name).indexOf(qn)>=0);
-  if(cust) return go(cust,false);
-  const sz=rows.find(c=>{ const t=norm(c.size); if(!t)return false;
-    const rev=norm(String(c.size||'').replace(/^(\D*)(\d+(?:\.\d+)?)(\D+)(\d+(?:\.\d+)?)(.*)$/,'$4x$2'));
-    return t.indexOf(qn)>=0||rev.indexOf(qn)>=0; });
-  if(sz) return go(sz,true);
-  $('wbBody').innerHTML='<div class="empty">कुछ नहीं मिला — बही, पन्ना, ग्राहक, डिज़ाइन या साइज़ लिखें</div>'; }
+/* ---- Search: filters the flat list — customer / book / page / design / size */
+function wbSearchIn(v){ clearTimeout(_wbT); _wbT=setTimeout(()=>{ _wbQ=v.trim(); if(wbSeg().length>2) location.hash='#o'; else wbRender(); },250); }
+function wbNorm(s){ return String(s||'').toLowerCase().replace(/[^0-9a-zऀ-ॿ]/g,'').replace(/o/g,'0').replace(/[il]/g,'1'); }
+function wbSizeHit(size,qn){ const t=wbNorm(size); if(!t)return false;
+  const rev=wbNorm(String(size||'').replace(/^(\D*)(\d+(?:\.\d+)?)(\D+)(\d+(?:\.\d+)?)(.*)$/,'$4x$2'));
+  return t.indexOf(qn)>=0||rev.indexOf(qn)>=0; }
+function wbMatch(it,q){ const qn=wbNorm(q); if(!qn)return true; const b=String(it.book_number), p=String(it.page_number);
+  if(wbNorm(b)===qn||p===q||wbNorm(b+'/'+p)===qn) return true;
+  if(wbNorm(it.tally_name).indexOf(qn)>=0) return true;
+  return (it.lines||[]).some(l=>{ const d=wbNorm(l.design_no); return (d&&d.indexOf(qn)>=0)||wbSizeHit(l.size,qn); }); }
 
 function itemText(){ if(mode==='plywood')return [sel.brand,sel.thickness,sel.size].filter(Boolean).join(' ');
   if(mode==='door')return [sel.design,sel.size].filter(Boolean).join(' ');
