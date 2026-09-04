@@ -232,12 +232,15 @@ button,input,select{font-family:inherit;font-size:16px}
 .wbk-m{color:var(--mut);font-size:12.5px;margin-top:3px}
 .wbk-a{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
 .wbk-mv{min-height:36px;border-radius:999px;border:1.5px solid var(--hair2);background:none;color:var(--ink);font-weight:700;font-size:13px;padding:6px 12px}
-.wbk-st{font-size:12.5px;font-weight:800}.wbk-st.pending{color:var(--amber)}.wbk-st.received{color:var(--sky)}.wbk-st.delivered{color:var(--mint)}
+.wbk-st{font-size:12.5px;font-weight:800;color:var(--mint)}
 .wbk-page{cursor:default;margin-bottom:10px}
 .wbghost{position:fixed;z-index:60;pointer-events:none;opacity:.94;transform:rotate(2deg) scale(1.03);box-shadow:0 18px 40px -10px rgba(0,0,0,.7);border-color:var(--mint)}
 .wblift{opacity:.3}
 body.wbdragging{overflow:hidden}
-.wbempty{color:var(--mut2);font-size:13.5px;text-align:center;padding:22px 8px}
+.wbempty{color:var(--mut2);font-size:14px;text-align:center;padding:28px 8px}
+.wblist-menu{flex:0 0 auto;width:34px;height:34px;margin-left:6px;border-radius:9px;border:1px solid var(--hair);background:none;color:var(--mut);font-size:16px}
+.wblist.wbadd{flex:0 0 60%;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-style:dashed;border-color:var(--hair2);color:var(--ink);font-weight:800;font-size:16px;cursor:pointer;text-align:center}
+.wblist.wbadd small{color:var(--mut);font-weight:600;font-size:12px}
 .wben{font-size:13px;color:var(--mut);font-weight:600}
 .wbdate{color:var(--mut);font-size:12.5px;font-weight:600}
 .pkrow:active{background:rgba(255,255,255,.04)}
@@ -807,10 +810,14 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
    menu's "Move to" — either way ONE explicit act on /api/cl/status.
    Naming = one row on /api/cl/title. Opening a card never moves it and
    Door receiving never moves it. Feed: PZ /api/cl/work. */
-let _wbT=null,_wbRows=null,_wbWork=null,_wbTags=[],_wbTab=null,_wbX=0,_wbQ='',_wbPickIt=null,_wbEdit=null,_wbDrag=null,_wbDragged=0;
-const WB_COLS=['pending','received','delivered'];
-const WB_ST={pending:'बाकी',received:'आ गया',delivered:'दे दिया'};
-const WB_STEN={pending:'Pending',received:'Received',delivered:'Delivered'};
+let _wbT=null,_wbRows=null,_wbWork=null,_wbTags=[],_wbLists=[],_wbTab=null,_wbX=0,_wbY=0,_wbQ='',_wbPickIt=null,_wbEdit=null,_wbDrag=null,_wbDragged=0,_wbListPick=null;
+/* Board Lists v1: every department's lists come from the shop's board
+   configuration (/api/cl/lists) - stable ids, runtime names, any number,
+   in position order. The owner renames and adds lists here; staff move
+   cards between them. Nothing about three statuses is assumed any more. */
+function wbOwner(){ return typeof origin!=='undefined'&&origin==='owner'; }
+function wbListsOf(cat){ return (_wbLists||[]).filter(l=>l.category===cat).sort((a,b)=>a.position-b.position); }
+function wbListById(id){ return (_wbLists||[]).find(l=>l.id===Number(id))||null; }
 function wbOrd(c){ const q=c.qty==null?null:Number(c.qty), r=Number(c.received)||0;
   const st= q==null ? (r>0?'blue':'grey') : (r>q?'red': r>=q?'green': r>0?'blue':'grey');
   return {q,r,st}; }
@@ -852,11 +859,13 @@ async function wbLoad(){ const el=$('wbBoard'); if(!el)return;
   try{ const rs=await Promise.all([
       fetch(PZ+'/api/cl/work',{cache:'no-store'}),
       fetch(PZ+'/api/cl/orders',{cache:'no-store'}),
-      fetch(PZ+'/api/cl/tags',{cache:'no-store'})]);
-    if(!rs[0].ok)throw 0;
+      fetch(PZ+'/api/cl/tags',{cache:'no-store'}),
+      fetch(PZ+'/api/cl/lists',{cache:'no-store'})]);
+    if(!rs[0].ok||!rs[3].ok)throw 0;
     _wbWork=await rs[0].json();
     _wbRows=rs[1].ok?await rs[1].json():[];
     _wbTags=rs[2].ok?await rs[2].json():[];
+    _wbLists=await rs[3].json();
     wbTabsRender(); wbRender();
   }catch(e){ wbChrome(true); el.innerHTML='<div class="empty">दुकान का ऑर्डर बुक नहीं खुला — नेट देखें, दोबारा कोशिश करें</div>'; } }
 /* One department switcher (no "सभी" — boards never mix). A single
@@ -878,8 +887,8 @@ function wbDate(d){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d||'')); ret
 function wbCover(it,big){ const u=wbImg(it);
   return '<div class="wbk-cover'+(big?' big':'')+'">'+(u?'<img class="wbk-img" loading="lazy" decoding="async" alt="बिल" src="'+esc(u)+'" onerror="wbImgFail(this)">':'<div class="wbk-noimg">&#128196;<br>फोटो नहीं</div>')+'</div>'; }
 function wbImgFail(img){ const c=img.parentNode; if(c) c.innerHTML='<div class="wbk-noimg">&#128196;<br>फोटो नहीं खुली</div>'; }
-function wbCard(it){ const b=esc(String(it.book_number)), p=it.page_number, d=wbDate(it.agreed_on), nm=wbName(it), s=it.status||'pending';
-  return '<div class="wbk" data-book="'+b+'" data-page="'+p+'" data-cat="'+esc(it.category)+'" data-st="'+s+'" onclick="wbOpen(this)">'
+function wbCard(it){ const b=esc(String(it.book_number)), p=it.page_number, d=wbDate(it.agreed_on), nm=wbName(it);
+  return '<div class="wbk" data-book="'+b+'" data-page="'+p+'" data-cat="'+esc(it.category)+'" data-list="'+(it.list_id||'')+'" onclick="wbOpen(this)">'
    +wbCover(it,false)
    +'<div class="wbk-body"><div class="wbk-t"><span class="wbcust'+(nm?'':' add')+'">'+esc(nm||'नाम जोड़ें')+'</span>'
    +'<button class="wbk-menu" aria-label="मेन्यू" onclick="event.stopPropagation();wbMenu(\''+b+'\','+p+',\''+esc(it.category)+'\')">&#8943;</button></div>'
@@ -887,14 +896,43 @@ function wbCard(it){ const b=esc(String(it.book_number)), p=it.page_number, d=wb
 function wbBoardRender(){ wbChrome(true); const cat=_wbTab; const board=$('wbBoard'); if(!board)return;
   wbTitleSet(cat?'<b>'+esc(cat)+'</b><span class="wbsub">ऑर्डर बोर्ड</span>':'<b>&#128203; ऑर्डर</b>');
   if(!cat){ board.innerHTML='<div class="empty">कोई विभाग नहीं — दुकान पर category बनवाएँ</div>'; return; }
-  const by={pending:[],received:[],delivered:[]};
-  wbItems(false).forEach(it=>{ (by[it.status||'pending']||by.pending).push(it); });
-  board.innerHTML=WB_COLS.map(s=>'<section class="wblist" data-s="'+s+'">'
-    +'<div class="wblist-h"><span class="wblist-t">'+WB_ST[s]+' <small>'+WB_STEN[s]+'</small></span><span class="wblist-n">'+by[s].length+'</span></div>'
-    +'<div class="wblist-c">'+(by[s].map(wbCard).join('')||'<div class="wbempty">'+(_wbQ?'कुछ नहीं मिला':'कोई कार्ड नहीं')+'</div>')+'</div></section>').join('');
-  board.scrollLeft=_wbX; }
+  const lists=wbListsOf(cat); if(!lists.length){ board.innerHTML='<div class="empty">इस बोर्ड की सूचियाँ नहीं मिलीं — दोबारा कोशिश करें</div>'; return; }
+  const by={}; lists.forEach(l=>{ by[l.id]=[]; });
+  wbItems(false).forEach(it=>{ (by[it.list_id]||by[lists[0].id]).push(it); });   // no placement yet = the first list
+  const own=wbOwner();
+  board.innerHTML=lists.map(l=>'<section class="wblist" data-id="'+l.id+'" data-name="'+esc(l.name)+'">'
+    +'<div class="wblist-h"><span class="wblist-t">'+esc(l.name)+'</span><span class="wblist-n">'+by[l.id].length+'</span>'
+    +(own?'<button class="wblist-menu" aria-label="सूची मेन्यू" onclick="wbListMenu('+l.id+')">&#8943;</button>':'')+'</div>'
+    +'<div class="wblist-c">'+(by[l.id].map(wbCard).join('')||'<div class="wbempty">'+(_wbQ?'कुछ नहीं मिला':'कोई कार्ड नहीं')+'</div>')+'</div></section>').join('')
+   +(own?'<button class="wblist wbadd" id="wbAddList" onclick="wbListAdd()">&#43; नई सूची<small>Add another list</small></button>':'');
+  board.scrollLeft=_wbX; if(_wbY){ const y=_wbY; _wbY=0; requestAnimationFrame(()=>window.scrollTo(0,y)); } }
+/* ---- owner controls: rename a list · add a list (append at the end) ---- */
+function wbListMenu(id){ const l=wbListById(id); if(!l||!wbOwner())return; _wbListPick=l;
+  sheetHTML('<div class="grab"></div><h4>'+esc(l.name)+'</h4><div style="font-size:12.5px;color:var(--mut)">'+esc(l.category)+' बोर्ड · सूची '+l.position+'</div>'
+   +'<div class="ladder chips" id="wbListOpts" style="margin-top:10px"><button class="chip" data-a="rename" onclick="wbListRename()">&#9998; सूची का नाम बदलें <span class="wben">Rename list</span></button></div>');
+  openSheet(); }
+function wbListRename(){ const l=_wbListPick; if(!l)return;
+  sheetHTML('<div class="grab"></div><h4>&#9998; सूची का नाम</h4><div style="font-size:12.5px;color:var(--mut)">'+esc(l.category)+' बोर्ड · कार्ड जहाँ हैं वहीं रहेंगे</div>'
+   +'<input id="wbListIn" class="field" maxlength="30" autocomplete="off" value="'+esc(l.name)+'" style="max-width:none;margin-top:10px" onkeydown="if(event.key===\'Enter\')wbListSave(\'rename\')">'
+   +'<button class="pri" style="max-width:none;margin-top:10px" onclick="wbListSave(\'rename\')">&#10003; नाम रखें</button>');
+  openSheet(); setTimeout(()=>{const e=$('wbListIn'); if(e){e.focus(); e.select&&e.select();}},100); }
+function wbListAdd(){ if(!wbOwner())return; _wbListPick=null;
+  sheetHTML('<div class="grab"></div><h4>&#43; नई सूची</h4><div style="font-size:12.5px;color:var(--mut)">'+esc(_wbTab||'')+' बोर्ड के अंत में जुड़ेगी · Add another list</div>'
+   +'<input id="wbListIn" class="field" maxlength="30" autocomplete="off" placeholder="जैसे: Cutting" style="max-width:none;margin-top:10px" onkeydown="if(event.key===\'Enter\')wbListSave(\'add\')">'
+   +'<button class="pri" style="max-width:none;margin-top:10px" onclick="wbListSave(\'add\')">&#10003; सूची जोड़ें</button>');
+  openSheet(); setTimeout(()=>{const e=$('wbListIn'); if(e)e.focus();},100); }
+async function wbListSave(action){ const name=(($('wbListIn')&&$('wbListIn').value)||'').replace(/\s+/g,' ').trim(); if(!name){ toast('नाम लिखें','err'); return; }
+  const body=action==='rename'?{action:'rename',list_id:_wbListPick&&_wbListPick.id,name,changed_by:(me_&&me_.name)||'Owner'}:{category:_wbTab,name,changed_by:(me_&&me_.name)||'Owner'};
+  try{ const r=await fetch(PZ+'/api/cl/list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json(); if(!d||!d.ok){ toast((d&&d.error)||'सेव नहीं हुआ — दोबारा','err'); return; }
+    closeSheet();
+    if(action==='rename'){ const l=wbListById(d.id); if(l)l.name=d.name; (_wbWork||[]).forEach(x=>{ if(x.list_id===d.id) x.list=d.name; }); toast('✓ नाम रखा','ok'); }
+    else { _wbLists.push({id:d.id,kind_id:null,category:d.category,position:d.position,legacy_status:null,name:d.name}); toast('✓ सूची जुड़ी','ok'); }
+    wbRender(); wbLoad();
+    if(action==='add'){ const b=$('wbBoard'); if(b) b.scrollTo({left:b.scrollWidth,behavior:'smooth'}); }
+  }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 function wbOpen(el){ if(Date.now()-_wbDragged<600) return;   // a drop is not a tap
-  _wbX=($('wbBoard')||{}).scrollLeft||0; location.hash='#o/'+el.dataset.book+'/'+el.dataset.page; }
+  _wbX=($('wbBoard')||{}).scrollLeft||0; _wbY=window.scrollY||0; location.hash='#o/'+el.dataset.book+'/'+el.dataset.page; }
 (function(){ const b=$('wbBoard'); if(!b)return;
   b.addEventListener('scroll',()=>{ if(_wbDrag&&!_wbDrag.active) wbDragCancel(); if(!_wbDrag) _wbX=b.scrollLeft; },{passive:true});
   /* long-press to lift a card, drag it over another list, drop to move —
@@ -923,35 +961,35 @@ function wbDragMove(x,y){ const d=_wbDrag; if(!d)return; d.x=x; d.y=y;
   if(zone&&d.edge!==zone){ d.edge=zone; b.scrollBy({left:zone*wbListStep(),behavior:'smooth'}); } else if(!zone) d.edge=0;
   wbDropMark(wbListUnder(x,y,d)); }
 function wbListStep(){ const l=document.querySelector('#wbBoard .wblist'); return l?(l.offsetWidth+12):300; }
-function wbListUnder(x,y,d){ const t=document.elementFromPoint(x,y), list=t&&t.closest?t.closest('#wbBoard .wblist'):null;
-  return (list&&list.dataset.s!==d.el.dataset.st)?list:null; }
+function wbListUnder(x,y,d){ const t=document.elementFromPoint(x,y), list=t&&t.closest?t.closest('#wbBoard .wblist:not(.wbadd)'):null;
+  return (list&&list.dataset.id!==d.el.dataset.list)?list:null; }
 function wbDragTrack(){}
 function wbDropMark(list){ const d=_wbDrag; if(!d||d.over===list)return; if(d.over)d.over.classList.remove('wbdrop'); d.over=list; if(list)list.classList.add('wbdrop'); }
 function wbDragEnd(){ const d=_wbDrag; if(!d)return; clearTimeout(d.timer); _wbDrag=null; if(!d.active) return;
-  const tgt=wbListUnder(d.x,d.y,d), to=tgt?tgt.dataset.s:null; d.over=null; if(d.ghost)d.ghost.remove(); d.el.classList.remove('wblift');
+  const tgt=wbListUnder(d.x,d.y,d), to=tgt?Number(tgt.dataset.id):null; d.over=null; if(d.ghost)d.ghost.remove(); d.el.classList.remove('wblift');
   Array.from(document.querySelectorAll('.wblist.wbdrop')).forEach(e=>e.classList.remove('wbdrop'));
   document.body.classList.remove('wbdragging'); _wbDragged=Date.now();
-  if(to&&to!==d.el.dataset.st){ _wbPickIt=wbFind(d.el.dataset.book,d.el.dataset.page,d.el.dataset.cat); wbMoveTo(to); } }
+  if(to&&String(to)!==d.el.dataset.list){ _wbPickIt=wbFind(d.el.dataset.book,d.el.dataset.page,d.el.dataset.cat); wbMoveTo(to); } }
 function wbDragCancel(){ const d=_wbDrag; if(!d)return; clearTimeout(d.timer); _wbDrag=null;
   if(d.active){ if(d.ghost)d.ghost.remove(); d.el.classList.remove('wblift'); Array.from(document.querySelectorAll('.wblist.wbdrop')).forEach(e=>e.classList.remove('wbdrop')); document.body.classList.remove('wbdragging'); _wbDragged=Date.now(); } }
 
 /* ---- the card menu: rename · open · move to --------------------------- */
-function wbMenu(b,p,cat){ const it=wbFind(b,p,cat); if(!it||!wbCatOK(cat))return; _wbPickIt=it; const cur=it.status||'pending';
+function wbMenu(b,p,cat){ const it=wbFind(b,p,cat); if(!it||!wbCatOK(cat))return; _wbPickIt=it; const cur=it.list_id;
   sheetHTML('<div class="grab"></div><h4>'+esc(wbLabel(it))+'</h4>'
    +'<div style="font-size:12.5px;color:var(--mut)">बही '+esc(String(b))+' · पन्ना '+p+' · '+esc(cat)+'</div>'
    +'<div class="ladder chips" id="wbMenuOpts" style="margin-top:10px">'
    +'<button class="chip" data-a="rename" onclick="closeSheet();wbTitleEdit(\''+esc(String(b))+'\','+p+')">&#9998; नाम बदलें <span class="wben">Rename</span></button>'
    +'<button class="chip" data-a="open" onclick="closeSheet();location.hash=\'#o/'+esc(String(b))+'/'+p+'\'">&#128443; बिल खोलें <span class="wben">Open bill</span></button>'
    +'</div><div class="wbsec">Move to &#8594;</div><div class="ladder chips" id="wbMoveOpts">'
-   +WB_COLS.map(s=>'<button class="chip'+(cur===s?' on':'')+'" data-s="'+s+'"'+(cur===s?' disabled':'')+' onclick="wbMoveTo(\''+s+'\')">'+(cur===s?'&#10004; ':'&#8594; ')+WB_ST[s]+' <span class="wben">'+WB_STEN[s]+'</span></button>').join('')+'</div>');
+   +wbListsOf(cat).map(l=>'<button class="chip'+(cur===l.id?' on':'')+'" data-list="'+l.id+'"'+(cur===l.id?' disabled':'')+' onclick="wbMoveTo('+l.id+')">'+(cur===l.id?'&#10004; ':'&#8594; ')+esc(l.name)+'</button>').join('')+'</div>');
   openSheet(); }
-async function wbMoveTo(s){ const it=_wbPickIt; if(!it)return; if((it.status||'pending')===s){ closeSheet(); return; }
-  try{ const r=await fetch(PZ+'/api/cl/status',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({book_number:it.book_number,page_number:it.page_number,category:it.category,status:s,changed_by:(me_&&me_.name)||'Warehouse'})});
+async function wbMoveTo(lid){ const it=_wbPickIt; if(!it)return; lid=Number(lid); const l=wbListById(lid); if(!l||it.list_id===lid){ closeSheet(); return; }
+  try{ const r=await fetch(PZ+'/api/cl/move',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({book_number:it.book_number,page_number:it.page_number,category:it.category,list_id:lid,changed_by:(me_&&me_.name)||'Warehouse'})});
     const d=await r.json();
     if(!d||!d.ok){ toast((d&&d.error)||'सेव नहीं हुआ — दोबारा','err'); return; }
-    closeSheet(); toast('✓ '+WB_ST[s],'ok');
-    it.status=s; wbRender();   // the card moves at once; the feed confirms
+    closeSheet(); toast('✓ '+l.name,'ok');
+    it.list_id=lid; it.list=l.name; wbRender();   // the card moves at once; the feed confirms
     wbLoad();
   }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 
@@ -989,11 +1027,11 @@ function wbPage(book,page){ wbChrome(false);
   const rows=(_wbRows||[]).filter(c=>String(c.book_number)===String(book)&&c.page_number===page);
   wbTitleSet('<b>पन्ना '+page+'</b> · बही '+esc(String(book))+(it?' · '+esc(it.category):''));
   if(!it){ $('wbBody').innerHTML='<div class="empty">यह बिल आपकी सूची में नहीं है</div>'; return; }
-  const b=esc(String(book)), d=wbDate(it.agreed_on), nm=wbName(it), s=it.status||'pending';
+  const b=esc(String(book)), d=wbDate(it.agreed_on), nm=wbName(it), ln=(wbListById(it.list_id)||{}).name||it.list||'—';
   let h='<div class="wbk wbk-page"><div class="wbk-body"><div class="wbk-t"><span class="wbcust'+(nm?'':' add')+'">'+esc(nm||'नाम जोड़ें')+'</span>'
    +'<button class="wbk-menu" aria-label="मेन्यू" onclick="wbMenu(\''+b+'\','+page+',\''+esc(it.category)+'\')">&#8943;</button></div>'
    +'<div class="wbk-m"><span class="wbref">बही '+b+' · पन्ना '+page+'</span>'+(d?'<span class="wbdate"> · '+d+'</span>':'')+(it.tally_name&&it.title?'<br>Tally: '+esc(it.tally_name):'')+'</div>'
-   +'<div class="wbk-a"><span class="wbk-st '+s+'">'+WB_ST[s]+' · '+WB_STEN[s]+'</span>'
+   +'<div class="wbk-a"><span class="wbk-st">&#9646; '+esc(ln)+'</span>'
    +'<button class="wbk-mv" onclick="wbMenu(\''+b+'\','+page+',\''+esc(it.category)+'\')">&#8644; ले जाएँ</button></div></div></div>';
   h+='<iframe class="wbif" src="'+PZ+'/billview?book='+encodeURIComponent(book)+'&page='+page+'"></iframe>';
   h+='<div style="text-align:right;margin-top:4px"><button class="pkeye" onclick="wbBill(\''+b+'\','+page+')">&#128065; बड़ा देखें</button></div>';

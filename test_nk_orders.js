@@ -1,21 +1,22 @@
 /*
- * NK Warehouse — Orders (Trello-style department board, Work Board v2)
- * browser verification.
+ * NK Warehouse — Orders (Trello-style department board with runtime lists,
+ * Board Lists v1) browser verification.
  *
  * Drives the REAL index.html in headless Chromium at a phone viewport
  * (390×844) with Project Zero and Supabase replaced by in-test fakes
  * (page.route), entering exactly as a human does, and proves:
- *   three real list containers stand side by side, Pending first, with a
- *   meaningful part of the next list visible; cards carry the bill
- *   photograph (lazy), with a clean placeholder when it cannot load; the
- *   editable name sits below the photo and persists; the board scrolls
- *   sideways and long lists scroll down to the last card; a long-press
- *   drag moves exactly one card and writes one status act, an ordinary
- *   swipe moves nothing; the ⋯ menu moves and renames; Door and Glass
- *   cards of one bill move independently; search keeps cards in their
- *   lists; staff permissions, owner and runtime boards work; opening a
- *   card never moves it; returning lands on the same list; browser back
- *   works; receiving is unchanged; screenshots are captured.
+ *   every department board is built from ITS OWN runtime lists (stable ids,
+ *   any number, in position order); existing Pending/Received/Delivered
+ *   history lands on the matching starter lists; new work enters the first
+ *   list; the owner renames lists (header changes at once, cards stay,
+ *   persists) and adds lists at the end (empty, persists, usable at once);
+ *   duplicates are refused only within one board; staff see no list
+ *   controls; cards move onto runtime lists by drag and by menu with one
+ *   placement act each; Door and Glass stay independent; search keeps the
+ *   layout across any number of lists; a board of eight lists scrolls
+ *   fluently; photo cards, names, workspace, receiving and permissions are
+ *   as before; returning restores department and list position; six
+ *   screenshots are captured.
  *
  * Usage: NODE_PATH=$(npm root -g) node test_nk_orders.js
  *   SHOT_DIR=/some/dir saves phone screenshots for a visual check.
@@ -49,26 +50,38 @@ const STAFF = [
   { id: 's2', name: 'Gopal', active: true, order_tags: ['Glass'] },
   { id: 's3', name: 'Meena', active: true, order_tags: [] },
 ];
-const events = [], titles = [], receipts = [], pzLog = [], imgLog = [];
+// what migration board_lists_v1 seeded: three starter lists per department, each an identity of its own
+const LISTS = [];
+KINDS.filter(k => k.name !== 'Order').forEach(k => [['Pending', 'pending'], ['Received', 'received'], ['Delivered', 'delivered']].forEach(([n, st], i) =>
+  LISTS.push({ id: k.id * 10 + i + 1, kind_id: k.id, category: k.name, position: i + 1, legacy_status: st, name: n })));
+const listsOf = cat => LISTS.filter(l => l.category === cat).sort((a, b) => a.position - b.position);
+const legacy = [{ book: '490', page: 83, cat: 'Door', status: 'received' }];   // production history that predates boards
+const placements = [], titles = [], receipts = [], listLog = [], pzLog = [], imgLog = [];
 const lastTitle = (book, page) => { const t = titles.slice().reverse().find(e => e.book === book && e.page === page); return t ? t.title : null; };
+function listOfCard(book, page, cat) {
+  const pl = placements.slice().reverse().find(e => e.book === book && e.page === page && e.cat === cat);
+  if (pl) return LISTS.find(l => l.id === pl.list_id);
+  const lg = legacy.slice().reverse().find(e => e.book === book && e.page === page && e.cat === cat);
+  if (lg) return listsOf(cat).find(l => l.legacy_status === lg.status);
+  return listsOf(cat)[0];
+}
 function feed() {
   const out = [];
   PAGES.forEach(p => (p.cats.length ? p.cats : [null]).forEach(cat => {
-    const ev = events.slice().reverse().find(e => e.book === p.book && e.page === p.page && e.cat === cat);
-    out.push({ book_number: p.book, page_number: p.page, category: cat,
-      status: ev ? ev.status : (cat ? 'pending' : null), status_by: ev ? ev.by : null, status_at: ev ? 'now' : null,
+    const l = cat ? listOfCard(p.book, p.page, cat) : null;
+    out.push({ book_number: p.book, page_number: p.page, category: cat, list_id: l ? l.id : null, list: l ? l.name : null,
+      status: l ? l.legacy_status : null, status_by: null, status_at: null,
       tally_name: p.cust, agreed_on: p.date, title: lastTitle(p.book, p.page), photo: p.photo, lines: p.lines });
   }));
   return out;
 }
-function latest(book, page, cat) { const ev = events.slice().reverse().find(e => e.book === book && e.page === page && e.cat === cat); return ev ? ev.status : 'pending'; }
 const json = (route, obj, status) => route.fulfill({ status: status || 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(obj) });
-// a stand-in for the archive photograph: a portrait "handwritten bill" drawn as SVG
 const billSvg = p => '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800"><rect width="600" height="800" fill="#f3ecd8"/>' +
   [90, 150, 210, 270, 330, 390, 450, 510, 570, 630, 690].map(y => '<line x1="40" y1="' + y + '" x2="560" y2="' + y + '" stroke="#b9ad8e" stroke-width="2"/>').join('') +
   '<text x="50" y="70" font-family="serif" font-size="34" fill="#1c2a5a" font-style="italic">Mittal Hardware · ' + p + '</text>' +
   '<path d="M60 130 q40 -30 80 0 t80 0 t80 0 t80 0" stroke="#233" stroke-width="3" fill="none"/><path d="M60 190 q30 -25 60 0 t60 0 t60 0" stroke="#233" stroke-width="3" fill="none"/>' +
   '<path d="M60 250 q50 -30 100 0 t100 0 t100 0" stroke="#233" stroke-width="3" fill="none"/><path d="M60 310 q30 -25 60 0 t60 0 t60 0 t60 0 t60 0" stroke="#233" stroke-width="3" fill="none"/></svg>';
+const tidy = s => String(s || '').replace(/\s+/g, ' ').trim();
 
 async function routes(page) {
   await page.route(PZ + '/**', async route => {
@@ -77,21 +90,37 @@ async function routes(page) {
     if (m === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' } });
     if (u.pathname === '/api/bbk/img') { const p = u.searchParams.get('p'); imgLog.push(p); if (/^broken/.test(p)) return route.fulfill({ status: 404, body: 'no' }); return route.fulfill({ status: 200, contentType: 'image/svg+xml', body: billSvg(p) }); }
     if (u.pathname === '/api/cl/work') return json(route, feed());
+    if (u.pathname === '/api/cl/lists') return json(route, LISTS.slice().sort((a, b) => a.kind_id - b.kind_id || a.position - b.position));
     if (u.pathname === '/api/cl/orders') return json(route, COMMITMENTS);
     if (u.pathname === '/api/cl/tags') return json(route, KINDS);
     if (u.pathname === '/api/cl/tagged') return json(route, []);
     if (u.pathname === '/api/version') return json(route, { commit: 'test' });
     if (u.pathname === '/billview') return route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body style="background:#333;color:#eee;font:16px sans-serif;padding:20px">BILL PHOTO ' + u.search + '</body></html>' });
-    if (u.pathname === '/api/cl/status' && m === 'POST') {
+    if (u.pathname === '/api/cl/list' && m === 'POST') {
+      const b = req.postDataJSON(), name = tidy(b.name); listLog.push(b);
+      if (!b.changed_by || !name || name.length > 30) return json(route, { ok: false, error: 'List name is required' });
+      if (b.action === 'rename') {
+        const l = LISTS.find(x => x.id === Number(b.list_id)); if (!l) return json(route, { ok: false, error: 'That list does not exist' });
+        if (LISTS.some(x => x.category === l.category && x.id !== l.id && x.name.toLowerCase() === name.toLowerCase())) return json(route, { ok: false, error: 'The ' + l.category + ' board already has a list called ' + name });
+        l.name = name; return json(route, { ok: true, id: l.id, category: l.category, name });
+      }
+      const mine = listsOf(b.category); if (!mine.length) return json(route, { ok: false, error: 'Unknown category' });
+      if (mine.some(x => x.name.toLowerCase() === name.toLowerCase())) return json(route, { ok: false, error: 'The ' + b.category + ' board already has a list called ' + name });
+      const l = { id: 100 + LISTS.length, kind_id: mine[0].kind_id, category: b.category, position: mine[mine.length - 1].position + 1, legacy_status: null, name };
+      LISTS.push(l); return json(route, { ok: true, id: l.id, category: l.category, position: l.position, name });
+    }
+    if (u.pathname === '/api/cl/move' && m === 'POST') {
       const b = req.postDataJSON();
       const pg = PAGES.find(p => p.book === String(b.book_number) && p.page === Number(b.page_number));
       if (!pg || pg.cats.indexOf(b.category) < 0) return json(route, { ok: false, error: 'This bill has no ' + b.category + ' work' });
-      if (['pending', 'received', 'delivered'].indexOf(b.status) < 0 || !b.changed_by) return json(route, { ok: false, error: 'bad' });
-      events.push({ book: pg.book, page: pg.page, cat: b.category, status: b.status, by: b.changed_by });
-      return json(route, { ok: true, book_number: pg.book, page_number: pg.page, category: b.category, status: b.status });
+      const l = LISTS.find(x => x.id === Number(b.list_id));
+      if (!l || l.category !== b.category) return json(route, { ok: false, error: 'That list is not on the ' + b.category + ' board' });
+      if (!b.changed_by) return json(route, { ok: false, error: 'bad' });
+      placements.push({ book: pg.book, page: pg.page, cat: b.category, list_id: l.id, by: b.changed_by });
+      return json(route, { ok: true, book_number: pg.book, page_number: pg.page, category: b.category, list_id: l.id, list: l.name });
     }
     if (u.pathname === '/api/cl/title' && m === 'POST') {
-      const b = req.postDataJSON(), t = String(b.title || '').replace(/\s+/g, ' ').trim();
+      const b = req.postDataJSON(), t = tidy(b.title);
       const pg = PAGES.find(p => p.book === String(b.book_number) && p.page === Number(b.page_number));
       if (!pg || !b.changed_by || t.length > 60) return json(route, { ok: false, error: 'bad' });
       titles.push({ book: pg.book, page: pg.page, title: t || null, by: b.changed_by });
@@ -120,18 +149,12 @@ function serve() {
 }
 
 // ---- helpers ----------------------------------------------------------------
-async function list(page, s) {
-  return page.$$eval('#wbBoard .wblist[data-s="' + s + '"] .wbk', els => els.map(e => ({
-    ref: e.querySelector('.wbref').textContent, name: e.querySelector('.wbcust').textContent,
-    date: e.querySelector('.wbdate') ? e.querySelector('.wbdate').textContent.replace(/^\s*·\s*/, '') : null,
-    img: e.querySelector('img.wbk-img') ? e.querySelector('img.wbk-img').getAttribute('src') : null,
-    lazy: e.querySelector('img.wbk-img') ? e.querySelector('img.wbk-img').getAttribute('loading') : null,
-    noimg: !!e.querySelector('.wbk-noimg'), coverFirst: e.firstElementChild.classList.contains('wbk-cover'),
-    text: e.textContent, menu: e.querySelectorAll('.wbk-menu').length, stButtons: e.querySelectorAll('.wbst,.wbk-mv').length })));
-}
-const refs = async (page, s) => (await list(page, s)).map(x => x.ref).join('|');
-const counts = page => page.$$eval('#wbBoard .wblist', els => els.map(e => e.dataset.s + ':' + e.querySelector('.wblist-n').textContent).join(','));
-const rects = page => page.$$eval('#wbBoard .wblist', els => els.map(e => { const r = e.getBoundingClientRect(); return { s: e.dataset.s, l: Math.round(r.left), r: Math.round(r.right), w: Math.round(r.width) }; }));
+const boardLists = page => page.$$eval('#wbBoard .wblist:not(.wbadd)', els => els.map(e => ({ id: Number(e.dataset.id), name: e.querySelector('.wblist-t').textContent, n: Number(e.querySelector('.wblist-n').textContent), menu: e.querySelectorAll('.wblist-menu').length })));
+const names = async page => (await boardLists(page)).map(l => l.name).join('|');
+const inList = (page, id) => page.$$eval('#wbBoard .wblist[data-id="' + id + '"] .wbk', els => els.map(e => e.querySelector('.wbref').textContent));
+const cardIn = async (page, book, pg) => page.$eval('#wbBoard .wbk[data-book="' + book + '"][data-page="' + pg + '"]', e => Number(e.closest('.wblist').dataset.id)).catch(() => null);
+const addPanel = page => page.$$('#wbAddList');
+const rects = page => page.$$eval('#wbBoard .wblist', els => els.map(e => { const r = e.getBoundingClientRect(); return { id: e.dataset.id || 'add', l: Math.round(r.left), r: Math.round(r.right) }; }));
 const scrollX = page => page.$eval('#wbBoard', e => e.scrollLeft);
 const step = page => page.$eval('#wbBoard .wblist', e => e.offsetWidth + 12);
 const tabs = page => page.$$eval('#wbTabs .wbtab', els => els.map(e => e.dataset.t));
@@ -139,23 +162,33 @@ const tabOn = page => page.$eval('#wbTabs .wbtab.on', e => e.dataset.t).catch(()
 const tabsHidden = page => page.$eval('#wbTabs', e => e.classList.contains('hide'));
 const title = page => page.$eval('#wbTitle', e => e.textContent);
 const hash = page => page.evaluate(() => location.hash);
+const toastText = page => page.$eval('#toast', e => e.textContent);
 async function settled(page) { await page.waitForFunction(() => { const b = document.getElementById('wbBoard'), y = document.getElementById('wbBody'); return b && y && !/लोड हो रहा/.test(b.textContent + y.textContent); }); await page.waitForTimeout(150); }
-async function pickStaff(page, name) {
-  await page.waitForSelector('#staffBtns .namebtn');
-  await page.locator('#staffBtns .namebtn', { hasText: name }).first().click();
-  await page.waitForSelector('#add:not(.hide), #dorders:not(.hide)');
-}
+async function pickStaff(page, name) { await page.waitForSelector('#staffBtns .namebtn'); await page.locator('#staffBtns .namebtn', { hasText: name }).first().click(); await page.waitForSelector('#add:not(.hide), #dorders:not(.hide)'); }
 async function openOrders(page) { await page.click('#doBtn'); await page.waitForSelector('#dorders:not(.hide)'); await settled(page); }
 async function leaveOrders(page) { await page.click('#dorders .iconlink'); await page.waitForSelector('#add:not(.hide)'); }
 async function switchTo(page, name) { await leaveOrders(page); await page.click('#addBack'); await pickStaff(page, name); await openOrders(page); }
-async function menu(page, book, pg) { await page.click('#wbBoard .wbk[data-book="' + book + '"][data-page="' + pg + '"] .wbk-menu'); await page.waitForSelector('#wbMenuOpts .chip'); }
-async function moveVia(page, book, pg, to) { await menu(page, book, pg); await page.click('#wbMoveOpts .chip[data-s="' + to + '"]'); await page.waitForTimeout(450); await settled(page); }
-async function rename(page, book, pg, value) {
-  await menu(page, book, pg); await page.click('#wbMenuOpts .chip[data-a="rename"]'); await page.waitForSelector('#wbTitleIn');
-  const before = await page.$eval('#wbTitleIn', e => e.value);
-  await page.fill('#wbTitleIn', value); await page.click('#sheetInner .pri'); await page.waitForTimeout(450); await settled(page); return before;
+async function ownerIn(page) {
+  await page.click('#gate .linkbtn'); await page.waitForSelector('#pwIn, #owner:not(.hide)');
+  if (await page.$('#pwIn')) { await page.fill('#pwIn', 'secret'); await page.click('#pwBtn'); }
+  await page.waitForSelector('#owner:not(.hide)');
+  await page.locator('#owner button', { hasText: 'Add stock' }).first().click(); await page.waitForSelector('#add:not(.hide), #dorders:not(.hide)');
+  if (await page.$('#dorders:not(.hide)')) await settled(page); else await openOrders(page);   // a deep link (#o) lands straight on the board
 }
-async function tab(page, cat) { await page.click('#wbTabs .wbtab[data-t="' + cat + '"]'); await page.waitForTimeout(200); }
+async function menu(page, book, pg) { await page.click('#wbBoard .wbk[data-book="' + book + '"][data-page="' + pg + '"] .wbk-menu'); await page.waitForSelector('#wbMenuOpts .chip'); }
+async function moveVia(page, book, pg, listId) { await menu(page, book, pg); await page.click('#wbMoveOpts .chip[data-list="' + listId + '"]'); await page.waitForTimeout(450); await settled(page); }
+async function renameList(page, listId, value) {
+  await page.click('#wbBoard .wblist[data-id="' + listId + '"] .wblist-menu'); await page.waitForSelector('#wbListOpts .chip[data-a="rename"]');
+  await page.click('#wbListOpts .chip[data-a="rename"]'); await page.waitForSelector('#wbListIn');
+  const before = await page.$eval('#wbListIn', e => e.value);
+  await page.fill('#wbListIn', value); await page.click('#sheetInner .pri'); await page.waitForTimeout(450); await settled(page); return before;
+}
+async function addList(page, value) {
+  await page.$eval('#wbBoard', e => e.scrollTo({ left: e.scrollWidth })); await stable(page);
+  await page.click('#wbAddList'); await page.waitForSelector('#wbListIn');
+  await page.fill('#wbListIn', value); await page.click('#sheetInner .pri'); await page.waitForTimeout(500); await settled(page); await stable(page);
+}
+async function tab(page, cat) { await page.click('#wbTabs .wbtab[data-t="' + cat + '"]'); await page.waitForTimeout(200); await settled(page); }
 async function search(page, q) { if (await page.$eval('#wbSearch', e => e.classList.contains('hide'))) await page.click('#wbSearchBtn'); await page.fill('#wbSearch', q); await page.waitForTimeout(450); }
 async function shot(page, nm) { if (process.env.SHOT_DIR) await page.screenshot({ path: path.join(process.env.SHOT_DIR, nm + '.png') }); }
 const center = async (page, sel) => page.$eval(sel, e => { const r = e.getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + Math.min(r.height / 2, 120)) }; });
@@ -164,141 +197,114 @@ async function touch(cdp, type, x, y) { await cdp.send('Input.dispatchTouchEvent
 
 async function run(page, cdp) {
   await page.goto('http://127.0.0.1:' + PORT + '/index.html');
+  const D = listsOf('Door'), G = listsOf('Glass');
 
-  // ---- Raju (Door only): the Door board, Pending list first --------------
-  await pickStaff(page, 'Raju');
-  await openOrders(page);
-  let R = await rects(page);
-  check('T1 Orders opens the board at #o with three list containers side by side: Pending, Received, Delivered', (await hash(page)) === '#o' && R.map(x => x.s).join() === 'pending,received,delivered' && R[0].l < R[1].l && R[1].l < R[2].l, R);
-  check('T2 Pending is in view first (board at the start), a real part of Received visible beside it', (await scrollX(page)) === 0 && R[0].l >= 0 && R[1].l < 390 && (390 - R[1].l) >= 30, R);
-  check('T3 each list is 82–88% of the viewport width with a clear gap', R[0].w >= 0.82 * 362 && R[0].w <= 0.88 * 362 && (R[1].l - R[0].r) >= 8, R);
-  check('T4 single-department staff: board titled Door, no switcher, no सभी, no status strip or dropdown', (await tabsHidden(page)) && /Door/.test(await title(page)) && (await page.$$('#wbCols, #wbStSel, .wbcol')).length === 0 && !/सभी/.test(await page.$eval('#dorders', e => e.textContent)));
-  check('T5 list headers carry the title and card count', (await counts(page)) === 'pending:8,received:0,delivered:0' && /बाकी.*Pending/.test(await page.$eval('.wblist[data-s="pending"] .wblist-h', e => e.textContent)));
-  let L = await list(page, 'pending');
-  check('T6 cards are photo-first: a real lazy <img> of the archive photograph is the cover, name below it', L[0].coverFirst && L[0].lazy === 'lazy' && /\/api\/bbk\/img\?p=book1%2Fp83\.jpg$/.test(L[0].img) && L[0].name === 'Amar Traders', L[0]);
-  check('T7 one card = one job: no status button, no department name, one ⋯ menu', L.every(x => x.stButtons === 0 && x.menu === 1 && !/Door|Glass|Aluminium|Mesh/.test(x.text)), L);
-  check('T8 name precedence: Tally customer, else "नाम जोड़ें" — never "? — नाम बिल पर है"', L[1].name === 'नाम जोड़ें' && !/नाम बिल पर है/.test(await page.$eval('#wbBoard', e => e.textContent)));
-  check('T9 reference on every card; date only when known', L[0].ref === 'बही 490 · पन्ना 83' && L[0].date === '20-08-2026' && L[1].date === null, L);
-  check('T10 no "+ Add card" anywhere', !/Add card|कार्ड जोड़ें/.test(await page.$eval('#dorders', e => e.textContent)));
-  await page.waitForFunction(() => Array.from(document.querySelectorAll('.wblist[data-s="pending"] img.wbk-img')).slice(0, 2).every(i => i.complete && i.naturalWidth > 0));
-  check('T11 the first photographs are loaded and rendered', (await page.$eval('.wblist[data-s="pending"] img.wbk-img', e => e.naturalWidth)) > 0 && imgLog.length >= 2);
-  await shot(page, '1-door-board-pending-with-received-peeking');
-
-  // vertical: a long list reaches its last card by ordinary page scroll
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)); await page.waitForTimeout(200);
-  const last = await page.$eval('.wblist[data-s="pending"] .wbk:last-child', e => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; });
-  check('T12 vertical scrolling reaches the last card of a long list (no nested-scroll trap)', last.bottom <= 845 && last.top >= 0, last);
-  await shot(page, '2-pending-stack-scrolled');
-  await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(150);
-
-  // horizontal: the board itself scrolls sideways
-  const st = await step(page);
-  await page.$eval('#wbBoard', (e, x) => e.scrollTo({ left: x }), st); await page.waitForTimeout(400);
-  R = await rects(page);
-  check('T13 the board scrolls sideways: Received now in view, Delivered peeking', (await scrollX(page)) >= st - 2 && R[1].l < 30 && R[2].l < 390, R);
-  await shot(page, '3-board-moved-to-received');
-  await page.$eval('#wbBoard', e => e.scrollTo({ left: 0 })); await page.waitForTimeout(300);
-
-  // an ordinary swipe never lifts a card
-  let c = await center(page, '.wblist[data-s="pending"] .wbk[data-book="490"]');
-  const n0 = events.length;
-  await touch(cdp, 'touchStart', c.x, c.y);
-  for (let i = 1; i <= 4; i++) { await touch(cdp, 'touchMove', c.x - 30 * i, c.y); await page.waitForTimeout(25); }
-  await touch(cdp, 'touchEnd'); await page.waitForTimeout(400);
-  check('T14 an ordinary quick swipe lifts nothing, writes nothing and opens nothing', events.length === n0 && (await page.$$('.wbghost')).length === 0 && (await hash(page)) === '#o' && !(await page.$eval('#wbBoard', e => e.classList.contains('hide'))) && (await refs(page, 'pending')).startsWith('बही 490 · पन्ना 83'), await hash(page));
+  // ---- Raju (Door only): the Door board from its own lists ----------------
+  await pickStaff(page, 'Raju'); await openOrders(page);
+  let L = await boardLists(page);
+  check('L1 the Door board is built from Door\'s own three lists, by id, in position order', L.map(l => l.id).join() === D.map(l => l.id).join() && await names(page) === 'Pending|Received|Delivered' && (await scrollX(page)) === 0, L);
+  check('L2 staff see no list controls: no list ⋯ menu, no "+ Add another list"', L.every(l => l.menu === 0) && (await addPanel(page)).length === 0);
+  check('L3 existing history survives migration exactly: 490/83 (legacy "received") sits on the Received list', (await cardIn(page, '490', 83)) === D[1].id && (await inList(page, D[1].id)).join() === 'बही 490 · पन्ना 83');
+  check('L4 new work with no placement sits on the FIRST list', (await cardIn(page, '491', 5)) === D[0].id && (await cardIn(page, '493', 1)) === D[0].id && L[0].n === 7);
+  await menu(page, '493', 1);
+  check('L5 the card menu "Move to" lists the board\'s runtime lists, current one marked', (await page.$$eval('#wbMoveOpts .chip', els => els.map(e => e.dataset.list + ':' + e.disabled))).join() === D.map((l, i) => l.id + ':' + (i === 0)).join());
+  await page.click('#sheet', { position: { x: 10, y: 10 } }); await page.waitForTimeout(250);
+  await moveVia(page, '493', 1, D[2].id);
+  check('L6 a menu move writes ONE placement with the list id; the card lands there', placements.length === 1 && placements[0].list_id === D[2].id && placements[0].by === 'Raju' && (await cardIn(page, '493', 1)) === D[2].id);
+  // drag onto the peeking second list
+  await stable(page); await page.$eval('#wbBoard', e => e.scrollTo({ left: 0 })); await stable(page);
+  let c = await center(page, '.wblist[data-id="' + D[0].id + '"] .wbk[data-book="491"]');
+  await touch(cdp, 'touchStart', c.x, c.y); await page.waitForTimeout(550);
+  await touch(cdp, 'touchMove', c.x + 30, c.y); await page.waitForTimeout(60);
+  await touch(cdp, 'touchMove', 372, 200); await page.waitForTimeout(700);
+  await touch(cdp, 'touchMove', 200, 200); await page.waitForTimeout(150);
+  const hl = await page.$$eval('.wblist.wbdrop', els => els.map(e => e.dataset.id));
+  await touch(cdp, 'touchEnd'); await page.waitForTimeout(500); await settled(page);
+  check('L7 a long-press drag onto another runtime list writes ONE placement', hl.join() === String(D[1].id) && placements.length === 2 && placements[1].list_id === D[1].id && (await cardIn(page, '491', 5)) === D[1].id && (await hash(page)) === '#o', { hl, placements });
   await stable(page); await page.$eval('#wbBoard', e => e.scrollTo({ left: 0 })); await stable(page);
 
-  // long-press drag: lift, carry to the peeking Received list, drop
-  c = await center(page, '.wblist[data-s="pending"] .wbk[data-book="490"]');
-  await touch(cdp, 'touchStart', c.x, c.y); await page.waitForTimeout(550);
-  check('T15 a long press lifts the card (ghost follows the finger, source dimmed)', (await page.$$('.wbghost')).length === 1 && await page.$eval('.wblist[data-s="pending"] .wbk[data-book="490"]', e => e.classList.contains('wblift')));
-  await touch(cdp, 'touchMove', c.x + 30, c.y); await page.waitForTimeout(60);
-  await touch(cdp, 'touchMove', c.x + 120, c.y - 40); await page.waitForTimeout(60);
-  await touch(cdp, 'touchMove', 372, 200); await page.waitForTimeout(700);   // the edge slides the board one list; Received now under the finger
-  await touch(cdp, 'touchMove', 200, 200); await page.waitForTimeout(150);
-  check('T16 the destination list is highlighted while hovering', await page.$eval('.wblist[data-s="received"]', e => e.classList.contains('wbdrop')));
-  await shot(page, '5-drag-in-progress');
-  await touch(cdp, 'touchEnd'); await page.waitForTimeout(500); await settled(page);
-  check('T17 the drop writes exactly ONE status act (Door 490/83 → received by Raju) and nothing else', events.length === n0 + 1 && JSON.stringify(events[n0]) === JSON.stringify({ book: '490', page: 83, cat: 'Door', status: 'received', by: 'Raju' }), events);
-  check('T18 the card now sits in Received; the bill did not open; no ghost left behind', (await hash(page)) === '#o' && await refs(page, 'received') === 'बही 490 · पन्ना 83' && (await counts(page)) === 'pending:7,received:1,delivered:0' && (await page.$$('.wbghost')).length === 0);
-  await stable(page); await page.$eval('#wbBoard', e => e.scrollTo({ left: 0 })); await stable(page); await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(200);
-
-  // menu movement (the reliable fallback) and rename
-  await moveVia(page, '491', 5, 'received');
-  check('T19 the ⋯ menu "Move to" moves a card with one act too', events.length === n0 + 2 && events[n0 + 1].cat === 'Door' && events[n0 + 1].book === '491' && (await counts(page)) === 'pending:6,received:2,delivered:0');
-  await menu(page, '493', 1);
-  check('T20 the menu offers Rename, Open bill and Move to (current list marked)', (await page.$$('#wbMenuOpts .chip[data-a="rename"], #wbMenuOpts .chip[data-a="open"]')).length === 2 && await page.$eval('#wbMoveOpts .chip[data-s="pending"]', e => e.disabled));
-  await page.click('#sheet', { position: { x: 10, y: 10 } }); await page.waitForTimeout(250);
-  let before = await rename(page, '491', 5, 'Sharma ji bedroom');
-  check('T21 rename: empty for an unnamed bill; one row on /api/cl/title; the name shows below the photo at once', before === '' && titles.length === 1 && titles[0].title === 'Sharma ji bedroom' && (await list(page, 'received')).find(x => x.ref === 'बही 491 · पन्ना 5').name === 'Sharma ji bedroom');
-  await menu(page, '490', 83); await page.click('#wbMenuOpts .chip[data-a="rename"]'); await page.waitForSelector('#wbTitleIn');
-  check('T22 a bill with a Tally name opens the rename sheet prefilled with it', (await page.$eval('#wbTitleIn', e => e.value)) === 'Amar Traders');
-  await shot(page, '4-rename');
-  await page.fill('#wbTitleIn', 'Amar – first floor'); await page.click('#sheetInner .pri'); await page.waitForTimeout(450); await settled(page);
-  await menu(page, '490', 83); await page.click('#wbMenuOpts .chip[data-a="rename"]'); await page.waitForSelector('#wbTitleIn');
-  await page.locator('#sheetInner .chip', { hasText: 'Tally का नाम वापस' }).click(); await page.waitForTimeout(450); await settled(page);
-  check('T23 clearing records an explicit clearing row and the Tally name returns', titles.length === 3 && titles[2].title === null && (await list(page, 'received')).find(x => x.ref === 'बही 490 · पन्ना 83').name === 'Amar Traders');
-  await rename(page, '490', 83, 'Amar – first floor');
-
-  // reload: persisted, Pending first again
-  await page.reload(); await pickStaff(page, 'Raju'); await page.waitForSelector('#dorders:not(.hide)'); await settled(page);
-  check('T24 after reload: Door board, Pending first, moves and names persisted', (await scrollX(page)) === 0 && (await counts(page)) === 'pending:6,received:2,delivered:0' && (await list(page, 'received')).map(x => x.name).join('|') === 'Amar – first floor|Sharma ji bedroom');
-
-  // search keeps cards inside their lists
-  await search(page, 'Sharma'); check('T25 search by card name keeps the card in its own list', (await counts(page)) === 'pending:0,received:1,delivered:0' && await refs(page, 'received') === 'बही 491 · पन्ना 5' && /कुछ नहीं मिला/.test(await page.$eval('.wblist[data-s="pending"]', e => e.textContent)));
-  await search(page, 'Amar'); check('T26 search by Tally customer', (await counts(page)) === 'pending:0,received:1,delivered:0');
-  await search(page, 'Teak'); check('T27 search by design', await refs(page, 'received') === 'बही 491 · पन्ना 5');
-  await search(page, '3x7'); check('T28 search by size, either orientation', await refs(page, 'received') === 'बही 490 · पन्ना 83');
-  await search(page, '493'); check('T29 search by book', (await counts(page)) === 'pending:6,received:0,delivered:0');
-  await search(page, '83'); check('T30 search by page', (await counts(page)) === 'pending:0,received:1,delivered:0');
-  await search(page, 'Bhola'); check('T31 a Glass bill is never found from the Door board', (await counts(page)) === 'pending:0,received:0,delivered:0');
-  await page.click('#wbSearchBtn'); await page.waitForTimeout(300);
-  check('T32 closing search restores the board', (await counts(page)) === 'pending:6,received:2,delivered:0' && await page.$eval('#wbSearch', e => e.classList.contains('hide')));
-
-  // ---- Gopal (Glass only): its own board, same photo and name, independent ----
-  await switchTo(page, 'Gopal');
-  L = await list(page, 'pending');
-  check('T33 Gopal lands on the Glass board, Pending first, no switcher', (await tabsHidden(page)) && /Glass/.test(await title(page)) && (await scrollX(page)) === 0);
-  check('T34 the Door+Glass bill is a separate Glass card here, still Pending, same photo and same name', await refs(page, 'pending') === 'बही 490 · पन्ना 83|बही 490 · पन्ना 84' && L[0].name === 'Amar – first floor' && /book1%2Fp83/.test(L[0].img), L);
-  await page.waitForSelector('.wbk[data-book="490"][data-page="84"] .wbk-noimg');
-  check('T35 a photograph that cannot load shows a clean placeholder', (await list(page, 'pending'))[1].noimg && !(await list(page, 'pending'))[0].noimg);
-  await moveVia(page, '490', 83, 'delivered');
-  check('T36 Gopal\'s move names Glass; the Door card of the same bill stays received', events[events.length - 1].cat === 'Glass' && events[events.length - 1].by === 'Gopal' && latest('490', 83, 'Door') === 'received' && latest('490', 83, 'Glass') === 'delivered');
-
-  // ---- Meena (unassigned): switcher, one board at a time, runtime board ------
-  await switchTo(page, 'Meena');
-  check('T37 multi-department person: switcher Door|Glass|Aluminium|Mesh, no सभी, Door first', JSON.stringify(await tabs(page)) === '["Door","Glass","Aluminium","Mesh"]' && !(await tabsHidden(page)) && (await tabOn(page)) === 'Door' && (await counts(page)) === 'pending:6,received:2,delivered:0');
-  await page.$eval('#wbBoard', (e, x) => e.scrollTo({ left: x }), st); await page.waitForTimeout(300);
-  await tab(page, 'Glass');
-  check('T38 switching department resets the board to its Pending list; Glass shows Glass only (490/83 in Delivered)', (await scrollX(page)) === 0 && (await counts(page)) === 'pending:1,received:0,delivered:1' && await refs(page, 'delivered') === 'बही 490 · पन्ना 83');
-  check('T39 the uncategorised Order (492/1) is on no board', !/492 · पन्ना 1/.test(await page.$eval('#wbBoard', e => e.textContent)));
-  await tab(page, 'Aluminium'); check('T40 Aluminium board is its own', await refs(page, 'pending') === 'बही 492 · पन्ना 2');
-  await tab(page, 'Mesh'); check('T41 runtime category Mesh has its own board; a bill with no photograph shows the placeholder', await refs(page, 'pending') === 'बही 491 · पन्ना 7' && (await list(page, 'pending'))[0].noimg);
-
-  // ---- Owner: every department, one at a time ------------------------------
+  // ---- Owner: rename and add lists, per department -------------------------
   await leaveOrders(page); await page.click('#addBack'); await page.waitForSelector('#gate:not(.hide)');
-  await page.click('#gate .linkbtn'); await page.waitForSelector('#pwIn'); await page.fill('#pwIn', 'secret'); await page.click('#pwBtn');
-  await page.waitForSelector('#owner:not(.hide)');
-  await page.locator('#owner button', { hasText: 'Add stock' }).first().click(); await page.waitForSelector('#add:not(.hide)');
-  await openOrders(page);
-  check('T42 owner: every department in the switcher, Door board, Pending first', JSON.stringify(await tabs(page)) === '["Door","Glass","Aluminium","Mesh"]' && (await tabOn(page)) === 'Door' && (await scrollX(page)) === 0);
-  await shot(page, '6-owner-department-switcher');
+  await ownerIn(page);
+  L = await boardLists(page);
+  check('L8 owner sees a ⋯ on every list header and "+ Add another list" after the last list', L.every(l => l.menu === 1) && (await addPanel(page)).length === 1 && (await rects(page)).slice(-1)[0].id === 'add' && (await tabOn(page)) === 'Door');
+  const before = await renameList(page, D[0].id, '  Order   Received ');
+  check('L9 Rename list: prefilled with the current name, one call, header changes at once, cards stay', before === 'Pending' && listLog.length === 1 && listLog[0].action === 'rename' && await names(page) === 'Order Received|Received|Delivered' && (await inList(page, D[0].id)).length === 5);
+  await renameList(page, D[1].id, 'order received');
+  check('L10 a duplicate name (case-insensitive) is refused on the same board', listLog.length === 2 && await names(page) === 'Order Received|Received|Delivered' && /already/.test(await toastText(page)));
+  await page.click('#sheet', { position: { x: 10, y: 10 } }).catch(() => {}); await page.waitForTimeout(250);
+  await addList(page, 'Cutting');
+  L = await boardLists(page);
+  check('L11 "+ Add another list" appends an empty list at the END of this board and scrolls to it', await names(page) === 'Order Received|Received|Delivered|Cutting' && L[3].n === 0 && (await scrollX(page)) > (await step(page)) * 2 && (await rects(page)).slice(-1)[0].id === 'add');
+  await stable(page); await page.$eval('#wbBoard', e => e.scrollTo({ left: 0 })); await stable(page); await shot(page, '1-door-board-renamed-lists');
   await tab(page, 'Glass');
-  check('T43 owner switches to the Glass board and sees Glass cards only', (await counts(page)) === 'pending:1,received:0,delivered:1');
-  await tab(page, 'Door');
+  check('L12 Glass has its own untouched lists; switching department resets to its first list', await names(page) === 'Pending|Received|Delivered' && (await scrollX(page)) === 0);
+  check('L13 the Door+Glass bill is on Glass\'s first list here although its Door card was moved', (await cardIn(page, '490', 83)) === G[0].id);
+  await renameList(page, G[0].id, 'Cutting'); await renameList(page, G[1].id, 'Ready');
+  check('L14 the same name ("Cutting") is allowed on two different boards', await names(page) === 'Cutting|Ready|Delivered' && listsOf('Door')[3].name === 'Cutting');
+  await stable(page); await page.$eval('#wbBoard', e => e.scrollTo({ left: 0 })); await stable(page); await shot(page, '2-glass-board-different-lists');
+  await page.$eval('#wbBoard', e => e.scrollTo({ left: e.scrollWidth })); await stable(page);
+  await shot(page, '3-add-another-list');
+  await addList(page, 'Packed');
+  const packed = listsOf('Glass')[3];
+  check('L15 the new Glass list "Packed" is empty and last', await names(page) === 'Cutting|Ready|Delivered|Packed' && (await boardLists(page))[3].n === 0 && packed.position === 4);
+  await shot(page, '4-new-empty-list');
+  await stable(page); await page.$eval('#wbBoard', e => e.scrollTo({ left: 0 })); await stable(page);
+  await moveVia(page, '490', 84, packed.id);
+  check('L16 a card moves into the runtime-added list at once (one placement); the Door board is untouched', placements.slice(-1)[0].list_id === packed.id && (await cardIn(page, '490', 84)) === packed.id && listsOf('Door').length === 4);
+  await page.$eval('#wbBoard', e => e.scrollTo({ left: e.scrollWidth })); await stable(page);
+  await shot(page, '5-card-moved-into-new-list');
+  check('L17 Door and Glass placements of one bill stay independent', (await cardIn(page, '490', 83)) === G[0].id && placements.filter(p => p.book === '490' && p.page === 83).every(p => p.cat === 'Door' || p.cat === 'Glass') && listsOf('Door')[0].name === 'Order Received');
+  await search(page, 'Bhola');
+  check('L18 search across four lists keeps the card inside its own list (Packed) and the layout intact', (await boardLists(page)).length === 4 && (await inList(page, packed.id)).join() === 'बही 490 · पन्ना 84' && (await inList(page, G[0].id)).length === 0);
+  await page.click('#wbSearchBtn'); await page.waitForTimeout(300);
 
-  // ---- One bill: opening never moves; position kept; back works; receiving ----
-  const n1 = events.length;
-  await page.$eval('#wbBoard', (e, x) => e.scrollTo({ left: x }), st); await page.waitForTimeout(400);
-  await page.click('.wblist[data-s="received"] .wbk[data-book="491"][data-page="5"] .wbk-cover'); await page.waitForSelector('.wbif'); await settled(page);
-  check('T44 tapping the photograph opens the bill workspace with the full viewer; the board is hidden', (await hash(page)) === '#o/491/5' && /billview\?book=491&page=5/.test(await page.$eval('.wbif', e => e.getAttribute('src'))) && await page.$eval('#wbBoard', e => e.classList.contains('hide')));
-  check('T45 opening changed nothing; it shows the name, the reference and this department\'s list', events.length === n1 && /Sharma ji bedroom/.test(await page.$eval('#wbBody .wbcust', e => e.textContent)) && /बही 491 · पन्ना 5/.test(await page.$eval('#wbBody', e => e.textContent)) && /आ गया/.test(await page.$eval('#wbBody .wbk-st', e => e.textContent)));
-  await page.click('#wbBody .wbrow'); await page.waitForSelector('#don');
-  check('T46 the Door line opens the existing receive sheet prefilled with the remaining count', (await page.$eval('#don', e => e.value)) === '2');
-  await page.fill('#don', '1'); await page.click('#sheetInner .pri'); await page.waitForTimeout(450); await settled(page);
-  check('T47 receiving posts the same line-level receipt as before and never moves the card', receipts.length === 1 && receipts[0].mark_id === 12 && receipts[0].qty === 1 && receipts[0].noted_by === 'Owner' && latest('491', 5, 'Door') === 'received' && events.length === n1, receipts);
+  // eight lists stay fluent
+  await tab(page, 'Aluminium');
+  for (const n of ['Manufacturing', 'Ready', 'Packed', 'Dispatched', 'Installed']) await addList(page, n);
+  L = await boardLists(page);
+  await page.$eval('#wbBoard', e => e.scrollTo({ left: e.scrollWidth })); await stable(page);
+  const R = await rects(page);
+  check('L19 a board of eight lists renders and scrolls to its last list and the add panel', L.length === 8 && R[7].l < 390 && R[7].r > 0 && R.slice(-1)[0].id === 'add', { n: L.length, R });
+  await menu(page, '492', 2);
+  check('L20 the move menu offers all eight lists', (await page.$$('#wbMoveOpts .chip')).length === 8);
+  await page.click('#wbMoveOpts .chip[data-list="' + L[7].id + '"]'); await page.waitForTimeout(450); await settled(page);
+  check('L21 a card moves straight to the eighth list', (await cardIn(page, '492', 2)) === L[7].id);
+
+  // persists after reload
+  await page.reload(); await page.waitForSelector('#gate:not(.hide)'); await ownerIn(page);
+  check('L22 after reload: Door\'s renamed and added lists persist, cards where they were', await names(page) === 'Order Received|Received|Delivered|Cutting' && (await cardIn(page, '493', 1)) === D[2].id && (await cardIn(page, '491', 5)) === D[1].id);
+  await tab(page, 'Glass');
+  check('L23 …and Glass\'s own names and the card in Packed persist', await names(page) === 'Cutting|Ready|Delivered|Packed' && (await cardIn(page, '490', 84)) === packed.id);
+  await tab(page, 'Mesh');
+  check('L24 a runtime category has its own starter board and its work sits on the first list', await names(page) === 'Pending|Received|Delivered' && (await cardIn(page, '491', 7)) === listsOf('Mesh')[0].id);
+
+  // ---- staff view of a customised board -------------------------------------
+  await leaveOrders(page); await page.click('#addBack'); await page.waitForSelector('#owner:not(.hide)');   // the owner's Switch returns to the owner screen
+  await page.locator('#owner button', { hasText: 'Exit' }).first().click(); await page.waitForSelector('#gate:not(.hide)');
+  await pickStaff(page, 'Gopal'); await openOrders(page);
+  L = await boardLists(page);
+  check('L25 Gopal sees Glass\'s customised lists, the card in Packed, and no configuration controls', await names(page) === 'Cutting|Ready|Delivered|Packed' && (await cardIn(page, '490', 84)) === packed.id && L.every(l => l.menu === 0) && (await addPanel(page)).length === 0 && (await tabsHidden(page)));
+  await page.$eval('#wbBoard', e => e.scrollTo({ left: e.scrollWidth })); await stable(page);
+  await shot(page, '6-staff-view-no-controls');
+  await stable(page); await page.$eval('#wbBoard', e => e.scrollTo({ left: 0 })); await stable(page);
+  await moveVia(page, '490', 83, G[1].id);
+  check('L26 staff move cards between runtime lists; Door\'s card of the same bill stays put', (await cardIn(page, '490', 83)) === G[1].id && placements.slice(-1)[0].cat === 'Glass');
+
+  // ---- workspace, receiving, position restore --------------------------------
+  await switchTo(page, 'Meena'); await tab(page, 'Door');
+  const st = await step(page);
+  await page.$eval('#wbBoard', (e, x) => e.scrollTo({ left: x }), st); await stable(page);
+  const n1 = placements.length;
+  await page.click('.wblist[data-id="' + D[1].id + '"] .wbk[data-book="491"][data-page="5"] .wbk-cover'); await page.waitForSelector('.wbif'); await settled(page);
+  check('L27 the bill workspace shows the runtime list name and opening changed nothing', /Received/.test(await page.$eval('#wbBody .wbk-st', e => e.textContent)) && placements.length === n1 && (await hash(page)) === '#o/491/5');
+  await page.click('#wbBody .wbrow'); await page.waitForSelector('#don'); await page.fill('#don', '1'); await page.click('#sheetInner .pri'); await page.waitForTimeout(450); await settled(page);
+  check('L28 receiving is unchanged and never moves the card', receipts.length === 1 && receipts[0].mark_id === 12 && placements.length === n1);
+  await page.click('#wbBody .wbk-mv'); await page.waitForSelector('#wbMoveOpts .chip'); await page.click('#wbMoveOpts .chip[data-list="' + listsOf('Door')[3].id + '"]'); await page.waitForTimeout(450); await settled(page);
+  check('L29 a card moves to a runtime list from inside the bill', (placements.slice(-1)[0].list_id) === listsOf('Door')[3].id);
   await page.goBack(); await page.waitForSelector('#wbBoard:not(.hide)'); await settled(page); await page.waitForTimeout(300);
-  check('T48 browser back returns to the same board on the same list (Received still in view)', (await hash(page)) === '#o' && (await tabOn(page)) === 'Door' && Math.abs((await scrollX(page)) - st) < 30 && await refs(page, 'received') === 'बही 490 · पन्ना 83|बही 491 · पन्ना 5', await scrollX(page));
+  check('L30 back returns to the same department and list position', (await hash(page)) === '#o' && (await tabOn(page)) === 'Door' && Math.abs((await scrollX(page)) - st) < 30);
+  check('L31 the app never called the retired status route', !pzLog.some(l => /\/api\/cl\/status/.test(l)));
 }
 
 (async () => {
@@ -312,8 +318,8 @@ async function run(page, cdp) {
   page.on('pageerror', e => errors.push(String(e)));
   await routes(page);
   try { await run(page, cdp); } catch (e) { check('run completed without throwing', false, e && e.stack || e); }
-  check('T0 no uncaught page errors', errors.length === 0, errors);
+  check('L0 no uncaught page errors', errors.length === 0, errors);
   await browser.close(); srv.close();
-  console.log('\n' + PASS.length + ' passed, ' + FAIL.length + ' failed — NK Orders (Trello-style board) verified.');
+  console.log('\n' + PASS.length + ' passed, ' + FAIL.length + ' failed — NK Orders (runtime board lists) verified.');
   process.exit(FAIL.length ? 1 : 0);
 })();
