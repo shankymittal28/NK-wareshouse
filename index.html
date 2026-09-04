@@ -211,25 +211,33 @@ button,input,select{font-family:inherit;font-size:16px}
 .wbtab{flex:0 0 auto;min-height:40px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--hair);background:none;color:var(--mut);font-weight:700;font-size:14px}
 .wbtab.on{border-color:#34d399;color:var(--ink);background:rgba(52,211,153,.12)}
 .wbtag{display:inline-block;font-size:11px;font-weight:700;color:var(--mut);border:1px solid var(--hair);border-radius:999px;padding:2px 8px;margin:0 4px 4px 0}
-.wbhead{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}.wbhead .wbtabs{padding:0}
-.wbsearch{width:100%;font-size:14px;padding:9px 12px;border-radius:10px;border:1px solid var(--hair);background:var(--well);color:var(--ink);outline:none}
-.wbcols{display:flex;gap:6px;margin-bottom:8px}
-.wbcol{flex:1;min-height:38px;border-radius:10px;border:1.5px solid var(--hair);background:none;color:var(--mut);font-weight:700;font-size:13px;padding:6px 4px}
-.wbcol b{color:var(--ink);font-weight:800;margin-left:3px}.wbcol.on{border-color:#34d399;color:var(--ink);background:rgba(52,211,153,.12)}
-.wbboard{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;align-items:flex-start;padding-bottom:8px;scrollbar-width:none}
+.wbwho b{font-size:19px}.wbsub{color:var(--mut);font-size:12px;font-weight:600;margin-left:6px}
+.wbtabs{margin-bottom:8px}
+.wbsearch{width:100%;font-size:14px;padding:10px 12px;border-radius:10px;border:1px solid var(--hair);background:var(--well);color:var(--ink);outline:none;margin-bottom:8px}
+.wbboard{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;align-items:flex-start;padding:2px 0 16px;scrollbar-width:none;scroll-snap-type:x proximity}
 .wbboard::-webkit-scrollbar{display:none}
-.wblane{flex:0 0 calc(100% - 28px);scroll-snap-align:start;background:var(--well);border:1px solid var(--hair);border-radius:16px;padding:10px;min-height:220px}
-.wblanehd{font-weight:800;font-size:15px;margin:2px 4px 10px}.wblanehd span{color:var(--mut);font-size:12.5px;font-weight:700;margin-left:8px}
-.wbk{background:var(--panel2);border:1px solid var(--hair);border-radius:14px;padding:12px 12px 10px;margin-bottom:10px;cursor:pointer}
-.wbk-t{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.wbk .wbcust{font-weight:800;font-size:17px;line-height:1.25;min-width:0;word-break:break-word}.wbk .wbcust.add{color:var(--mut);font-weight:700}
-.wbk-ed{flex:0 0 auto;width:36px;height:36px;border-radius:10px;border:1px solid var(--hair);background:none;color:var(--mut);font-size:16px;margin:-4px -4px 0 0}
-.wbk-m{color:var(--mut);font-size:12.5px;margin-top:4px}
+.wblist{flex:0 0 84%;scroll-snap-align:start;background:var(--well);border:1px solid var(--hair);border-radius:16px;padding:10px 10px 6px;min-height:160px;transition:background .15s,outline-color .15s;outline:2px solid transparent}
+.wblist.wbdrop{outline-color:#34d399;background:rgba(52,211,153,.08)}
+.wblist-h{display:flex;justify-content:space-between;align-items:center;margin:2px 4px 10px}
+.wblist-t{font-weight:800;font-size:16px}.wblist-t small{color:var(--mut);font-size:12px;font-weight:700;margin-left:6px}
+.wblist-n{min-width:26px;text-align:center;border-radius:999px;background:var(--panel2);border:1px solid var(--hair);color:var(--mut);font-size:12.5px;font-weight:800;padding:3px 8px}
+.wbk{background:var(--panel2);border:1px solid var(--hair);border-radius:12px;margin-bottom:10px;cursor:pointer;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.wbk-cover{background:#0e0e12;height:190px;overflow:hidden;position:relative}.wbk-cover.big{height:auto}
+.wbk-img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.wbk-noimg{height:100%;min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mut2);font-size:13px;font-weight:600;line-height:1.5}
+.wbk-body{padding:9px 10px 10px}
+.wbk-t{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.wbk .wbcust{font-weight:800;font-size:16px;line-height:1.25;min-width:0;word-break:break-word}.wbk .wbcust.add{color:var(--mut);font-weight:700}
+.wbk-menu{flex:0 0 auto;width:36px;height:32px;border-radius:8px;border:1px solid var(--hair);background:none;color:var(--mut);font-size:18px;line-height:1;margin:-3px -3px 0 0}
+.wbk-m{color:var(--mut);font-size:12.5px;margin-top:3px}
 .wbk-a{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-.wbk-ph{color:var(--mut2);font-size:12px;font-weight:600}
 .wbk-mv{min-height:36px;border-radius:999px;border:1.5px solid var(--hair2);background:none;color:var(--ink);font-weight:700;font-size:13px;padding:6px 12px}
 .wbk-st{font-size:12.5px;font-weight:800}.wbk-st.pending{color:var(--amber)}.wbk-st.received{color:var(--sky)}.wbk-st.delivered{color:var(--mint)}
-.wbempty{color:var(--mut2);font-size:14px;text-align:center;padding:28px 8px}
+.wbk-page{cursor:default;margin-bottom:10px}
+.wbghost{position:fixed;z-index:60;pointer-events:none;opacity:.94;transform:rotate(2deg) scale(1.03);box-shadow:0 18px 40px -10px rgba(0,0,0,.7);border-color:var(--mint)}
+.wblift{opacity:.3}
+body.wbdragging{overflow:hidden}
+.wbempty{color:var(--mut2);font-size:13.5px;text-align:center;padding:22px 8px}
 .wben{font-size:13px;color:var(--mut);font-weight:600}
 .wbdate{color:var(--mut);font-size:12.5px;font-weight:600}
 .pkrow:active{background:rgba(255,255,255,.04)}
@@ -444,16 +452,14 @@ button,input,select{font-family:inherit;font-size:16px}
 <div id="dorders" class="wrap hide">
   <div class="top">
     <button class="iconlink" onclick="wbBack()">&#8249; वापस</button>
-    <div class="who" id="wbTitle"><b>&#128203; ऑर्डर</b></div>
-    <button class="iconlink" onclick="wbReload()">&#8635;</button>
+    <div class="who wbwho" id="wbTitle"><b>&#128203; ऑर्डर</b></div>
+    <div id="wbTools" style="display:flex;gap:6px"><button class="iconlink" id="wbSearchBtn" onclick="wbSearchToggle()" aria-label="खोजें">&#128269;</button><button class="iconlink" onclick="wbReload()" aria-label="ताज़ा">&#8635;</button></div>
   </div>
-  <div class="wbhead" id="wbHead">
-    <div class="wbtabs" id="wbTabs"></div>
-    <input id="wbSearch" class="wbsearch" placeholder="&#128269; नाम / बही / पन्ना / डिज़ाइन / साइज़" oninput="wbSearchIn(this.value)">
-  </div>
-  <div class="wbcols" id="wbCols"></div>
+  <div class="wbtabs" id="wbTabs"></div>
+  <input id="wbSearch" class="wbsearch hide" placeholder="नाम / बही / पन्ना / डिज़ाइन / साइज़ खोजें…" oninput="wbSearchIn(this.value)">
   <div class="wbboard" id="wbBoard"></div>
   <div id="wbBody" class="hide"></div>
+</div>
 </div>
 </div>
 
@@ -784,25 +790,25 @@ async function saveDoorsIn(){ if(!doorBatch.length){ toast('कोई साइ�
   _lastSave={txt:(kd||'Door')+' — '+n+' साइज़', ok:!queued}; showStamp((queued?'⏳ ':'✓ ')+n+' साइज़ सेव');
   doorBatch=[]; resetItemAll(); refreshToday(); wizGo(loopStart()); }
 
-/* ===== Orders — the department work board (Work Board v1) =================
-   Tapping 📋 ऑर्डर opens ONE department's board: three columns — बाकी
-   (Pending) · आ गया (Received) · दे दिया (Delivered) — one column per
-   phone screen, swiped sideways, opened on Pending. Door, Glass, Aluminium
-   and any runtime category are separate boards; a bill tagged Door + Glass
-   is one card on the Door board and another on the Glass board, each
-   moved independently. One card = one bill page + this department; its
-   column IS its status, so the card carries no status button. Cards wear
-   an editable name (a page-level label the warehouse gives the bill —
-   never the Tally customer, the photo, the reference or the work) with
-   this precedence: manual name → derived Tally customer → "नाम जोड़ें".
-   Moving a card = one explicit act on /api/cl/status (the board offers a
-   "ले जाएँ" sheet: on a one-column-per-screen board the target column is
-   off-screen, so a drag would fight the swipe — the sheet is the reliable
-   path). Naming a card = one row on /api/cl/title. Door receiving stays
-   the line-level flow inside the bill (/api/cl/orders + /api/cl/receipt).
-   Feed: PZ /api/cl/work (one row per order page + category). */
-let _wbT=null,_wbT2=null,_wbRows=null,_wbWork=null,_wbTags=[],_wbTab=null,_wbCol=0,_wbQ='',_wbPickIt=null,_wbEdit=null;
-const WB_COLS=['pending','received','delivered'], WB_GAP=10;
+/* ===== Orders — the department board (Trello-style, Work Board v2) =======
+   A department is a board. Inside it, three real LISTS stand side by side
+   — बाकी (Pending) · आ गया (Received) · दे दिया (Delivered) — each a
+   rounded container with its title, its card count and its cards stacked
+   inside; the board scrolls sideways with the next list visibly present,
+   like Trello on a phone. Door, Glass, Aluminium and any runtime category
+   are separate boards; a bill tagged Door + Glass is one photo card on
+   the Door board and another on the Glass board, moved independently.
+   No "+ Add card": cards exist only because the Shop tagged the bill as
+   an Order with a category. A card is PHOTO-FIRST — the handwritten bill
+   itself is the cover (read from the archive by the one evidence rule) —
+   with the editable name beneath (manual name → Tally customer → "नाम
+   जोड़ें"), बही·पन्ना, the date when known, and a ⋯ menu (rename, open,
+   move to). Moving = long-press, drag onto another list, drop — or the
+   menu's "Move to" — either way ONE explicit act on /api/cl/status.
+   Naming = one row on /api/cl/title. Opening a card never moves it and
+   Door receiving never moves it. Feed: PZ /api/cl/work. */
+let _wbT=null,_wbRows=null,_wbWork=null,_wbTags=[],_wbTab=null,_wbX=0,_wbQ='',_wbPickIt=null,_wbEdit=null,_wbDrag=null,_wbDragged=0;
+const WB_COLS=['pending','received','delivered'];
 const WB_ST={pending:'बाकी',received:'आ गया',delivered:'दे दिया'};
 const WB_STEN={pending:'Pending',received:'Received',delivered:'Delivered'};
 function wbOrd(c){ const q=c.qty==null?null:Number(c.qty), r=Number(c.received)||0;
@@ -818,16 +824,18 @@ function wbCats(){ const allow=wbAllow(), all=(_wbTags||[]).map(t=>t.name).filte
   const mine=allow?all.filter(n=>allow.has(n)):all; return mine.length?mine:all; }
 function wbName(it){ return it.title||it.tally_name||''; }
 function wbLabel(it){ return wbName(it)||'नाम जोड़ें'; }
+function wbImg(it){ return it.photo ? PZ+'/api/bbk/img?p='+encodeURIComponent(it.photo) : null; }
+function wbFind(b,p,cat){ return (_wbWork||[]).find(x=>String(x.book_number)===String(b)&&x.page_number===Number(p)&&(cat?x.category===cat:wbCatOK(x.category))); }
 /* all=true: every row this person may see (bill workspace); otherwise this
-   department's rows, narrowed by search across all three columns. */
+   board's rows, narrowed by search — cards stay inside their own list. */
 function wbItems(all){ return (_wbWork||[]).filter(it=>{ if(!wbCatOK(it.category)) return false; if(all) return true;
     if(it.category!==_wbTab) return false; return !_wbQ || wbMatch(it,_wbQ); }); }
 
 /* ---- navigation: #o -> the board · #o/<book>/<page> -> one bill ------- */
 function wbSeg(){ return location.hash.replace(/^#/,'').split('/').filter(Boolean); }
-/* The button always opens the board on Pending with no search; the
+/* The button opens the board on its Pending list with no search; the
    department chosen earlier in this session is kept. */
-function showDoorOrders(){ _wbQ=''; _wbCol=0; const sb=$('wbSearch'); if(sb)sb.value='';
+function showDoorOrders(){ _wbQ=''; _wbX=0; wbSearchShow(false);
   if(wbSeg()[0]!=='o') location.hash='#o'; else wbRoute(); }
 function wbBack(){ location.hash = wbSeg().length>=3 ? '#o' : ''; }
 window.addEventListener('hashchange',wbRoute);
@@ -840,7 +848,7 @@ function wbRoute(){ const g=wbSeg();
 function wbTitleSet(h){ if($('wbTitle'))$('wbTitle').innerHTML=h; }
 function wbReload(){ wbLoad(); }
 async function wbLoad(){ const el=$('wbBoard'); if(!el)return;
-  if(wbSeg().length<3){ wbChrome(true); el.innerHTML='<div class="empty">लोड हो रहा है…</div>'; }
+  if(wbSeg().length<3&&!_wbWork){ wbChrome(true); el.innerHTML='<div class="empty">लोड हो रहा है…</div>'; }
   try{ const rs=await Promise.all([
       fetch(PZ+'/api/cl/work',{cache:'no-store'}),
       fetch(PZ+'/api/cl/orders',{cache:'no-store'}),
@@ -856,42 +864,86 @@ async function wbLoad(){ const el=$('wbBoard'); if(!el)return;
 function wbTabsRender(){ const cats=wbCats(); if(_wbTab==null||cats.indexOf(_wbTab)<0)_wbTab=cats[0]||null;
   const el=$('wbTabs'); if(el){ el.classList.toggle('hide',cats.length<=1);
     el.innerHTML=cats.map(n=>'<button class="wbtab'+(_wbTab===n?' on':'')+'" onclick="wbTabSet(this.dataset.t)" data-t="'+esc(n)+'">'+esc(n)+'</button>').join(''); } }
-function wbTabSet(n){ _wbTab=n; _wbCol=0; if(wbSeg().length>2) location.hash='#o'; else { wbTabsRender(); wbRender(); } }
-function wbChrome(board){ ['wbHead','wbCols','wbBoard'].forEach(i=>{ const e=$(i); if(e)e.classList.toggle('hide',!board); });
+function wbTabSet(n){ _wbTab=n; _wbX=0; if(wbSeg().length>2) location.hash='#o'; else { wbTabsRender(); wbRender(); } }
+function wbChrome(board){ ['wbTabs','wbBoard','wbTools'].forEach(i=>{ const e=$(i); if(e&&i!=='wbTabs')e.classList.toggle('hide',!board); });
+  if(!board){ const t=$('wbTabs'); if(t)t.classList.add('hide'); }
+  const s=$('wbSearch'); if(s&&!board)s.classList.add('hide');
   const b=$('wbBody'); if(b)b.classList.toggle('hide',board); }
 function wbRender(){ const g=wbSeg(); if(g.length<3) return wbBoardRender(); wbPage(g[1],Number(g[2])); }
+function wbSearchShow(on){ const s=$('wbSearch'); if(!s)return; s.classList.toggle('hide',!on); if(on){ setTimeout(()=>s.focus(),50); } else { s.value=''; if(_wbQ){ _wbQ=''; if(wbSeg().length<3)wbBoardRender(); } } }
+function wbSearchToggle(){ const s=$('wbSearch'); if(!s)return; wbSearchShow(s.classList.contains('hide')); }
 
-/* ---- the board: three columns, one per screen, cards inside ----------- */
+/* ---- the board: three lists side by side, photo cards inside ---------- */
 function wbDate(d){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d||'')); return m?(m[3]+'-'+m[2]+'-'+m[1]):''; }
-function wbCard(it){ const b=esc(String(it.book_number)), p=it.page_number, d=wbDate(it.agreed_on), nm=wbName(it);
-  return '<div class="wbk" data-book="'+b+'" data-page="'+p+'" onclick="location.hash=\'#o/'+b+'/'+p+'\'">'
-   +'<div class="wbk-t"><span class="wbcust'+(nm?'':' add')+'">'+esc(nm||'नाम जोड़ें')+'</span>'
-   +'<button class="wbk-ed" aria-label="नाम बदलें" onclick="event.stopPropagation();wbTitleEdit(\''+b+'\','+p+')">&#9998;</button></div>'
-   +'<div class="wbk-m"><span class="wbref">बही '+b+' · पन्ना '+p+'</span>'+(d?'<span class="wbdate"> · '+d+'</span>':'')+'</div>'
-   +'<div class="wbk-a"><span class="wbk-ph">&#128443; बिल</span>'
-   +'<button class="wbk-mv" onclick="event.stopPropagation();wbMove(\''+b+'\','+p+',\''+esc(it.category)+'\')">&#8644; ले जाएँ</button></div></div>'; }
-function wbBoardRender(){ wbChrome(true); const cat=_wbTab; wbTitleSet('<b>&#128203; ऑर्डर</b>'+(cat?' · '+esc(cat):''));
-  const board=$('wbBoard'), cols=$('wbCols'); if(!board||!cols)return;
-  if(!cat){ cols.innerHTML=''; board.innerHTML='<div class="empty">कोई विभाग नहीं — दुकान पर category बनवाएँ</div>'; return; }
+function wbCover(it,big){ const u=wbImg(it);
+  return '<div class="wbk-cover'+(big?' big':'')+'">'+(u?'<img class="wbk-img" loading="lazy" decoding="async" alt="बिल" src="'+esc(u)+'" onerror="wbImgFail(this)">':'<div class="wbk-noimg">&#128196;<br>फोटो नहीं</div>')+'</div>'; }
+function wbImgFail(img){ const c=img.parentNode; if(c) c.innerHTML='<div class="wbk-noimg">&#128196;<br>फोटो नहीं खुली</div>'; }
+function wbCard(it){ const b=esc(String(it.book_number)), p=it.page_number, d=wbDate(it.agreed_on), nm=wbName(it), s=it.status||'pending';
+  return '<div class="wbk" data-book="'+b+'" data-page="'+p+'" data-cat="'+esc(it.category)+'" data-st="'+s+'" onclick="wbOpen(this)">'
+   +wbCover(it,false)
+   +'<div class="wbk-body"><div class="wbk-t"><span class="wbcust'+(nm?'':' add')+'">'+esc(nm||'नाम जोड़ें')+'</span>'
+   +'<button class="wbk-menu" aria-label="मेन्यू" onclick="event.stopPropagation();wbMenu(\''+b+'\','+p+',\''+esc(it.category)+'\')">&#8943;</button></div>'
+   +'<div class="wbk-m"><span class="wbref">बही '+b+' · पन्ना '+p+'</span>'+(d?'<span class="wbdate"> · '+d+'</span>':'')+'</div></div></div>'; }
+function wbBoardRender(){ wbChrome(true); const cat=_wbTab; const board=$('wbBoard'); if(!board)return;
+  wbTitleSet(cat?'<b>'+esc(cat)+'</b><span class="wbsub">ऑर्डर बोर्ड</span>':'<b>&#128203; ऑर्डर</b>');
+  if(!cat){ board.innerHTML='<div class="empty">कोई विभाग नहीं — दुकान पर category बनवाएँ</div>'; return; }
   const by={pending:[],received:[],delivered:[]};
   wbItems(false).forEach(it=>{ (by[it.status||'pending']||by.pending).push(it); });
-  cols.innerHTML=WB_COLS.map((s,i)=>'<button class="wbcol'+(i===_wbCol?' on':'')+'" data-s="'+s+'" onclick="wbColGo('+i+')">'+WB_ST[s]+' <b>'+by[s].length+'</b></button>').join('');
-  board.innerHTML=WB_COLS.map(s=>'<section class="wblane" data-s="'+s+'"><div class="wblanehd">'+WB_ST[s]+'<span>'+WB_STEN[s]+' · '+by[s].length+'</span></div>'
-    +(by[s].map(wbCard).join('')||'<div class="wbempty">'+(_wbQ?'कुछ नहीं मिला':'कोई '+WB_STEN[s]+' ऑर्डर नहीं')+'</div>')+'</section>').join('');
-  wbColGo(_wbCol,true); }
-function wbLaneStep(){ const l=document.querySelector('#wbBoard .wblane'); return l?(l.offsetWidth+WB_GAP):1; }
-function wbColMark(i){ _wbCol=i; Array.from(document.querySelectorAll('#wbCols .wbcol')).forEach((e,k)=>e.classList.toggle('on',k===i)); }
-function wbColGo(i,instant){ const b=$('wbBoard'); if(!b)return; wbColMark(i); const x=i*wbLaneStep();
-  if(instant||!b.scrollTo) b.scrollLeft=x; else b.scrollTo({left:x,behavior:'smooth'}); }
+  board.innerHTML=WB_COLS.map(s=>'<section class="wblist" data-s="'+s+'">'
+    +'<div class="wblist-h"><span class="wblist-t">'+WB_ST[s]+' <small>'+WB_STEN[s]+'</small></span><span class="wblist-n">'+by[s].length+'</span></div>'
+    +'<div class="wblist-c">'+(by[s].map(wbCard).join('')||'<div class="wbempty">'+(_wbQ?'कुछ नहीं मिला':'कोई कार्ड नहीं')+'</div>')+'</div></section>').join('');
+  board.scrollLeft=_wbX; }
+function wbOpen(el){ if(Date.now()-_wbDragged<600) return;   // a drop is not a tap
+  _wbX=($('wbBoard')||{}).scrollLeft||0; location.hash='#o/'+el.dataset.book+'/'+el.dataset.page; }
 (function(){ const b=$('wbBoard'); if(!b)return;
-  b.addEventListener('scroll',()=>{ clearTimeout(_wbT2); _wbT2=setTimeout(()=>{ wbColMark(Math.max(0,Math.min(2,Math.round(b.scrollLeft/wbLaneStep())))); },60); },{passive:true}); })();
+  b.addEventListener('scroll',()=>{ if(_wbDrag&&!_wbDrag.active) wbDragCancel(); if(!_wbDrag) _wbX=b.scrollLeft; },{passive:true});
+  /* long-press to lift a card, drag it over another list, drop to move —
+     an ordinary swipe or scroll never lifts anything */
+  const at=t=>{ const c=t&&t.closest?t.closest('.wbk'):null; return (c&&!(t.closest&&t.closest('button')))?c:null; };
+  b.addEventListener('touchstart',e=>{ const c=at(e.target); if(c&&e.touches.length===1) wbDragArm(c,e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
+  b.addEventListener('touchmove',e=>{ if(!_wbDrag)return; if(_wbDrag.active) e.preventDefault(); wbDragMove(e.touches[0].clientX,e.touches[0].clientY); },{passive:false});
+  b.addEventListener('touchend',wbDragEnd); b.addEventListener('touchcancel',wbDragCancel);
+  b.addEventListener('mousedown',e=>{ const c=at(e.target); if(c&&e.button===0) wbDragArm(c,e.clientX,e.clientY); });
+  window.addEventListener('mousemove',e=>{ if(_wbDrag) wbDragMove(e.clientX,e.clientY); });
+  window.addEventListener('mouseup',()=>{ if(_wbDrag) wbDragEnd(); });
+  b.addEventListener('contextmenu',e=>{ if(at(e.target)) e.preventDefault(); }); })();
+function wbDragArm(el,x,y){ wbDragCancel(); _wbDrag={el,x0:x,y0:y,x,y,active:false,over:null,timer:setTimeout(wbDragStart,380)}; }
+function wbDragStart(){ const d=_wbDrag; if(!d)return; d.active=true; const r=d.el.getBoundingClientRect();
+  d.dx=d.x-r.left; d.dy=d.y-r.top; const g=d.el.cloneNode(true); g.className='wbk wbghost'; g.style.width=r.width+'px';
+  g.style.left=(d.x-d.dx)+'px'; g.style.top=(d.y-d.dy)+'px'; document.body.appendChild(g); d.ghost=g;
+  d.el.classList.add('wblift'); document.body.classList.add('wbdragging'); if(navigator.vibrate) try{navigator.vibrate(15);}catch(e){}
+  wbDragTrack(); }
+function wbDragMove(x,y){ const d=_wbDrag; if(!d)return; d.x=x; d.y=y;
+  if(!d.active){ if(Math.abs(x-d.x0)>8||Math.abs(y-d.y0)>8){ _wbDragged=Date.now(); wbDragCancel(); } return; }   // a swipe: never a tap, never a lift
+  d.ghost.style.left=(x-d.dx)+'px'; d.ghost.style.top=(y-d.dy)+'px';
+  /* touching the board's edge slides the board ONE list that way (once per
+     touch of the edge) so the far list can be reached; the drop always goes
+     to the list under the finger */
+  const b=$('wbBoard'), r=b.getBoundingClientRect(), zone= x>r.right-40 ? 1 : x<r.left+40 ? -1 : 0;
+  if(zone&&d.edge!==zone){ d.edge=zone; b.scrollBy({left:zone*wbListStep(),behavior:'smooth'}); } else if(!zone) d.edge=0;
+  wbDropMark(wbListUnder(x,y,d)); }
+function wbListStep(){ const l=document.querySelector('#wbBoard .wblist'); return l?(l.offsetWidth+12):300; }
+function wbListUnder(x,y,d){ const t=document.elementFromPoint(x,y), list=t&&t.closest?t.closest('#wbBoard .wblist'):null;
+  return (list&&list.dataset.s!==d.el.dataset.st)?list:null; }
+function wbDragTrack(){}
+function wbDropMark(list){ const d=_wbDrag; if(!d||d.over===list)return; if(d.over)d.over.classList.remove('wbdrop'); d.over=list; if(list)list.classList.add('wbdrop'); }
+function wbDragEnd(){ const d=_wbDrag; if(!d)return; clearTimeout(d.timer); _wbDrag=null; if(!d.active) return;
+  const tgt=wbListUnder(d.x,d.y,d), to=tgt?tgt.dataset.s:null; d.over=null; if(d.ghost)d.ghost.remove(); d.el.classList.remove('wblift');
+  Array.from(document.querySelectorAll('.wblist.wbdrop')).forEach(e=>e.classList.remove('wbdrop'));
+  document.body.classList.remove('wbdragging'); _wbDragged=Date.now();
+  if(to&&to!==d.el.dataset.st){ _wbPickIt=wbFind(d.el.dataset.book,d.el.dataset.page,d.el.dataset.cat); wbMoveTo(to); } }
+function wbDragCancel(){ const d=_wbDrag; if(!d)return; clearTimeout(d.timer); _wbDrag=null;
+  if(d.active){ if(d.ghost)d.ghost.remove(); d.el.classList.remove('wblift'); Array.from(document.querySelectorAll('.wblist.wbdrop')).forEach(e=>e.classList.remove('wbdrop')); document.body.classList.remove('wbdragging'); _wbDragged=Date.now(); } }
 
-/* ---- move a card: one explicit act for ONE department of ONE bill ----- */
-function wbMove(b,p,cat){ const it=(_wbWork||[]).find(x=>String(x.book_number)===String(b)&&x.page_number===p&&x.category===cat);
-  if(!it||!wbCatOK(cat))return; _wbPickIt=it; const cur=it.status||'pending';
-  sheetHTML('<div class="grab"></div><h4>'+esc(wbLabel(it))+' — कहाँ ले जाएँ?</h4>'
+/* ---- the card menu: rename · open · move to --------------------------- */
+function wbMenu(b,p,cat){ const it=wbFind(b,p,cat); if(!it||!wbCatOK(cat))return; _wbPickIt=it; const cur=it.status||'pending';
+  sheetHTML('<div class="grab"></div><h4>'+esc(wbLabel(it))+'</h4>'
    +'<div style="font-size:12.5px;color:var(--mut)">बही '+esc(String(b))+' · पन्ना '+p+' · '+esc(cat)+'</div>'
-   +'<div class="ladder chips" id="wbMoveOpts" style="margin-top:10px">'+WB_COLS.map(s=>'<button class="chip'+(cur===s?' on':'')+'" data-s="'+s+'"'+(cur===s?' disabled':'')+' onclick="wbMoveTo(\''+s+'\')">'+(cur===s?'&#10004; ':'&#8594; ')+WB_ST[s]+' <span class="wben">'+WB_STEN[s]+'</span></button>').join('')+'</div>');
+   +'<div class="ladder chips" id="wbMenuOpts" style="margin-top:10px">'
+   +'<button class="chip" data-a="rename" onclick="closeSheet();wbTitleEdit(\''+esc(String(b))+'\','+p+')">&#9998; नाम बदलें <span class="wben">Rename</span></button>'
+   +'<button class="chip" data-a="open" onclick="closeSheet();location.hash=\'#o/'+esc(String(b))+'/'+p+'\'">&#128443; बिल खोलें <span class="wben">Open bill</span></button>'
+   +'</div><div class="wbsec">Move to &#8594;</div><div class="ladder chips" id="wbMoveOpts">'
+   +WB_COLS.map(s=>'<button class="chip'+(cur===s?' on':'')+'" data-s="'+s+'"'+(cur===s?' disabled':'')+' onclick="wbMoveTo(\''+s+'\')">'+(cur===s?'&#10004; ':'&#8594; ')+WB_ST[s]+' <span class="wben">'+WB_STEN[s]+'</span></button>').join('')+'</div>');
   openSheet(); }
 async function wbMoveTo(s){ const it=_wbPickIt; if(!it)return; if((it.status||'pending')===s){ closeSheet(); return; }
   try{ const r=await fetch(PZ+'/api/cl/status',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -904,7 +956,7 @@ async function wbMoveTo(s){ const it=_wbPickIt; if(!it)return; if((it.status||'p
   }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 
 /* ---- name a card: a page-level label, never the customer or the bill -- */
-function wbTitleEdit(b,p){ const it=(_wbWork||[]).find(x=>String(x.book_number)===String(b)&&x.page_number===p&&wbCatOK(x.category)); if(!it)return; _wbEdit=it;
+function wbTitleEdit(b,p){ const it=wbFind(b,p,null); if(!it)return; _wbEdit=it;
   sheetHTML('<div class="grab"></div><h4>&#9998; कार्ड का नाम</h4>'
    +'<div style="font-size:12.5px;color:var(--mut)">बही '+esc(String(b))+' · पन्ना '+p+(it.tally_name?' · Tally: '+esc(it.tally_name):'')+'</div>'
    +'<input id="wbTitleIn" class="field" maxlength="60" autocomplete="off" placeholder="जैसे: Sharma ji bedroom" value="'+esc(wbName(it))+'" style="max-width:none;margin-top:10px" onkeydown="if(event.key===\'Enter\')wbTitleSave()">'
@@ -924,7 +976,7 @@ async function wbTitleSend(t){ const it=_wbEdit; if(!it)return; t=t.replace(/\s+
     wbRender(); wbLoad();
   }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 
-/* ---- one bill: name, photo, this department's column, doors ----------- */
+/* ---- one bill: name, photo, this department's list, doors ------------- */
 function wbBill(b,p,m){ window.open(PZ+'/billview?book='+encodeURIComponent(b)+'&page='+p+(m?'&mark='+m:''),'_blank'); }
 function wbStatusTxt(o){ if(o.st==='red')return 'ज़्यादा आया — '+o.r+'/'+o.q;
   if(o.st==='green')return 'पूरा';
@@ -933,16 +985,16 @@ function wbStatusTxt(o){ if(o.st==='red')return 'ज़्यादा आया
 function wbPage(book,page){ wbChrome(false);
   const mine=wbItems(true).filter(it=>String(it.book_number)===String(book)&&it.page_number===page);
   let it=mine.find(x=>x.category===_wbTab)||mine[0];   // a deep link lands in the bill's own department
-  if(it&&it.category!==_wbTab){ _wbTab=it.category; wbTabsRender(); }
+  if(it&&it.category!==_wbTab){ _wbTab=it.category; }
   const rows=(_wbRows||[]).filter(c=>String(c.book_number)===String(book)&&c.page_number===page);
   wbTitleSet('<b>पन्ना '+page+'</b> · बही '+esc(String(book))+(it?' · '+esc(it.category):''));
   if(!it){ $('wbBody').innerHTML='<div class="empty">यह बिल आपकी सूची में नहीं है</div>'; return; }
   const b=esc(String(book)), d=wbDate(it.agreed_on), nm=wbName(it), s=it.status||'pending';
-  let h='<div class="wbk" style="cursor:default"><div class="wbk-t"><span class="wbcust'+(nm?'':' add')+'">'+esc(nm||'नाम जोड़ें')+'</span>'
-   +'<button class="wbk-ed" aria-label="नाम बदलें" onclick="wbTitleEdit(\''+b+'\','+page+')">&#9998;</button></div>'
+  let h='<div class="wbk wbk-page"><div class="wbk-body"><div class="wbk-t"><span class="wbcust'+(nm?'':' add')+'">'+esc(nm||'नाम जोड़ें')+'</span>'
+   +'<button class="wbk-menu" aria-label="मेन्यू" onclick="wbMenu(\''+b+'\','+page+',\''+esc(it.category)+'\')">&#8943;</button></div>'
    +'<div class="wbk-m"><span class="wbref">बही '+b+' · पन्ना '+page+'</span>'+(d?'<span class="wbdate"> · '+d+'</span>':'')+(it.tally_name&&it.title?'<br>Tally: '+esc(it.tally_name):'')+'</div>'
    +'<div class="wbk-a"><span class="wbk-st '+s+'">'+WB_ST[s]+' · '+WB_STEN[s]+'</span>'
-   +'<button class="wbk-mv" onclick="wbMove(\''+b+'\','+page+',\''+esc(it.category)+'\')">&#8644; ले जाएँ</button></div></div>';
+   +'<button class="wbk-mv" onclick="wbMenu(\''+b+'\','+page+',\''+esc(it.category)+'\')">&#8644; ले जाएँ</button></div></div></div>';
   h+='<iframe class="wbif" src="'+PZ+'/billview?book='+encodeURIComponent(book)+'&page='+page+'"></iframe>';
   h+='<div style="text-align:right;margin-top:4px"><button class="pkeye" onclick="wbBill(\''+b+'\','+page+')">&#128065; बड़ा देखें</button></div>';
   if(rows.length||it.category==='Door'){
@@ -976,7 +1028,7 @@ async function wbSave(force){ const n=Number($('don')&&$('don').value)||0; if(n<
     wbLoad();
   }catch(e){ toast('नेट नहीं — दोबारा कोशिश करें','err'); } }
 
-/* ---- Search: within this department, across all three columns --------- */
+/* ---- Search: within this board, cards stay in their lists ------------- */
 function wbSearchIn(v){ clearTimeout(_wbT); _wbT=setTimeout(()=>{ _wbQ=v.trim(); if(wbSeg().length>2) location.hash='#o'; else wbBoardRender(); },250); }
 function wbNorm(s){ return String(s||'').toLowerCase().replace(/[^0-9a-zऀ-ॿ]/g,'').replace(/o/g,'0').replace(/[il]/g,'1'); }
 function wbSizeHit(size,qn){ const t=wbNorm(size); if(!t)return false;
