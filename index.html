@@ -408,6 +408,30 @@ body.wbdragging{overflow:hidden}
 .dtbl tr.sec .stot{color:var(--mint);float:right;font-weight:800}
 .dtbl .cust{color:var(--violet2);font-size:11.5px;font-weight:600;white-space:normal;margin-top:3px}
 .dtbl .cust.unset{color:var(--mut2);font-weight:600}
+
+/* My Tasks (personal, separate from Orders) */
+.mtentry{display:flex;align-items:center;gap:14px;width:100%;max-width:360px;margin-top:10px;background:linear-gradient(135deg,rgba(52,211,153,.14),rgba(99,102,241,.12));border:1px dashed rgba(52,211,153,.6);color:var(--ink);border-radius:16px;padding:14px 16px;text-align:left}
+.mtentry .ic{font-size:26px}.mtentry .tx{font-size:17px;font-weight:800;display:flex;flex-direction:column;gap:3px}.mtentry .en{font-weight:600;color:var(--mut)}.mtentry .sub{font-size:11.5px;font-weight:600;color:var(--mut)}
+.mtband{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.35);color:var(--ink);border-radius:12px;padding:9px 12px;font-size:12.5px;margin-bottom:14px}
+.mtcard{background:var(--panel);border:1px solid var(--hair2);border-radius:16px;padding:16px;margin-bottom:12px}
+.mth{font-size:16px;line-height:1.45;margin-bottom:12px}.mten{font-size:13px;color:var(--mut)}
+.mtcodein{font-size:26px;letter-spacing:.35em;text-align:center;text-transform:uppercase;font-family:ui-monospace,Menlo,monospace;padding:16px}
+.mterr{color:var(--rose,#fb7185);font-weight:700;min-height:20px;margin:4px 0 8px;text-align:center}
+.mtwho{font-size:15px;color:var(--mut);margin-bottom:10px}.mtwho b{color:var(--ink);font-size:18px}
+.mtsec{margin:16px 0 8px;font-size:12px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;font-weight:800}
+.mtsec.b{color:#fb7185}.mtsec.p{color:#fbbf24}.mtsec.d{color:#34d399}
+.mttask{background:var(--panel);border:1px solid var(--hair2);border-radius:16px;padding:14px;margin-bottom:10px;width:100%;text-align:left;color:var(--ink)}
+.mttask .ins{font-size:17px;font-weight:700;line-height:1.35}.mttask .meta{color:var(--mut);font-size:12.5px;margin-top:6px;display:flex;flex-wrap:wrap;gap:6px 12px}
+.mttask .note{margin-top:8px;font-size:13.5px;padding:8px 10px;border-radius:10px;background:var(--panel2)}.mttask.blocked{border-color:rgba(251,113,133,.5)}
+.mtkv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--hair);font-size:14.5px}
+.mtbig{width:100%;border:none;border-radius:16px;padding:18px;font-size:18px;font-weight:800;color:#fff;margin-bottom:10px}
+.mtbig.ok{background:#059669}.mtbig.bad{background:#be123c}.mtbig.dim{background:var(--panel2);color:var(--mut);font-weight:700;font-size:15px}.mtbig[disabled]{opacity:.5}
+.mtstate{display:inline-block;border-radius:99px;padding:4px 10px;font-size:12.5px;font-weight:800}
+.mtstate.pending{background:rgba(251,191,36,.18);color:#fbbf24}.mtstate.blocked{background:rgba(251,113,133,.18);color:#fb7185}.mtstate.done{background:rgba(52,211,153,.18);color:#34d399}
+.mtpick{display:block;width:100%;background:var(--panel2);border:1px dashed var(--hair2);border-radius:14px;padding:14px;color:var(--mut);text-align:center;margin-bottom:12px}.mtpick img{max-width:100%;max-height:220px;border-radius:10px;display:block;margin:8px auto 0}
+.mtcard textarea{width:100%;min-height:100px;font-size:16px;padding:14px;border-radius:14px;border:1px solid var(--hair2);background:var(--well);color:var(--ink);outline:none;margin-bottom:10px;resize:vertical}
+.mtcard img.bill{width:100%;border-radius:12px;margin-top:8px;background:#fff}
+.mthist{font-size:12.5px;color:var(--mut);line-height:1.5}
 </style></head>
 <body>
 
@@ -415,7 +439,32 @@ body.wbdragging{overflow:hidden}
   <div class="logo">&#128230;</div><div class="brand">NK Warehouse</div><div class="tag">Tap your name to start</div>
   <div class="namebtns" id="staffBtns"></div>
   <div class="nostaff hide" id="noStaff">No staff added yet.<br>Owner: tap below, add staff in <b>Manage</b>.</div>
+  <button class="mtentry" id="myTasksBtn" onclick="showTasks()"><span class="ic">&#128203;</span><span class="tx">मेरा काम <span class="en">· My Tasks</span><span class="sub">अपना लॉगिन · अलग सिस्टम, ऑर्डर से नहीं जुड़ा</span></span></button>
   <button class="linkbtn" onclick="ownerLogin()">I'm the owner &rarr;</button>
+</div>
+
+<!-- MY TASKS (Phase A): the employee's PERSONAL tasks from Project Zero. A
+     separate system from Orders: its own login (a code from Shanky, then a
+     token kept only on this phone), nothing stored in the warehouse
+     database, and nothing here can change an order, a page or a stock row. -->
+<div id="mytasks" class="wrap hide">
+  <div class="top">
+    <button class="iconlink" onclick="tasksBack()">&#8249; वापस</button>
+    <div class="who"><b>&#128203; मेरा काम</b> &middot; My Tasks</div>
+    <div style="display:flex;gap:6px"><button class="iconlink" id="mtRefresh" onclick="mtLoad()" aria-label="ताज़ा">&#8635;</button><button class="iconlink hide" id="mtLogout" onclick="mtLogout()">Logout</button></div>
+  </div>
+  <div class="mtband">व्यक्तिगत &middot; Personal &mdash; यह ऑर्डर बोर्ड नहीं है। यहाँ सिर्फ़ आपका अपना काम दिखता है।</div>
+  <div id="mtCode" class="hide">
+    <div class="mtcard">
+      <div class="mth">Shanky जी ने जो कोड दिया है, वह यहाँ लिखें।<br><span class="mten">Enter the code Shanky gave you.</span></div>
+      <input id="mtCodeIn" class="searchbar mtcodein" maxlength="12" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="ABCD 2345">
+      <div class="mterr" id="mtCodeErr"></div>
+      <button class="pri" style="max-width:none" id="mtCodeBtn" onclick="mtActivate()">शुरू करें &middot; Start</button>
+      <div class="mten" style="margin-top:10px">कोड 24 घंटे में खत्म हो जाता है और एक ही बार चलता है।</div>
+    </div>
+  </div>
+  <div id="mtList" class="hide"><div class="mtwho">नमस्ते, <b id="mtName"></b></div><div id="mtItems"></div></div>
+  <div id="mtDetail" class="hide"></div>
 </div>
 
 <div id="add" class="wrap hide">
@@ -1817,6 +1866,71 @@ if('serviceWorker' in navigator){ let _rf=false; navigator.serviceWorker.addEven
   };
 })();
 /* =============== END TEMPORARY DIAGNOSTIC =============== */
+
+/* ===== MY TASKS (Phase A) =====================================================
+   Personal tasks from Project Zero on the employee's own phone. The only thing
+   kept here is that phone's opaque token (nkg_work_token). Every list and
+   act is answered by Project Zero after IT resolves who the phone is; the
+   warehouse never sends a name or an id and never stores a task. Orders,
+   pages, stock and receiving are untouched by anything in this block. */
+let mtT=null; try{mtT=localStorage.getItem('nkg_work_token');}catch(e){}
+let mtMe=null, mtTasks=[], mtCur=null, mtPhoto=null;
+function mtSetToken(t){ mtT=t; try{ if(t)localStorage.setItem('nkg_work_token',t); else localStorage.removeItem('nkg_work_token'); }catch(e){} }
+function mtApi(path,opt){ opt=opt||{}; const h=opt.headers||{}; if(mtT)h['Authorization']='Bearer '+mtT; opt.headers=h; opt.cache='no-store';
+  return fetch(PZ+path,opt).then(r=>{ if(r.status===401){ mtSetToken(null); mtMe=null; mtShowCode('पहुँच बंद है। Shanky जी से नया कोड लें।'); throw new Error('unauthorised'); } return r.json(); }); }
+function showTasks(){ ['gate','add','owner','manage','khata','bill','dorders','dstock'].forEach(i=>{const e=$(i); if(e)e.classList.add('hide');}); $('mytasks').classList.remove('hide'); window.scrollTo(0,0);
+  if(!mtT){ mtShowCode(''); return; } mtLoad(); }
+function tasksBack(){ $('mytasks').classList.add('hide'); mtCur=null; mtPhoto=null; backToGate(); }
+function mtShow(which){ ['mtCode','mtList','mtDetail'].forEach(i=>$(i).classList.toggle('hide',i!==which)); $('mtLogout').classList.toggle('hide',which==='mtCode'); $('mtRefresh').classList.toggle('hide',which==='mtCode'); }
+function mtShowCode(msg){ mtShow('mtCode'); $('mtCodeErr').textContent=msg||''; $('mtCodeIn').value=''; $('mtItems').innerHTML=''; $('mtDetail').innerHTML=''; mtTasks=[]; mtCur=null; }
+const MT_ERR={invalid:'कोड गलत है। फिर से देखें।',used:'यह कोड पहले चल चुका है। नया कोड लें।',locked:'बहुत बार गलत। Shanky जी से नया कोड लें।',expired:'कोड की समय सीमा खत्म। नया कोड लें।',inactive:'आपका नाम अभी चालू नहीं है। Shanky जी से बात करें।',too_many:'थोड़ा रुकें, फिर कोशिश करें।'};
+function mtActivate(){ const code=$('mtCodeIn').value; const b=$('mtCodeBtn'); b.disabled=true; $('mtCodeErr').textContent='';
+  fetch(PZ+'/api/work/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,phone_label:'NK app · '+(navigator.userAgent||'').slice(0,60)})})
+  .then(r=>r.json()).then(j=>{ b.disabled=false; if(!j.ok){ $('mtCodeErr').textContent=MT_ERR[j.error]||MT_ERR.invalid; return; } mtSetToken(j.token); mtMe={name:j.name}; toast('नमस्ते '+j.name,'ok'); mtLoad(); })
+  .catch(()=>{ b.disabled=false; $('mtCodeErr').textContent='नेटवर्क नहीं मिला। फिर कोशिश करें।'; }); }
+function mtLogout(){ if(!confirm('इस फ़ोन से My Tasks लॉग आउट करें?'))return; mtApi('/api/work/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(()=>{ mtSetToken(null); mtMe=null; mtShowCode('लॉग आउट हो गया।'); }).catch(()=>{}); }
+function mtD(d){ if(!d)return ''; const p=String(d).slice(0,10).split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function mtTs(s){ if(!s)return ''; const d=new Date(s); if(isNaN(d))return String(s); return d.toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
+function mtLoad(){ mtApi('/api/work/tasks').then(j=>{ if(!j.ok)return; mtMe={name:j.name}; mtTasks=j.tasks||[]; mtRenderList(); }).catch(()=>{}); }
+function mtCard(t){ const m=[]; if(t.due_on)m.push('&#128197; '+esc(mtD(t.due_on))); if(t.ref_label)m.push('&#128279; '+esc(t.ref_label)); m.push(esc(t.created_by)+' · '+esc(mtTs(t.created_at)));
+  return '<button class="mttask '+t.state+'" data-task="'+t.id+'" onclick="mtOpen('+t.id+')"><div class="ins">'+esc(t.instruction)+'</div><div class="meta">'+m.map(x=>'<span>'+x+'</span>').join('')+'</div>'+(t.note&&t.state!=='pending'?'<div class="note">'+(t.state==='blocked'?'&#9940; ':'&#9989; ')+esc(t.note)+'</div>':'')+'</button>'; }
+function mtRenderList(){ mtShow('mtList'); $('mtName').textContent=mtMe?mtMe.name:''; const b=mtTasks.filter(t=>t.state==='blocked'),p=mtTasks.filter(t=>t.state==='pending'),d=mtTasks.filter(t=>t.state==='done'); let h='';
+  if(!mtTasks.length)h='<div class="empty">अभी कोई काम नहीं है।<br>No tasks right now.</div>';
+  if(b.length)h+='<div class="mtsec b">&#9940; अटका हुआ · Blocked ('+b.length+')</div>'+b.map(mtCard).join('');
+  if(p.length)h+='<div class="mtsec p">&#128204; करना है · To do ('+p.length+')</div>'+p.map(mtCard).join('');
+  if(d.length)h+='<div class="mtsec d">&#9989; आज पूरा · Done today ('+d.length+')</div>'+d.map(mtCard).join('');
+  $('mtItems').innerHTML=h; }
+function mtOpen(id){ mtApi('/api/work/task?id='+id).then(j=>{ if(!j.ok){toast('काम नहीं मिला','err');return;} mtCur=j.task; mtPhoto=null; mtRenderDetail(); }).catch(()=>{}); }
+function mtRef(r){ if(!r)return ''; const d=r.data; if(!r.found||!d)return '<div class="mtcard"><div class="mten">संदर्भ</div><div>नहीं मिला · '+esc(r.id)+'</div></div>';
+  if(r.type==='customer')return '<div class="mtcard"><div class="mten">ग्राहक · Customer</div><div style="font-size:18px;font-weight:800">'+esc(d.name)+'</div>'+(d.tally_name&&d.tally_name!==d.name?'<div class="mten">'+esc(d.tally_name)+'</div>':'')+'<div class="mtkv"><span>बाकी · Outstanding</span><b>'+(d.outstanding==null?'—':'₹'+esc(Math.round(Number(d.outstanding)).toLocaleString('en-IN')))+'</b></div>'+(d.phone?'<div class="mtkv"><span>फ़ोन</span><a href="tel:'+esc(String(d.phone).replace(/\s/g,''))+'" style="color:var(--sky);font-weight:700;text-decoration:none">&#128222; '+esc(d.phone)+'</a></div>':'')+(d.address?'<div class="mtkv"><span>पता</span><span style="text-align:right">'+esc(d.address)+'</span></div>':'')+'</div>';
+  if(r.type==='bill_page')return '<div class="mtcard"><div class="mten">बिल · Bill</div><div style="font-size:18px;font-weight:800">'+esc(d.label)+'</div>'+(d.title?'<div>'+esc(d.title)+'</div>':'')+(d.party?'<div class="mten">'+esc(d.party)+'</div>':'')+'<img class="bill" src="'+esc(PZ+d.img)+'" alt="bill" loading="lazy"></div>';
+  return '<div class="mtcard"><div class="mten">Tally voucher</div><div class="mtkv"><span>'+esc(d.type||'')+' '+esc(d.number||'')+'</span><b>'+(d.amount==null?'':'₹'+esc(Math.round(Number(d.amount)).toLocaleString('en-IN')))+'</b></div><div class="mtkv"><span>'+esc(d.party||'')+'</span><span>'+esc(mtD(d.date))+'</span></div></div>'; }
+const MT_SN={pending:'करना है',blocked:'अटका हुआ',done:'पूरा हुआ'};
+function mtRenderDetail(){ const t=mtCur; mtShow('mtDetail'); let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><button class="iconlink" onclick="mtBackToList()">&#8249; सूची</button><span class="mtstate '+t.state+'">'+(MT_SN[t.state]||t.state)+'</span></div>';
+  h+='<div class="mtcard"><div class="mten">काम · Task</div><div style="font-size:19px;font-weight:800;line-height:1.35">'+esc(t.instruction)+'</div>'+(t.due_on?'<div class="mtkv"><span>कब तक</span><b>'+esc(mtD(t.due_on))+'</b></div>':'')+'<div class="mtkv"><span>'+esc(t.created_by)+'</span><span>'+esc(mtTs(t.created_at))+'</span></div></div>';
+  h+=mtRef(t.reference);
+  if(t.note&&t.state!=='pending')h+='<div class="mtcard"><div class="mten">'+(t.state==='blocked'?'क्यों अटका':'नतीजा')+'</div><div>'+esc(t.note)+'</div></div>';
+  if(t.evidence&&t.evidence.length)h+='<div class="mtcard"><div class="mten">फ़ोटो</div><img class="bill" id="mtEvImg" alt="photo"></div>';
+  if(t.acts&&t.acts.length>1)h+='<div class="mtcard"><div class="mten">इतिहास</div><div class="mthist">'+t.acts.map(a=>esc(mtTs(a.at))+' · '+esc(a.by)+' · '+esc(a.act)+(a.note?': '+esc(a.note):'')).join('<br>')+'</div></div>';
+  h+='<div id="mtActs">'+((t.state==='pending'||t.state==='blocked')?'<button class="mtbig ok" id="mtDoneBtn" onclick="mtForm(\'done\')">&#9989; पूरा हुआ · Done</button>':'')+(t.state==='pending'?'<button class="mtbig bad" id="mtBlockBtn" onclick="mtForm(\'blocked\')">&#9940; अटक गया · Blocked</button>':'')+'</div><div id="mtForm" class="hide"></div>';
+  $('mtDetail').innerHTML=h; window.scrollTo(0,0);
+  if(t.evidence&&t.evidence.length){ fetch(PZ+'/api/work/photo?id='+t.evidence[0].id,{headers:{'Authorization':'Bearer '+mtT},cache:'no-store'}).then(r=>r.ok?r.blob():null).then(b=>{ if(b&&$('mtEvImg'))$('mtEvImg').src=URL.createObjectURL(b); }).catch(()=>{}); } }
+function mtBackToList(){ mtCur=null; mtPhoto=null; mtLoad(); mtShow('mtList'); }
+function mtForm(act){ $('mtActs').classList.add('hide'); const f=$('mtForm'); f.classList.remove('hide');
+  if(act==='blocked'){ f.innerHTML='<div class="mtcard"><div class="mten">क्यों अटका? · Why blocked?</div><textarea id="mtNote" placeholder="जैसे: ग्राहक नहीं मिला / माल नहीं है"></textarea><div class="mterr" id="mtFErr"></div><button class="mtbig bad" id="mtSend" onclick="mtSend(\'blocked\')">&#9940; अटका हुआ भेजें</button><button class="mtbig dim" onclick="mtCancelForm()">रद्द · Cancel</button></div>'; }
+  else { f.innerHTML='<div class="mtcard"><div class="mten">क्या हुआ? · Result</div><textarea id="mtNote" placeholder="जैसे: ₹5000 मिले / माल पहुँचा दिया"></textarea>'+((mtCur.evidence&&mtCur.evidence.length)?'':'<label class="mtpick" id="mtPickLbl">&#128247; फ़ोटो लगाएँ (ज़रूरी नहीं)<input id="mtPhotoIn" type="file" accept="image/*" capture="environment" class="hide" onchange="mtPick(event)"></label>')+'<div class="mterr" id="mtFErr"></div><button class="mtbig ok" id="mtSend" onclick="mtSend(\'done\')">&#9989; पूरा हुआ भेजें</button><button class="mtbig dim" onclick="mtCancelForm()">रद्द · Cancel</button></div>'; }
+  $('mtNote').focus(); }
+function mtCancelForm(){ $('mtForm').classList.add('hide'); $('mtForm').innerHTML=''; $('mtActs').classList.remove('hide'); mtPhoto=null; }
+function mtPick(ev){ const f=ev.target.files&&ev.target.files[0]; if(!f)return; const img=new Image(); const url=URL.createObjectURL(f);
+  img.onload=()=>{ const mx=1280,w=img.width,h=img.height,s=Math.min(1,mx/Math.max(w,h)); const c=document.createElement('canvas'); c.width=Math.round(w*s); c.height=Math.round(h*s); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    c.toBlob(b=>{ mtPhoto=b; const l=$('mtPickLbl'); if(l)l.innerHTML='&#128247; फ़ोटो तैयार ('+Math.round(b.size/1024)+' KB)<img src="'+c.toDataURL('image/jpeg',.6)+'">'; URL.revokeObjectURL(url); },'image/jpeg',.82); };
+  img.onerror=()=>{ $('mtFErr').textContent='फ़ोटो नहीं पढ़ी गई'; }; img.src=url; }
+function mtSend(act){ const note=($('mtNote').value||'').trim(); if(!note){ $('mtFErr').textContent=act==='blocked'?'कारण लिखें':'नतीजा लिखें'; return; }
+  const btn=$('mtSend'); btn.disabled=true; const id=mtCur.id; let up=Promise.resolve();
+  if(act==='done'&&mtPhoto){ up=mtApi('/api/work/task/photo?task_id='+id,{method:'POST',headers:{'Content-Type':'image/jpeg'},body:mtPhoto}).then(j=>{ if(!j.ok)throw new Error(j.error||'photo'); }); }
+  up.then(()=>mtApi('/api/work/task/'+act,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id,note:note})}))
+  .then(j=>{ btn.disabled=false; if(!j.ok){ $('mtFErr').textContent='नहीं हुआ: '+(j.error||''); return; } toast(act==='blocked'?'अटका हुआ दर्ज हुआ':'पूरा हुआ दर्ज हुआ','ok'); mtPhoto=null; mtBackToList(); })
+  .catch(e=>{ btn.disabled=false; if($('mtFErr'))$('mtFErr').textContent='भेज नहीं पाए: '+(e&&e.message||''); }); }
 </script>
 </body>
 </html>

@@ -158,3 +158,30 @@ Old Belief · New Understanding · Business Impact · Applies To · Status · Fu
 **Business Impact:** Medium-high (majority of lines) · **Applies To:** Quantity entry, all products · **Status:** Active — deployed
 **Evidence history:** *Why:* majority path was paying keyboard overhead. *Assumptions:* migration-phase quantity distribution. *Re-evaluate:* post-migration, re-run the qty-distribution query and re-tune the chip VALUES only — the model stays unless interaction evidence (not frequency evidence) says otherwise.
 **Future Rule:** Configuration values inside a permanent interaction model are re-tuned from evidence, never hard-coded as truth.
+
+# My Tasks (Phase A) — personal tasks beside the warehouse, 2026-09-13
+
+**What:** the gate now carries a visibly separate "मेरा काम · My Tasks" entry.
+It opens the employee's PERSONAL task list from Project Zero (Shanky assigns a
+task in StaffPay; the employee marks it Blocked with a reason or Done with a
+result and one photo). Nothing about it lives in the warehouse database.
+
+**Two identities, on purpose.**
+- *Orders* keep the tapped name (`nkg_staff`): a shared workspace identity for
+  boards, receiving and stock. Unchanged by this mission — same feed calls,
+  same board, with or without a task login (proved by `test_nk_tasks.js`).
+- *My Tasks* uses a personal login: a one-time code from Shanky, exchanged for
+  an opaque token kept only on that phone (`nkg_work_token`). The server
+  resolves who the phone is on every request; the phone never sends a name.
+- The two are NOT mapped by name in Phase A. "Arjun" tapped on the gate and
+  Arjun's StaffPay registry row are different things until an explicit
+  Phase-B link is designed. Never bridge them by string comparison.
+
+**Rule R6 — A personal identity is never derived from a shared, tapped one.**
+Tapped names are convenience, not authentication; anything that must be
+attributed to ONE accountable person (a task, a result, a revocation) needs
+its own credential and its own audit trail. *(from this mission)*
+
+**Recovery:** lost phone → Shanky taps "Revoke phone" in StaffPay; the next
+request from that phone is refused and it falls back to the code screen with
+no task data. New phone → new code. Logout on the phone invalidates its token.
