@@ -432,6 +432,27 @@ body.wbdragging{overflow:hidden}
 .mtcard textarea{width:100%;min-height:100px;font-size:16px;padding:14px;border-radius:14px;border:1px solid var(--hair2);background:var(--well);color:var(--ink);outline:none;margin-bottom:10px;resize:vertical}
 .mtcard img.bill{width:100%;border-radius:12px;margin-top:8px;background:#fff}
 .mthist{font-size:12.5px;color:var(--mut);line-height:1.5}
+
+.mttabs{display:flex;gap:8px;margin-bottom:12px}
+.mttabs button{flex:1;background:var(--panel);border:1px solid var(--hair2);color:var(--mut);border-radius:14px;padding:12px 8px;font-size:15px;font-weight:800}
+.mttabs button.on{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.6);color:var(--ink)}
+.mtcounts{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.mtcounts div{flex:1;min-width:68px;background:var(--panel);border:1px solid var(--hair2);border-radius:14px;padding:10px 6px;text-align:center}
+.mtcounts b{display:block;font-size:19px}.mtcounts span{font-size:11px;color:var(--mut)}
+.mtmrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--panel);border:1px solid var(--hair2);border-radius:16px;padding:13px 14px;margin-bottom:9px;color:var(--ink)}
+.mtmrow .mn{flex:1;min-width:0}.mtmrow .mn b{font-size:17px;font-weight:700;display:block}.mtmrow .mn span{font-size:12.5px;color:var(--mut)}
+.mtst{display:inline-block;border-radius:99px;padding:4px 10px;font-size:12.5px;font-weight:800;white-space:nowrap}
+.mtst.not_marked{background:var(--panel2);color:var(--mut)}.mtst.arrived,.mtst.lunch_ended{background:rgba(52,211,153,.18);color:#34d399}
+.mtst.lunch_started{background:rgba(251,191,36,.18);color:#fbbf24}.mtst.left{background:rgba(148,163,184,.18);color:var(--mut)}
+.mtbatch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.mtbatch button{background:var(--panel2);border:1px solid var(--hair2);color:var(--ink);border-radius:14px;padding:13px 8px;font-size:15px;font-weight:700}
+.mtpickrow{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--hair);font-size:16px}
+.mtpickrow input{width:22px;height:22px}
+.mtfbtns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+.mtfbtns button{border:1px solid var(--hair2);background:var(--panel2);color:var(--ink);border-radius:12px;padding:13px 4px;font-size:14px;font-weight:800}
+.mtfbtns button.on{background:#059669;color:#fff;border-color:#059669}
+.mtfbtns button.on.half{background:#fbbf24;color:#111}.mtfbtns button.on.abs{background:#be123c}
+.mtwarn{background:rgba(251,113,133,.14);border:1px solid rgba(251,113,133,.5);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
 </style></head>
 <body>
 
@@ -463,8 +484,17 @@ body.wbdragging{overflow:hidden}
       <div class="mten" style="margin-top:10px">कोड 24 घंटे में खत्म हो जाता है और एक ही बार चलता है।</div>
     </div>
   </div>
+  <div id="mtTabs" class="mttabs hide"></div>
   <div id="mtList" class="hide"><div class="mtwho">नमस्ते, <b id="mtName"></b></div><div id="mtItems"></div></div>
   <div id="mtDetail" class="hide"></div>
+  <div id="mtTeam" class="hide">
+    <div id="mtTeamSwitch" class="hide"></div>
+    <div class="mtcounts" id="mtTeamCounts"></div>
+    <div id="mtTeamList"></div>
+    <div class="mtbatch" id="mtTeamBatch"></div>
+    <button class="pri" style="max-width:none;margin-top:6px" onclick="mtFinalOpen()">&#9989; दिन पूरा करें · Finalise today</button>
+  </div>
+  <div id="mtFinal" class="hide"></div>
 </div>
 
 <div id="add" class="wrap hide">
@@ -1879,14 +1909,15 @@ function mtSetToken(t){ mtT=t; try{ if(t)localStorage.setItem('nkg_work_token',t
 function mtApi(path,opt){ opt=opt||{}; const h=opt.headers||{}; if(mtT)h['Authorization']='Bearer '+mtT; opt.headers=h; opt.cache='no-store';
   return fetch(PZ+path,opt).then(r=>{ if(r.status===401){ mtSetToken(null); mtMe=null; mtShowCode('पहुँच बंद है। Shanky जी से नया कोड लें।'); throw new Error('unauthorised'); } return r.json(); }); }
 function showTasks(){ ['gate','add','owner','manage','khata','bill','dorders','dstock'].forEach(i=>{const e=$(i); if(e)e.classList.add('hide');}); $('mytasks').classList.remove('hide'); window.scrollTo(0,0);
-  if(!mtT){ mtShowCode(''); return; } mtLoad(); }
-function tasksBack(){ $('mytasks').classList.add('hide'); mtCur=null; mtPhoto=null; backToGate(); }
-function mtShow(which){ ['mtCode','mtList','mtDetail'].forEach(i=>$(i).classList.toggle('hide',i!==which)); $('mtLogout').classList.toggle('hide',which==='mtCode'); $('mtRefresh').classList.toggle('hide',which==='mtCode'); }
-function mtShowCode(msg){ mtShow('mtCode'); $('mtCodeErr').textContent=msg||''; $('mtCodeIn').value=''; $('mtItems').innerHTML=''; $('mtDetail').innerHTML=''; mtTasks=[]; mtCur=null; }
+  if(!mtT){ mtShowCode(''); return; } mtLoadMe(); mtLoad(); }
+function tasksBack(){ mtStop(); closeSheet(); $('mytasks').classList.add('hide'); mtCur=null; mtPhoto=null; backToGate(); }
+function mtShow(which){ ['mtCode','mtList','mtDetail','mtTeam','mtFinal'].forEach(i=>$(i).classList.toggle('hide',i!==which)); $('mtLogout').classList.toggle('hide',which==='mtCode'); $('mtRefresh').classList.toggle('hide',which==='mtCode'); if($('mtTabs'))$('mtTabs').classList.toggle('hide',which==='mtCode'||!mtTeams.length); }
+function mtShowCode(msg){ mtStop(); closeSheet(); mtTeams=[]; mtTeam=null; mtRoster=[]; mtView='tasks'; mtRenderTabs();
+  mtShow('mtCode'); $('mtCodeErr').textContent=msg||''; $('mtCodeIn').value=''; $('mtItems').innerHTML=''; $('mtDetail').innerHTML=''; $('mtTeamList').innerHTML=''; $('mtFinal').innerHTML=''; mtTasks=[]; mtCur=null; }
 const MT_ERR={invalid:'कोड गलत है। फिर से देखें।',used:'यह कोड पहले चल चुका है। नया कोड लें।',locked:'बहुत बार गलत। Shanky जी से नया कोड लें।',expired:'कोड की समय सीमा खत्म। नया कोड लें।',inactive:'आपका नाम अभी चालू नहीं है। Shanky जी से बात करें।',too_many:'थोड़ा रुकें, फिर कोशिश करें।'};
 function mtActivate(){ const code=$('mtCodeIn').value; const b=$('mtCodeBtn'); b.disabled=true; $('mtCodeErr').textContent='';
   fetch(PZ+'/api/work/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code,phone_label:'NK app · '+(navigator.userAgent||'').slice(0,60)})})
-  .then(r=>r.json()).then(j=>{ b.disabled=false; if(!j.ok){ $('mtCodeErr').textContent=MT_ERR[j.error]||MT_ERR.invalid; return; } mtSetToken(j.token); mtMe={name:j.name}; toast('नमस्ते '+j.name,'ok'); mtLoad(); })
+  .then(r=>r.json()).then(j=>{ b.disabled=false; if(!j.ok){ $('mtCodeErr').textContent=MT_ERR[j.error]||MT_ERR.invalid; return; } mtSetToken(j.token); mtMe={name:j.name}; toast('नमस्ते '+j.name,'ok'); mtLoadMe(); mtLoad(); })
   .catch(()=>{ b.disabled=false; $('mtCodeErr').textContent='नेटवर्क नहीं मिला। फिर कोशिश करें।'; }); }
 function mtLogout(){ if(!confirm('इस फ़ोन से My Tasks लॉग आउट करें?'))return; mtApi('/api/work/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(()=>{ mtSetToken(null); mtMe=null; mtShowCode('लॉग आउट हो गया।'); }).catch(()=>{}); }
 function mtD(d){ if(!d)return ''; const p=String(d).slice(0,10).split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
@@ -1894,7 +1925,7 @@ function mtTs(s){ if(!s)return ''; const d=new Date(s); if(isNaN(d))return Strin
 function mtLoad(){ mtApi('/api/work/tasks').then(j=>{ if(!j.ok)return; mtMe={name:j.name}; mtTasks=j.tasks||[]; mtRenderList(); }).catch(()=>{}); }
 function mtCard(t){ const m=[]; if(t.due_on)m.push('&#128197; '+esc(mtD(t.due_on))); if(t.ref_label)m.push('&#128279; '+esc(t.ref_label)); m.push(esc(t.created_by)+' · '+esc(mtTs(t.created_at)));
   return '<button class="mttask '+t.state+'" data-task="'+t.id+'" onclick="mtOpen('+t.id+')"><div class="ins">'+esc(t.instruction)+'</div><div class="meta">'+m.map(x=>'<span>'+x+'</span>').join('')+'</div>'+(t.note&&t.state!=='pending'?'<div class="note">'+(t.state==='blocked'?'&#9940; ':'&#9989; ')+esc(t.note)+'</div>':'')+'</button>'; }
-function mtRenderList(){ mtShow('mtList'); $('mtName').textContent=mtMe?mtMe.name:''; const b=mtTasks.filter(t=>t.state==='blocked'),p=mtTasks.filter(t=>t.state==='pending'),d=mtTasks.filter(t=>t.state==='done'); let h='';
+function mtRenderList(){ mtShow('mtList'); mtRenderTabs(); $('mtName').textContent=mtMe?mtMe.name:''; const b=mtTasks.filter(t=>t.state==='blocked'),p=mtTasks.filter(t=>t.state==='pending'),d=mtTasks.filter(t=>t.state==='done'); let h='';
   if(!mtTasks.length)h='<div class="empty">अभी कोई काम नहीं है।<br>No tasks right now.</div>';
   if(b.length)h+='<div class="mtsec b">&#9940; अटका हुआ · Blocked ('+b.length+')</div>'+b.map(mtCard).join('');
   if(p.length)h+='<div class="mtsec p">&#128204; करना है · To do ('+p.length+')</div>'+p.map(mtCard).join('');
@@ -1931,6 +1962,126 @@ function mtSend(act){ const note=($('mtNote').value||'').trim(); if(!note){ $('m
   up.then(()=>mtApi('/api/work/task/'+act,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id:id,note:note})}))
   .then(j=>{ btn.disabled=false; if(!j.ok){ $('mtFErr').textContent='नहीं हुआ: '+(j.error||''); return; } toast(act==='blocked'?'अटका हुआ दर्ज हुआ':'पूरा हुआ दर्ज हुआ','ok'); mtPhoto=null; mtBackToList(); })
   .catch(e=>{ btn.disabled=false; if($('mtFErr'))$('mtFErr').textContent='भेज नहीं पाए: '+(e&&e.message||''); }); }
+
+/* ===== MY TEAM TODAY (only for a current team head) ==========================
+   The same Project Zero APIs and the same phone token as My Tasks. Nothing
+   here touches Orders, stock, door receiving or the warehouse database, and
+   nothing here can move a card or finish a task. */
+let mtTeams=[], mtTeam=null, mtRoster=[], mtView='tasks', mtTimer=null, mtBatchPick=null, mtFinal=null;
+const MT_PS={not_marked:'अभी नहीं आया',arrived:'आ गया',lunch_started:'खाने पर',lunch_ended:'काम पर',left:'चला गया'};
+const MT_KN={arrived:'आ गया',lunch_started:'खाना शुरू',lunch_ended:'खाने से वापस',left:'चला गया'};
+const MT_EL={arrived:['not_marked'],lunch_started:['arrived','lunch_ended'],lunch_ended:['lunch_started'],left:['arrived','lunch_ended','lunch_started']};
+function mtCid(){ return 'n'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,6); }
+function mtTime(s){ if(!s)return ''; const d=new Date(s); return isNaN(d)?'':d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+function mtLoadMe(){ return mtApi('/api/work/me').then(j=>{ if(!j.ok)return; mtMe={name:j.name}; mtTeams=j.teams||[];
+  if(mtTeam&&!mtTeams.some(t=>t.id===mtTeam.id))mtTeam=null; mtRenderTabs(); }).catch(()=>{}); }
+function mtRenderTabs(){ const el=$('mtTabs'); if(!el)return;
+  if(!mtTeams.length){ el.classList.add('hide'); el.innerHTML=''; return; }
+  el.classList.remove('hide');
+  el.innerHTML='<button class="'+(mtView==='tasks'?'on':'')+'" onclick="mtGoTasks()">&#128203; मेरा काम</button>'+
+               '<button class="'+(mtView==='team'?'on':'')+'" onclick="mtGoTeam()">&#128101; मेरी टीम</button>'; }
+function mtStop(){ if(mtTimer){clearInterval(mtTimer);mtTimer=null;} }
+function mtGoTasks(){ mtView='tasks'; mtStop(); closeSheet(); mtRenderTabs(); mtRenderList(); }
+function mtGoTeam(){ mtView='team'; closeSheet(); if(!mtTeams.length){mtGoTasks();return;}
+  if(!mtTeam)mtTeam=mtTeams[0]; mtShow('mtTeam'); mtRenderTabs(); mtLoadTeam();
+  mtStop(); mtTimer=setInterval(()=>{ if(mtView==='team'&&!document.hidden&&!$('mytasks').classList.contains('hide'))mtLoadTeam(true); },30000); }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&mtView==='team'&&!$('mytasks').classList.contains('hide'))mtLoadTeam(true); });
+function mtLoadTeam(quiet){ if(!mtTeam)return;
+  return mtApi('/api/work/team/today?team='+mtTeam.id).then(j=>{ if(!j.ok){ if(!quiet)toast(j.error||'नहीं मिला','err'); return; }
+    mtRoster=j.members||[]; mtRenderTeam(j.counts); }).catch(()=>{}); }
+function mtRenderTeam(counts){
+  const sw=$('mtTeamSwitch');
+  if(mtTeams.length>1){ sw.classList.remove('hide');
+    sw.innerHTML='<div class="mttabs">'+mtTeams.map(t=>'<button class="'+(mtTeam&&t.id===mtTeam.id?'on':'')+'" onclick="mtSwitchTeam('+t.id+')">'+esc(t.name)+'</button>').join('')+'</div>';
+  } else sw.classList.add('hide');
+  const c=counts||{working:0,not_marked:0,at_lunch:0,left:0};
+  $('mtTeamCounts').innerHTML='<div><b>'+c.working+'</b><span>काम पर</span></div><div><b>'+c.not_marked+'</b><span>नहीं आया</span></div>'+
+    '<div><b>'+c.at_lunch+'</b><span>खाने पर</span></div><div><b>'+c.left+'</b><span>चला गया</span></div>';
+  $('mtTeamList').innerHTML=mtRoster.length?mtRoster.map(m=>
+    '<button class="mtmrow" data-emp="'+esc(m.id)+'" data-state="'+m.state+'" onclick="mtOpenMember(\''+esc(m.id)+'\')">'+
+    '<div class="mn"><b>'+esc(m.label)+'</b><span>'+(m.at?esc(mtTime(m.at))+' · '+esc(m.by||''):'अभी कुछ दर्ज नहीं')+'</span></div>'+
+    '<span class="mtst '+m.state+'">'+MT_PS[m.state]+'</span></button>').join('')
+    :'<div class="empty">इस टीम में अभी कोई नहीं है।</div>';
+  $('mtTeamBatch').innerHTML=['arrived','lunch_started','lunch_ended','left'].map(k=>{
+    const n=mtRoster.filter(m=>MT_EL[k].indexOf(m.state)>=0).length;
+    return '<button data-batch="'+k+'" onclick="mtOpenBatch(\''+k+'\')">'+MT_KN[k]+' <span style="color:var(--mut)">('+n+')</span></button>';}).join(''); }
+function mtSwitchTeam(id){ mtTeam=mtTeams.filter(t=>t.id===id)[0]||mtTeam; mtLoadTeam(); }
+function mtOpenMember(id){ const m=mtRoster.filter(x=>x.id===id)[0]; if(!m)return;
+  const acts=['arrived','lunch_started','lunch_ended','left'].filter(k=>MT_EL[k].indexOf(m.state)>=0);
+  let h='<div class="grab"></div><h4>'+esc(m.label)+'</h4><div class="mten">अभी: <b>'+MT_PS[m.state]+'</b>'+(m.at?' · '+esc(mtTime(m.at)):'')+'</div>';
+  h+=acts.map(k=>'<button class="pri" style="max-width:none" onclick="mtMark(\''+esc(id)+'\',\''+k+'\')">'+MT_KN[k]+'</button>').join('');
+  if(m.event_id)h+='<button class="mtbig bad mtwrong" style="width:100%;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:800;color:#fff;background:#be123c" onclick="mtAskWrong(\''+esc(id)+'\')">&#10060; यह गलत था</button>';
+  sheetHTML(h); openSheet(); }
+function mtMark(id,kind){ closeSheet(); const c=mtCid();
+  mtApi('/api/work/team/presence',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({team_id:mtTeam.id,kind:kind,events:[{employee_id:id,client_id:c}]})})
+  .then(j=>{ if(!j.ok){toast('नहीं हुआ','err');return;}
+    const r=(j.results||[])[0]; if(r&&!r.ok)toast('नहीं हुआ','err'); else toast(MT_KN[kind]+' दर्ज','ok');
+    mtRoster=j.members||mtRoster; mtRenderTeam(j.counts); }).catch(()=>toast('भेज नहीं पाए','err')); }
+function mtAskWrong(id){ const m=mtRoster.filter(x=>x.id===id)[0]; if(!m||!m.event_id)return;
+  sheetHTML('<div class="grab"></div><h4>यह दर्ज गलत था</h4><div class="mten">'+esc(m.label)+' · '+MT_PS[m.state]+'</div>'+
+    '<textarea id="mtWrIn" placeholder="कारण लिखें (ज़रूरी)"></textarea><div class="mterr" id="mtWrErr"></div>'+
+    '<button class="pri" style="max-width:none;background:#be123c" id="mtWrGo" onclick="mtSendWrong(\''+esc(id)+'\','+m.event_id+')">हटाएँ</button>'); openSheet(); }
+function mtSendWrong(id,ev){ const note=($('mtWrIn').value||'').trim();
+  if(!note){ $('mtWrErr').textContent='कारण लिखें'; return; }
+  $('mtWrGo').disabled=true;
+  mtApi('/api/work/team/presence/correct',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({team_id:mtTeam.id,employee_id:id,removes:ev,reason:note,client_id:mtCid()})})
+  .then(j=>{ if(!j.ok){ $('mtWrGo').disabled=false; $('mtWrErr').textContent=j.error||'नहीं हुआ'; return; }
+    closeSheet(); toast('ठीक किया','ok'); mtRoster=j.members||mtRoster; mtRenderTeam(j.counts); })
+  .catch(()=>{ $('mtWrGo').disabled=false; $('mtWrErr').textContent='भेज नहीं पाए'; }); }
+function mtOpenBatch(kind){ const elig=mtRoster.filter(m=>MT_EL[kind].indexOf(m.state)>=0);
+  if(!elig.length){ toast('कोई नहीं मिला','err'); return; }
+  mtBatchPick={kind:kind,ids:{}}; elig.forEach(m=>{ mtBatchPick.ids[m.id]=mtCid(); });
+  sheetHTML('<div class="grab"></div><h4>'+MT_KN[kind]+'</h4><div class="mten">जो नहीं हैं उनका निशान हटा दें।</div>'+
+    elig.map(m=>'<label class="mtpickrow"><input type="checkbox" checked data-mtpick="'+esc(m.id)+'"><span>'+esc(m.label)+'</span></label>').join('')+
+    '<div class="mterr" id="mtBErr"></div><button class="pri" style="max-width:none" id="mtBGo" onclick="mtSendBatch()">दर्ज करें</button>'); openSheet(); }
+function mtSendBatch(){ if(!mtBatchPick)return;
+  const picked=[].slice.call(document.querySelectorAll('[data-mtpick]')).filter(i=>i.checked)
+    .map(i=>({employee_id:i.getAttribute('data-mtpick'),client_id:mtBatchPick.ids[i.getAttribute('data-mtpick')]}));
+  if(!picked.length){ $('mtBErr').textContent='किसी को चुनें'; return; }
+  $('mtBGo').disabled=true;
+  mtApi('/api/work/team/presence',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({team_id:mtTeam.id,kind:mtBatchPick.kind,batch_id:mtCid(),events:picked})})
+  .then(j=>{ if(!j.ok){ $('mtBGo').disabled=false; $('mtBErr').textContent=j.error||'नहीं हुआ'; return; }
+    const bad=(j.results||[]).filter(r=>!r.ok).length;
+    closeSheet(); toast(bad?('कुछ दर्ज नहीं हुए ('+bad+')'):(MT_KN[mtBatchPick.kind]+' दर्ज'),bad?'err':'ok');
+    mtBatchPick=null; mtRoster=j.members||mtRoster; mtRenderTeam(j.counts); })
+  .catch(()=>{ $('mtBGo').disabled=false; $('mtBErr').textContent='भेज नहीं पाए'; }); }
+function mtFinalOpen(){ if(!mtTeam)return; mtStop(); closeSheet();
+  mtApi('/api/work/team/finalise?team='+mtTeam.id).then(j=>{ if(!j.ok){toast(j.error||'नहीं मिला','err');return;}
+    mtFinal=j; mtShow('mtFinal'); mtRenderFinal(); }).catch(()=>{}); }
+function mtRenderFinal(){
+  let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+    '<button class="iconlink" onclick="mtGoTeam()">&#8249; टीम</button><b>'+esc(mtFinal.team.name)+'</b></div>'+
+    '<div class="mtwarn">&#9888; यह हाज़िरी तनख़्वाह पर असर करती है.<br><span style="opacity:.75">This attendance affects salary.</span></div>';
+  h+=(mtFinal.members||[]).map(m=>{
+    const tl=(m.timeline||[]).filter(a=>a.kind!=='removal').map(a=>{
+      const t=esc(MT_KN[a.kind]||a.kind)+' '+esc(mtTime(a.at)); return a.voided?'<s>'+t+'</s>':t; }).join(' · ');
+    return '<div class="mtcard"><div style="font-size:17px;font-weight:800">'+esc(m.label)+'</div>'+
+      '<div class="mthist">'+(tl||'दिन भर कुछ दर्ज नहीं')+'</div><div class="mtfbtns">'+
+      ['Present','Half-Day','Absent'].map(st=>{
+        const on=m.official===st?('on'+(st==='Half-Day'?' half':(st==='Absent'?' abs':''))):'';
+        return '<button class="'+on+'" data-emp="'+esc(m.id)+'" data-st="'+st+'" onclick="mtSetOfficial(\''+esc(m.id)+'\',\''+st+'\')">'+
+          (st==='Present'?'पूरा':st==='Half-Day'?'आधा':'नहीं आया')+'</button>'; }).join('')+'</div></div>'; }).join('')
+    ||'<div class="empty">कोई सदस्य नहीं</div>';
+  $('mtFinal').innerHTML=h; window.scrollTo(0,0); }
+function mtSetOfficial(id,st){ const m=(mtFinal.members||[]).filter(x=>x.id===id)[0]; if(!m)return;
+  if(m.official===st){ toast('पहले से यही है','ok'); return; }
+  if(m.official){ sheetHTML('<div class="grab"></div><h4>बदलाव का कारण</h4><div class="mten">'+esc(m.label)+': '+esc(m.official)+' &rarr; '+esc(st)+'</div>'+
+      '<textarea id="mtRsIn" placeholder="क्यों बदल रहे हैं? (ज़रूरी)"></textarea><div class="mterr" id="mtRsErr"></div>'+
+      '<button class="pri" style="max-width:none" id="mtRsGo" onclick="mtSendOfficial(\''+esc(id)+'\',\''+st+'\',true)">दर्ज करें</button>'); openSheet(); return; }
+  mtSendOfficial(id,st,false); }
+function mtSendOfficial(id,st,withReason){
+  const reason=withReason?(($('mtRsIn').value||'').trim()):'';
+  if(withReason&&!reason){ $('mtRsErr').textContent='कारण लिखें'; return; }
+  if(withReason)$('mtRsGo').disabled=true;
+  mtApi('/api/work/team/attendance',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({team_id:mtTeam.id,employee_id:id,status:st,reason:reason||null,client_id:mtCid()})})
+  .then(j=>{ if(!j.ok){ if(withReason){ $('mtRsGo').disabled=false; $('mtRsErr').textContent=j.error||'नहीं हुआ'; } else toast('नहीं हुआ','err'); return; }
+    closeSheet(); toast('हाज़िरी दर्ज','ok');
+    (mtFinal.members||[]).forEach(m=>{ if(m.id===id)m.official=st; }); mtRenderFinal(); })
+  .catch(()=>{ if(withReason){ $('mtRsGo').disabled=false; $('mtRsErr').textContent='भेज नहीं पाए'; } else toast('भेज नहीं पाए','err'); }); }
 </script>
 </body>
 </html>

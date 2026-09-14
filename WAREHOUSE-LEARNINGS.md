@@ -185,3 +185,29 @@ its own credential and its own audit trail. *(from this mission)*
 **Recovery:** lost phone → Shanky taps "Revoke phone" in StaffPay; the next
 request from that phone is refused and it falls back to the code screen with
 no task data. New phone → new code. Logout on the phone invalidates its token.
+
+# My Team Today (2026-09-14) — presence beside Orders, never inside them
+
+**What:** an authorised team head who opens **My Tasks** now also sees **My
+Team**: today's roster with each member's live state (not marked / at work /
+at lunch / left), one tap per person, quick batch actions with an untick for
+exceptions, a correction that needs a reason, and an end-of-day screen where
+the head asserts the official Present / Half-Day / Absent that StaffPay's
+payroll reads. It uses the same Project Zero APIs and the same phone token as
+My Tasks. A normal employee sees none of it.
+
+**Rule R7 — Presence is not an Order and never moves one.** Marking a person
+arrived, at lunch or gone writes exactly one row in Project Zero's presence
+stream. It cannot move a card, change a list, complete a task, receive a
+door, touch stock or write anything at all to the warehouse database. The
+reverse holds too: nothing on the Orders board changes anyone's attendance.
+*(proved by `test_nk_team.js`: the same feed calls before and after, zero
+warehouse writes)*
+
+**Rule R8 — Authority is re-checked on every tap, never remembered.** The
+team list comes from the server each time. When Shanky removes a head, the
+next tap is refused; there is no cached permission to go stale.
+
+**Why heads never see money:** the server's answer to a head simply contains
+no salary, rate, payment or balance. There is no hidden field and no button
+to find.
