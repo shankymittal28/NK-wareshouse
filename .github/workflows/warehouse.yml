@@ -35,3 +35,5 @@ jobs:
         run: bash warehouse/test/rollback.sh
       - name: import tooling on synthetic data
         run: bash warehouse/test/import_rehearsal.sh
+      - name: backup and recovery drill
+        run: bash warehouse/test/recovery_drill.sh

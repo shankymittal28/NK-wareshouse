@@ -1,13 +1,17 @@
 -- Reconciliation: for every legacy identity, what the old app would calculate against what
 -- the import produced. A row here is a difference that must be explained before Stage 1.
 \pset pager off
+\echo '--- snapshot ---'
+select snapshot_id, taken_at, source_rows, source_max_created_at from wh_import.snapshot order by taken_at desc limit 1;
+
 \echo '--- totals ---'
 select (select count(*) from src.nkg_stock)                                as source_rows,
        (select count(*) from wh.legacy_line)                               as imported_lines,
        (select count(*) from wh_import.exception where source_row_id is not null) as parked_rows,
        (select count(*) from wh_import.identity_map)                       as source_identities,
        (select count(*) from wh.material where origin='legacy_import')     as materials_created,
-       (select count(*) from wh.material where needs_naming)               as materials_needing_a_name,
+       (select count(*) from wh.material where identity_incomplete)       as identities_incomplete,
+       (select count(*) from wh.possible_same_material)                   as in_a_look_alike_group,
        (select count(*) from wh.legacy_photo)                              as photos_linked,
        (select count(*) from wh.rate)                                      as rates_mapped,
        (select count(*) from wh_import.exception where reason='rate key matches no identity') as rates_unmatched,

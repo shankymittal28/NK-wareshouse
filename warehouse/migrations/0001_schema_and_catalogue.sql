@@ -82,9 +82,14 @@ create table wh.material (
   merged_at       timestamptz,
   merged_reason   text,
   origin          text not null default 'live' check (origin in ('live','legacy_import')),
-  -- set by the legacy import when an old row had no value for a required attribute:
-  -- the quantity is preserved, and the owner names the material properly later
-  needs_naming    boolean not null default false
+  -- An old row that never carried a value for a required attribute. The quantity, date,
+  -- recorder and evidence are all preserved; only the identity is incomplete. No type is
+  -- ever invented for it, and it stays historical reference until a person classifies it.
+  identity_incomplete boolean not null default false,
+  missing_attrs   text[] not null default '{}',
+  -- Identities that merely LOOK alike after normalising share a group id so a person can
+  -- review them. They are never merged by that fact alone.
+  possible_same_group uuid
 );
 -- Exact identity is unique: the same tuple cannot exist twice.
 create unique index material_identity_uidx on wh.material(category_code, identity_key);

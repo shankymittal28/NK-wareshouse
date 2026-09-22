@@ -1,5 +1,7 @@
--- Undo 0005: remove the folds and the derived views. No stored data is affected,
--- because none of this stores anything.
+-- Undo 0005: remove the folds, the derived views and the review lists.
+-- No stored data is affected, because none of this stores anything.
+drop view if exists wh.incomplete_identity;
+drop view if exists wh.possible_same_material;
 drop function if exists wh.trail(uuid);
 drop view if exists wh.valuation_coverage;
 drop view if exists wh.material_value;

@@ -20,8 +20,14 @@ say "every source row is imported or parked" \
     "$(Q "select count(*) from src.nkg_stock")"
 say "no identity's expectation differs from the old rule" \
     "$(Q "select count(*) from wh_import.identity_map im left join wh.legacy_expected le on le.material_id=im.material_id where im.src_net is distinct from coalesce(le.expected_qty,0)")" "0"
-say "a row with no brand is kept, with its quantity, and flagged for naming" \
-    "$(Q "select count(*) from wh.material where needs_naming")" "1"
+say "a row with no door type is kept, with its quantity, and marked incomplete" \
+    "$(Q "select count(*) from wh.material where identity_incomplete")" "1"
+say "and it says which attribute is missing" \
+    "$(Q "select array_to_string(missing_attrs, ',') from wh.material where identity_incomplete")" "brand"
+say "look-alike identities are grouped for review, not merged" \
+    "$(Q "select count(*) from wh.possible_same_material")" "2"
+say "and no material was merged into another" \
+    "$(Q "select count(*) from wh.material where merged_into_material_id is not null")" "0"
 say "look-alike identities are kept apart" \
     "$(Q "select count(*) from (select norm_key from wh.material group by category_code, norm_key having count(*)>1) x")" "1"
 say "a repeated tap within two minutes is flagged, not removed" \

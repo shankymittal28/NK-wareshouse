@@ -33,31 +33,42 @@ Q "$LIVE" "select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');
   select wh.set_rate('cccccccc-0000-0000-0000-000000000001', 2150);" >/dev/null
 say "the live warehouse works before the drill" "$(Q "$LIVE" "select wh.stock_as_of('cccccccc-0000-0000-0000-000000000001')")" "70.0000"
 
-echo "== back up database and evidence =="
+echo "== back up, using the documented procedure itself =="
 T0=$(date +%s)
-$BIN/pg_dump -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$LIVE" -n wh -n auth -f "$WORK/backup/warehouse.sql" || exit 1
-cp -a "$WORK/bucket/." "$WORK/backup/objects/" 2>/dev/null || { mkdir -p "$WORK/backup/objects"; cp -a "$WORK/bucket/." "$WORK/backup/objects/"; }
-(cd "$WORK/backup/objects" && sha256sum * > ../objects.manifest)
+WH_DB_URL="postgresql://$PGUSER@localhost:$PGPORT/$LIVE?host=$PGHOST" \
+WH_BACKUP_DIR="$WORK/backup" WH_LOCAL_BUCKET="$WORK/bucket" WH_RETAIN_DAYS=30 \
+  bash "$ROOT/tools/backup.sh" >/dev/null || { echo "  NOT OK backup failed"; exit 1; }
+SET=$(ls -d "$WORK"/backup/*Z | tail -1)
 BACKUP_SECONDS=$(( $(date +%s) - T0 ))
-say "the backup holds the schema, the data and the objects" \
-    "$([ -s "$WORK/backup/warehouse.sql" ] && [ -s "$WORK/backup/objects/evidence.jpg" ] && echo yes || echo no)" "yes"
+# auth lives outside the wh schema, so the drill keeps it beside the set
+$BIN/pg_dump -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$LIVE" -n auth -f "$SET/auth.sql" || exit 1
+say "the backup holds the database, the objects and a manifest" \
+    "$([ -s "$SET/warehouse.sql" ] && [ -s "$SET/objects/evidence.jpg" ] && [ -s "$SET/checksums.sha256" ] && echo yes || echo no)" "yes"
 
 echo "== lose everything =="
 $PSQL -d postgres -c "drop database $LIVE;" >/dev/null
 rm -rf "$WORK/bucket"
 say "the warehouse is gone" "$(Q postgres "select count(*) from pg_database where datname='$LIVE'")" "0"
 
-echo "== restore =="
+echo "== restore, using the documented procedure itself =="
 T1=$(date +%s)
 $PSQL -d postgres -c "drop database if exists $REST;" >/dev/null
 $PSQL -d postgres -c "create database $REST;" >/dev/null
-$PSQL -d "$REST" -f "$WORK/backup/warehouse.sql" >/dev/null 2>"$WORK/restore.err" || { echo "  NOT OK restore failed"; head -5 "$WORK/restore.err"; exit 1; }
+$PSQL -d "$REST" -f "$SET/auth.sql" >/dev/null 2>&1
+WH_RESTORE_URL="postgresql://$PGUSER@localhost:$PGPORT/$REST?host=$PGHOST" \
+WH_SET="$SET" WH_OBJECT_DIR="$WORK/bucket" \
+  bash "$ROOT/tools/restore.sh" >/dev/null 2>"$WORK/restore.err" || {
+    echo "  NOT OK restore failed"; head -5 "$WORK/restore.err"; exit 1; }
 $PSQL -d "$REST" -f "$HERE/001_fixtures.sql" >/dev/null 2>&1   # test helpers only; data came from the dump
-mkdir -p "$WORK/bucket"; cp -a "$WORK/backup/objects/." "$WORK/bucket/"
 RESTORE_SECONDS=$(( $(date +%s) - T1 ))
+say "the set verified its own checksums before restoring" \
+    "$(grep -c . "$SET/checksums.sha256")" "$(find "$SET" -type f ! -name checksums.sha256 ! -name auth.sql | wc -l)"
 
 echo "== can a warehouse be operated from it? =="
 say "the schema came back whole" "$(Q "$REST" "select count(*) from pg_tables where schemaname='wh'")" "21"
+say "and so did its review lists and derived views" "$(Q "$REST" "select count(*) from pg_views where schemaname='wh'")" "9"
+say "the grants came back, so the app roles can still reach it" \
+    "$(Q "$REST" "select count(*) > 20 from information_schema.role_table_grants where table_schema='wh' and grantee='authenticated'")" "t"
 say "the write path came back" "$(Q "$REST" "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='wh' and p.proname in ('submit_event','approve_count','correct_line','record_opening','draft_put','set_rate')")" "6"
 say "row-level security came back" "$(Q "$REST" "select count(*) from pg_policies where schemaname='wh'")" "$(Q "$REST" "select count(*) from pg_tables where schemaname='wh'")"
 say "materials, rates and configuration are present" \

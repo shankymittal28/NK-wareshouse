@@ -229,3 +229,37 @@ language sql stable as $$
     from all_rows
    order by at, kind
 $$;
+
+-- ---------------------------------------------------------------- review lists
+-- Identities that look alike after normalising case, spaces and punctuation. Sharing a
+-- group is an observation, never a decision: nothing here merges anything. A cancelling
+-- pair of in and out quantities is suggestive and is shown, but it is not evidence.
+create view wh.possible_same_material as
+  select m.possible_same_group as group_id,
+         m.category_code,
+         m.material_id,
+         wh.material_name(m.material_id) as material_name,
+         m.norm_key,
+         coalesce(le.expected_qty, 0) as legacy_expectation,
+         coalesce(le.legacy_lines, 0) as legacy_lines,
+         le.first_seen, le.last_seen,
+         (select string_agg(distinct l.recorded_by_name, '/')
+            from wh.legacy_line l where l.material_id = m.material_id) as recorded_by
+    from wh.material m
+    left join wh.legacy_expected le on le.material_id = m.material_id
+   where m.possible_same_group is not null;
+comment on view wh.possible_same_material is
+  'A review list for a person. Membership means the spellings normalise alike, nothing more.';
+
+create view wh.incomplete_identity as
+  select m.material_id,
+         wh.material_name(m.material_id) as material_name,
+         m.category_code, m.missing_attrs,
+         coalesce(le.legacy_lines, 0) as legacy_lines,
+         coalesce(le.expected_qty, 0) as legacy_expectation,
+         le.first_seen, le.last_seen,
+         (select string_agg(distinct l.recorded_by_name, '/')
+            from wh.legacy_line l where l.material_id = m.material_id) as recorded_by
+    from wh.material m
+    left join wh.legacy_expected le on le.material_id = m.material_id
+   where m.identity_incomplete;
