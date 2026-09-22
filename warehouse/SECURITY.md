@@ -90,3 +90,38 @@ and enforced. Above the database it is shared:
   bounds the loss; it does not prevent it.
 
 `warehouse/BACKUP.md` carries the recovery procedure.
+
+## Three things the real project taught that a local run could not
+
+The local test cluster runs as a superuser. Supabase's `postgres` does not, and
+that difference hid three defects until Stage 0 was applied for real. All three
+are fixed in the migrations; two of them fail *silently*, which is why the
+boundary suite exists.
+
+1. **`ALTER ROLE ... NOSUPERUSER` is refused.** Only a superuser may name the
+   SUPERUSER attribute at all, even to switch it off. 0008 leaves it out and
+   asserts `rolsuper` instead. (Loud failure — the migration stopped.)
+
+2. **A serial column's sequence follows its table's owner.** Altering it
+   explicitly after the table has moved fails, because the migrating role is no
+   longer its owner. 0008 now only touches standalone sequences. (Loud.)
+
+3. **REVOKE and GRANT on an object you do not own only WARN.** 0009 originally
+   transferred ownership to the caretaker and *then* set the grants, so every
+   one of them was a no-op and the migration reported success. A function whose
+   ACL was never touched carries PostgreSQL's built-in default for functions —
+   EXECUTE to PUBLIC — so the result was not a closed API but a fully open one:
+   all 26 warehouse functions callable with the public key.
+
+   The warehouse's own checks still refused the work (`wh.require_owner()`
+   cannot be satisfied by the public key, and no staff function proceeds without
+   a device credential), so no data was reachable through it. But the grant was
+   wrong, and nothing except `t_85_boundary.sql` would have noticed.
+
+   The migrations now set grants **before** the handover and assert their own
+   outcome, so this cannot pass quietly again.
+
+The lesson generalises: **in this system, a permission mistake is silent and an
+authorisation mistake is loud.** The boundary suite exists to make the silent
+half loud, and it must run against the real project after every deploy, not
+only in CI.

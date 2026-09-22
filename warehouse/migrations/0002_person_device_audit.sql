@@ -285,6 +285,47 @@ language sql security definer set search_path = '' as $$
      and (last_seen_at is null or last_seen_at < pg_catalog.now() - interval '10 minutes')
 $$;
 
+-- ---------------------------------------------------------------- people
+create or replace function wh.add_person(p_display_name text, p_role text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare v_id uuid;
+begin
+  perform wh.require_owner();
+  if coalesce(btrim(p_display_name),'') = '' then
+    raise exception 'a person needs a name' using errcode='23514';
+  end if;
+  if p_role not in ('head','staff') then
+    raise exception 'role must be head or staff; the owner is set at deploy' using errcode='22023';
+  end if;
+  insert into wh.person(display_name, role) values (btrim(p_display_name), p_role)
+  returning person_id into v_id;
+  perform wh.log('person.add', 'person', v_id, null, jsonb_build_object('role', p_role));
+  return jsonb_build_object('person_id', v_id, 'display_name', btrim(p_display_name), 'role', p_role);
+end $$;
+
+-- Someone who leaves keeps their history; they simply stop being able to act,
+-- and every phone of theirs stops with them.
+create or replace function wh.set_person_active(p_person_id uuid, p_active boolean, p_reason text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare n int := 0;
+begin
+  perform wh.require_owner();
+  if (select role from wh.person where person_id = p_person_id) = 'owner' then
+    raise exception 'the owner cannot be deactivated here' using errcode='42501';
+  end if;
+  update wh.person set active = p_active where person_id = p_person_id;
+  if not found then raise exception 'no such person' using errcode='23503'; end if;
+  if not p_active then
+    update wh.device set revoked_at = pg_catalog.now(), revoked_reason = coalesce(p_reason,'person deactivated'),
+           token_hash = null
+     where person_id = p_person_id and revoked_at is null;
+    get diagnostics n = row_count;
+  end if;
+  perform wh.log('person.' || case when p_active then 'activate' else 'deactivate' end,
+                 'person', p_person_id, p_reason, jsonb_build_object('devices_revoked', n));
+  return jsonb_build_object('person_id', p_person_id, 'active', p_active, 'devices_revoked', n);
+end $$;
+
 -- ---------------------------------------------------------------- activation
 create or replace function wh.issue_activation_code(p_person_id uuid, p_minutes int default 15,
                                                     p_mode text default 'add')

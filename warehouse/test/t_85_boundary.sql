@@ -20,6 +20,7 @@ declare
     'wh_abandon_draft','wh_submit_event','wh_report_count','wh_attach_evidence'];
   owner_api text[] := array[
     'wh_owner_issue_code','wh_owner_revoke_device','wh_owner_devices','wh_owner_people',
+    'wh_owner_add_person','wh_owner_set_person_active',
     'wh_owner_stock','wh_owner_trail','wh_owner_create_material','wh_owner_set_rate',
     'wh_owner_record_opening','wh_owner_supersede_opening','wh_owner_approve_count',
     'wh_owner_resolve_count','wh_owner_count_basis_changes','wh_owner_correct_line',
@@ -48,11 +49,22 @@ begin
     if n = 0 then raise notice 'ok  1.3 caretaker is a member of no other role, so it borrows nothing';
     else raise notice 'NOT OK  1.3 caretaker belongs to % other role(s)', n; fails := fails + 1; end if;
 
+    -- wh_import is the one-time legacy mapping, kept as evidence. It is the
+    -- caretaker's own schema, reachable by no client role. Nothing else is
+    -- allowed, and the import's temporary reach into the old NK tables is
+    -- taken away by the same migration that used it.
     select string_agg(distinct table_schema || '.' || table_name, ', ') into bad
       from information_schema.table_privileges
-     where grantee = 'wh_owner' and table_schema <> 'wh';
-    if bad is null then raise notice 'ok  1.4 caretaker holds no table privilege anywhere outside wh';
+     where grantee = 'wh_owner' and table_schema not in ('wh','wh_import');
+    if bad is null then raise notice 'ok  1.4 caretaker holds no table privilege outside its own schemas';
     else raise notice 'NOT OK  1.4 caretaker can reach: %', left(bad, 120); fails := fails + 1; end if;
+
+    -- only meaningful where the legacy NK tables exist, i.e. the shared project
+    if to_regclass('public.nkg_stock') is null then
+      raise notice 'ok  1.4b (no legacy NK tables in this database)';
+    elsif not has_table_privilege('wh_owner','public.nkg_stock','SELECT') then
+      raise notice 'ok  1.4b and specifically cannot read the legacy NK tables';
+    else raise notice 'NOT OK  1.4b caretaker can still read public.nkg_stock'; fails := fails + 1; end if;
 
     if not has_schema_privilege('wh_owner','public','CREATE')
     then raise notice 'ok  1.5 caretaker cannot create anything in public';

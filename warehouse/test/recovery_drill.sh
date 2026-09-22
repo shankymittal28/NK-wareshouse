@@ -111,9 +111,9 @@ say "staff still cannot read a rate after the restore" \
 say "the owner still can, through his own identity" \
     "$(Q "$REST" "select t.act_as_owner(); select jsonb_array_length(public.wh_owner_stock()) > 0;" | tail -1)" "t"
 say "and the public API came back with the schema" \
-    "$(Q "$REST" "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\\_%'")" "26"
+    "$(Q "$REST" "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\\_%'")" "28"
 say "still owned by the confined caretaker" \
-    "$(Q "$REST" "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\\_%' and pg_get_userbyid(p.proowner)='wh_owner'")" "26"
+    "$(Q "$REST" "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\\_%' and pg_get_userbyid(p.proowner)='wh_owner'")" "28"
 
 echo "  backup took ${BACKUP_SECONDS}s, restore and verification took ${RESTORE_SECONDS}s"
 $PSQL -d postgres -c "drop database if exists $REST;" >/dev/null

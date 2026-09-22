@@ -68,7 +68,7 @@ say "the warehouse is back" "$(Q "select wh.stock_as_of('cccccccc-0000-0000-0000
 say "with its boundary intact -- still owned by the caretaker" \
     "$(Q "select pg_get_userbyid(nspowner) from pg_namespace where nspname='wh'")" "wh_owner"
 say "and its public API" \
-    "$(Q "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\_%'")" "26"
+    "$(Q "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\_%'")" "28"
 
 echo "== and the neighbours never noticed =="
 say "StaffPay attendance unchanged" "$(Q "select count(*) from public.sp_attendance")" "2"

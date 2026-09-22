@@ -27,8 +27,14 @@ end $$;
 
 -- Converge the attributes whether the role was just created or already existed,
 -- so this migration is idempotent and cannot inherit a looser earlier state.
+--
+-- NOSUPERUSER is deliberately NOT in this list. On Supabase the migrating role
+-- is `postgres`, which is not a superuser, and only a superuser may name the
+-- SUPERUSER attribute at all -- even to switch it off. Including it fails the
+-- whole migration. The assertion below checks rolsuper instead, so a caretaker
+-- that somehow became superuser still stops the deploy.
 alter role wh_owner
-  nologin nosuperuser nocreatedb nocreaterole noinherit nobypassrls noreplication;
+  nologin nocreatedb nocreaterole noinherit nobypassrls noreplication;
 
 -- The role that runs migrations must be able to SET ROLE to the caretaker in
 -- order to hand objects over. On Supabase, CREATE ROLE by `postgres` yields a
@@ -38,6 +44,13 @@ begin
   execute format('grant wh_owner to %I with inherit false, set true', current_user);
 exception when others then null;   -- already a member, or the platform granted it
 end $$;
+
+-- Mint the pepper BEFORE the handover. Afterwards the migrating role has no
+-- rights inside wh at all -- which is the whole point, and which a local
+-- superuser quietly hides.
+insert into wh.secret(k, v)
+select 'pepper', uuid_send(gen_random_uuid()) || uuid_send(gen_random_uuid())
+ where not exists (select 1 from wh.secret where k = 'pepper');
 
 alter schema wh owner to wh_owner;
 
@@ -62,8 +75,17 @@ begin
     execute format('alter function %s owner to wh_owner', r.ident);
   end loop;
 
-  for r in select format('%I.%I', sequence_schema, sequence_name) as ident
-             from information_schema.sequences where sequence_schema = 'wh'
+  -- Only standalone sequences. A serial column's sequence is OWNED BY its table
+  -- and its owner follows the table automatically, so altering it here is both
+  -- unnecessary and impossible: once the table has moved, the migrating role is
+  -- no longer the sequence's owner. (Invisible on a local superuser; fatal on Supabase.)
+  for r in select format('%I.%I', n.nspname, c.relname) as ident
+             from pg_class c
+             join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'wh' and c.relkind = 'S'
+              and pg_get_userbyid(c.relowner) <> 'wh_owner'
+              and not exists (select 1 from pg_depend d
+                               where d.objid = c.oid and d.deptype = 'a')
   loop
     execute format('alter sequence %s owner to wh_owner', r.ident);
   end loop;
@@ -96,9 +118,3 @@ begin
 
   raise notice 'wh_owner: owns wh, holds nothing else';
 end $$;
-
--- The pepper is minted here, once, from the server's own randomness. It is
--- never printed, never committed, and never leaves the database.
-insert into wh.secret(k, v)
-select 'pepper', uuid_send(gen_random_uuid()) || uuid_send(gen_random_uuid())
- where not exists (select 1 from wh.secret where k = 'pepper');

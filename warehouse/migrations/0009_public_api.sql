@@ -144,6 +144,18 @@ end $$;
 comment on function public.wh_owner_devices() is
   'The phone list. Carries no credential material -- token_hash is not selected.';
 
+create or replace function public.wh_owner_add_person(p_display_name text, p_role text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+begin
+  return wh.add_person(p_display_name, p_role);
+end $$;
+
+create or replace function public.wh_owner_set_person_active(p_person_id uuid, p_active boolean, p_reason text)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+begin
+  return wh.set_person_active(p_person_id, p_active, p_reason);
+end $$;
+
 create or replace function public.wh_owner_people()
 returns jsonb language plpgsql security definer set search_path = '' as $$
 begin
@@ -241,27 +253,20 @@ begin
     'valuation_coverage',     (select coalesce(jsonb_agg(to_jsonb(z)), '[]'::jsonb) from wh.valuation_coverage z));
 end $$;
 
--- ---------------------------------------------------------------- ownership
--- CREATE on public is lent to the caretaker only long enough to take ownership,
--- then taken straight back. Verified on the real project: ownership survives
--- the revoke, and afterwards the caretaker cannot create anything new here.
-do $$
-declare r record;
-begin
-  execute 'grant create on schema public to wh_owner';
-  for r in select format('%I.%I(%s)', n.nspname, p.proname,
-                         pg_get_function_identity_arguments(p.oid)) as ident
-             from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-            where n.nspname = 'public' and p.proname like 'wh\_%'
-  loop
-    execute format('alter function %s owner to wh_owner', r.ident);
-  end loop;
-  execute 'revoke create on schema public from wh_owner';
-end $$;
-
 -- ---------------------------------------------------------------- grants
--- Close the door Supabase's default privileges left open, then open exactly
--- the intended ones. Staff hold the anon key. The owner holds a signed-in session.
+-- Close the door, then open exactly the intended ones. Staff hold the anon key.
+-- The owner holds a signed-in session.
+--
+-- ORDER MATTERS, and getting it wrong fails silently. These statements run
+-- BEFORE ownership moves to the caretaker, because REVOKE and GRANT on an
+-- object you do not own raise a WARNING, not an ERROR -- the migration would
+-- report success while changing nothing. A function whose ACL was never
+-- touched carries PostgreSQL's built-in default for functions: EXECUTE to
+-- PUBLIC. So a silent failure here does not leave the API closed; it leaves
+-- every warehouse function callable by anyone holding the public key.
+--
+-- This was not theoretical. It happened on the real project, and
+-- t_85_boundary.sql caught it.
 do $$
 declare r record;
 begin
@@ -293,6 +298,8 @@ grant execute on function
   public.wh_owner_issue_code(uuid, integer, text),
   public.wh_owner_revoke_device(uuid, text),
   public.wh_owner_devices(),
+  public.wh_owner_add_person(text, text),
+  public.wh_owner_set_person_active(uuid, boolean, text),
   public.wh_owner_people(),
   public.wh_owner_stock(),
   public.wh_owner_trail(uuid),
@@ -308,3 +315,51 @@ grant execute on function
   public.wh_owner_correct_event(uuid, text, jsonb),
   public.wh_owner_review()
 to authenticated;
+
+-- ---------------------------------------------------------------- ownership
+-- CREATE on public is lent to the caretaker only long enough to take ownership,
+-- then taken straight back. Verified on the real project: ownership survives
+-- the revoke, and afterwards the caretaker cannot create anything new here.
+-- Ownership moves LAST, after the grants above are already in place; an owner
+-- change carries the ACL with it.
+do $$
+declare r record;
+begin
+  execute 'grant create on schema public to wh_owner';
+  for r in select format('%I.%I(%s)', n.nspname, p.proname,
+                         pg_get_function_identity_arguments(p.oid)) as ident
+             from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+            where n.nspname = 'public' and p.proname like 'wh\_%'
+  loop
+    execute format('alter function %s owner to wh_owner', r.ident);
+  end loop;
+  execute 'revoke create on schema public from wh_owner';
+end $$;
+
+-- ---------------------------------------------------------------- self-check
+-- REVOKE and GRANT warn rather than fail when the running role does not own the
+-- object, so this migration must prove its own outcome or abort. Without this,
+-- a reordering mistake reports success and leaves every warehouse function
+-- callable by anyone holding the public key.
+do $$
+declare bad text; n int;
+begin
+  select string_agg(p.proname, ', ' order by p.proname) into bad
+    from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
+   where ns.nspname = 'public' and p.proname like 'wh\_%'
+     and (has_function_privilege('public', p.oid, 'EXECUTE')
+          or (has_function_privilege('anon', p.oid, 'EXECUTE')
+              and p.proname like 'wh\_owner\_%'));
+  if bad is not null then
+    raise exception 'the warehouse API is over-exposed: %', bad;
+  end if;
+
+  select count(*) into n from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
+   where ns.nspname = 'public' and p.proname like 'wh\_%'
+     and has_function_privilege('anon', p.oid, 'EXECUTE');
+  if n <> 9 then
+    raise exception '% functions are callable with the public key, expected 9', n;
+  end if;
+  raise notice 'public API: 9 functions for a phone, the rest for the owner';
+end $$;
+
