@@ -1,8 +1,7 @@
 \set QUIET on
 \set ON_ERROR_STOP on
 -- Confirmed rows are never mutated. Every later change is an appended correction.
-set role authenticated;
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');   -- Raj records everything here
+select t.act_as('tok-raj-1');   -- Raj records everything here
 \set A '''cccccccc-0000-0000-0000-000000000001'''
 \set B '''cccccccc-0000-0000-0000-000000000002'''
 
@@ -63,7 +62,7 @@ select t.eq(wh.stock_as_of(:A::uuid), 70::numeric, 'and correcting it again rest
 select t.raises($$select wh.correct_event('d0000000-0000-0000-0000-0000000000c1','दिशा ग़लत',
                    '{"event_type":"OUT"}'::jsonb)$$,
                 'only the owner', 'staff cannot reverse the direction of a recorded movement');
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000001');   -- owner
+select t.act_as_owner();   -- owner
 select wh.correct_event('d0000000-0000-0000-0000-0000000000c1','यह माल गया था, आया नहीं',
                         '{"event_type":"OUT"}'::jsonb);
 select t.eq(wh.stock_as_of(:A::uuid), 30::numeric, 'the owner reverses it and every line flips together');
@@ -74,7 +73,6 @@ select t.eq((select event_type from wh.stock_event where event_id='d0000000-0000
 -- corrections need a reason, and strangers cannot make them
 select t.raises($$select wh.correct_line('11110000-0000-0000-0000-0000000000c1','', null, 5, null)$$,
                 'needs a reason', 'a correction without a reason is refused');
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000003');   -- Suresh, not the recorder
+select t.act_as('tok-suresh-1');   -- Suresh, not the recorder
 select t.raises($$select wh.correct_line('11110000-0000-0000-0000-0000000000c1','कुछ', null, 5, null)$$,
                 'only the person who recorded', 'someone else cannot correct another person''s record');
-reset role;

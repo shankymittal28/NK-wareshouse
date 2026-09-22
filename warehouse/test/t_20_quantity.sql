@@ -25,7 +25,7 @@ select t.raises($$insert into wh.event_line(line_id,event_id,line_no,material_id
 
 -- exact arithmetic end to end on a fractional category
 select wh.record_opening('cccccccc-0000-0000-0000-000000000005', 100.10, now() - interval '2 days')
-  from (select t.act_as('aaaaaaaa-0000-0000-0000-000000000002')) x;
+  from (select t.act_as('tok-raj-1')) x;
 insert into wh.stock_event(event_id,event_type,effective_at,confirmed_at,recorder_person_id,device_id)
  values ('eeee0000-0000-0000-0000-00000000f003','IN',now() - interval '1 day',now(),
          '22222222-2222-2222-2222-222222222222','dddddddd-0000-0000-0000-000000000002');

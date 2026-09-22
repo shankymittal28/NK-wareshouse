@@ -22,14 +22,14 @@ $PSQL -d "$LIVE" -f "$HERE/001_fixtures.sql" >/dev/null
 mkdir -p "$WORK/bucket" "$WORK/backup"
 printf 'bilty 4471, Zangi Transport, 20 sheets\n' > "$WORK/bucket/evidence.jpg"
 SHA=$(sha256sum "$WORK/bucket/evidence.jpg" | cut -d' ' -f1)
-Q "$LIVE" "select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');
+Q "$LIVE" "select t.act_as('tok-raj-1');
   select wh.record_opening('cccccccc-0000-0000-0000-000000000001', 50, now() - interval '2 days');
   select wh.submit_event(jsonb_build_object('draft_id','ab000000-0000-0000-0000-00000000dd01',
     'event_type','IN','effective_at',now()::text,'counterparty','Zangi Transport',
     'lines', jsonb_build_array(jsonb_build_object('material_id','cccccccc-0000-0000-0000-000000000001','qty',20))), 0);
   select wh.attach_evidence('ab000000-0000-0000-0000-00000000dd01','ev/2026-09-21/evidence.jpg','$SHA',
     $(stat -c%s "$WORK/bucket/evidence.jpg"), now());
-  select t.act_as('aaaaaaaa-0000-0000-0000-000000000001');
+  select t.act_as_owner();
   select wh.set_rate('cccccccc-0000-0000-0000-000000000001', 2150);" >/dev/null
 say "the live warehouse works before the drill" "$(Q "$LIVE" "select wh.stock_as_of('cccccccc-0000-0000-0000-000000000001')")" "70.0000"
 
@@ -65,10 +65,15 @@ say "the set verified its own checksums before restoring" \
     "$(grep -c . "$SET/checksums.sha256")" "$(find "$SET" -type f ! -name checksums.sha256 ! -name auth.sql | wc -l)"
 
 echo "== can a warehouse be operated from it? =="
-say "the schema came back whole" "$(Q "$REST" "select count(*) from pg_tables where schemaname='wh'")" "21"
+say "the schema came back whole" "$(Q "$REST" "select count(*) from pg_tables where schemaname='wh'")" "23"
 say "and so did its review lists and derived views" "$(Q "$REST" "select count(*) from pg_views where schemaname='wh'")" "9"
-say "the grants came back, so the app roles can still reach it" \
-    "$(Q "$REST" "select count(*) > 20 from information_schema.role_table_grants where table_schema='wh' and grantee='authenticated'")" "t"
+# Under the confined-caretaker design a restore that hands the warehouse to
+# whoever ran it would rebuild the system WITHOUT its boundary. So the drill
+# asserts the boundary came back, not that grants did -- there are none to come.
+say "the boundary came back: the caretaker owns the schema" \
+    "$(Q "$REST" "select pg_get_userbyid(nspowner) from pg_namespace where nspname='wh'")" "wh_owner"
+say "and no client role holds a single privilege inside it" \
+    "$(Q "$REST" "select count(*) from information_schema.role_table_grants where table_schema='wh' and grantee in ('anon','authenticated','PUBLIC')")" "0"
 say "the write path came back" "$(Q "$REST" "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='wh' and p.proname in ('submit_event','approve_count','correct_line','record_opening','draft_put','set_rate')")" "6"
 say "row-level security came back" "$(Q "$REST" "select count(*) from pg_policies where schemaname='wh'")" "$(Q "$REST" "select count(*) from pg_tables where schemaname='wh'")"
 say "materials, rates and configuration are present" \
@@ -80,13 +85,13 @@ say "people and their device mappings came from the same restore point" \
 # A real restore into a new project issues new keys, so every phone session dies.
 # Re-activation is therefore part of recovery, not an afterthought.
 Q "$REST" "insert into auth.users(id, is_anonymous) values ('cafe0000-0000-0000-0000-000000000001', true);" >/dev/null
-CODE=$(Q "$REST" "select t.act_as('aaaaaaaa-0000-0000-0000-000000000001'); select wh.issue_activation_code('22222222-2222-2222-2222-222222222222');" | tail -1)
+CODE=$(Q "$REST" "select t.act_as_owner(); select wh.issue_activation_code('22222222-2222-2222-2222-222222222222');" | tail -1)
 say "the owner can authenticate against the restored warehouse" \
-    "$(Q "$REST" "select t.act_as('aaaaaaaa-0000-0000-0000-000000000001'); select wh.current_role();" | tail -1)" "owner"
+    "$(Q "$REST" "select t.act_as_owner(); select wh.current_role();" | tail -1)" "owner"
 say "a staff phone can be re-activated after the restore" \
-    "$(Q "$REST" "select t.act_as('cafe0000-0000-0000-0000-000000000001'); select wh.activate_device('$CODE','Raj replacement phone') ->> 'person';" | tail -1)" "राज"
+    "$(Q "$REST" "select public.wh_activate('$CODE','Raj replacement phone') ->> 'person';" | tail -1)" "राज"
 say "and record a real movement on the restored system" \
-    "$(Q "$REST" "select t.act_as('cafe0000-0000-0000-0000-000000000001');
+    "$(Q "$REST" "select t.act_as('tok-raj-1');
        select wh.submit_event(jsonb_build_object('draft_id','ab000000-0000-0000-0000-00000000dd02',
          'event_type','IN','effective_at',now()::text,
          'lines', jsonb_build_array(jsonb_build_object('material_id','cccccccc-0000-0000-0000-000000000001','qty',4))), 0) ->> 'lines';" | tail -1)" "1"
@@ -102,9 +107,13 @@ say "and the photograph is byte-for-byte the one that was taken" \
 
 # permissions still enforced
 say "staff still cannot read a rate after the restore" \
-    "$(Q "$REST" "set role authenticated; select t.act_as('cafe0000-0000-0000-0000-000000000001'); select count(*) from wh.rate;" | tail -1)" "0"
-say "the owner still can" \
-    "$(Q "$REST" "set role authenticated; select t.act_as('aaaaaaaa-0000-0000-0000-000000000001'); select count(*) from wh.rate;" | tail -1)" "1"
+    "$(Q "$REST" "set role anon; select count(*) from wh.rate;" 2>&1 | grep -c 'permission denied')" "1"
+say "the owner still can, through his own identity" \
+    "$(Q "$REST" "select t.act_as_owner(); select jsonb_array_length(public.wh_owner_stock()) > 0;" | tail -1)" "t"
+say "and the public API came back with the schema" \
+    "$(Q "$REST" "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\\_%'")" "26"
+say "still owned by the confined caretaker" \
+    "$(Q "$REST" "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\\_%' and pg_get_userbyid(p.proowner)='wh_owner'")" "26"
 
 echo "  backup took ${BACKUP_SECONDS}s, restore and verification took ${RESTORE_SECONDS}s"
 $PSQL -d postgres -c "drop database if exists $REST;" >/dev/null

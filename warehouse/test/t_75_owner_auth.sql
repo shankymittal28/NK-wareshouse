@@ -1,52 +1,71 @@
 \set QUIET on
 \set ON_ERROR_STOP on
--- The warehouse project has its own auth realm. The owner is established here by an
--- activation he performs himself. No password is ever copied from anywhere.
--- (The fixtures already bound an owner device; this test starts from an empty realm.)
-delete from wh.device; delete from wh.person where role <> 'owner';
-delete from wh.activation_code;
-delete from wh.person;
+-- The owner keeps the Supabase identity he already uses for NK. There is no
+-- second owner auth realm, no second password, and nothing is ever copied from
+-- one project to another. Warehouse staff never enter that realm at all.
 
+-- ---- the deploy-time door ------------------------------------------------
+delete from wh.device; delete from wh.activation_code; delete from wh.person;
+delete from wh.setting where key = 'owner_email';
 select t.eq((select count(*)::int from wh.person where role='owner'), 0, 'no owner exists yet');
 
--- the deployer, holding the service key, seeds the owner and one code
-\set CODE `echo`
-select wh.bootstrap_owner('Shanky') as code \gset
-select t.eq(length(:'code'), 8, 'the deployer receives a single activation code');
-select t.eq((select count(*)::int from wh.person where role='owner'), 1, 'the owner person now exists');
-select t.eq((select count(*)::int from wh.activation_code where code_hash = :'code'), 0,
-            'and the code itself is not stored anywhere, only its salted hash');
+select wh.bootstrap_owner('Shanky', 'Owner@Example.Test') as owner \gset
+select t.eq((select count(*)::int from wh.person where role='owner'), 1,
+            'the deployer names the existing Supabase account as the owner');
+select t.eq(wh.owner_email(), 'owner@example.test',
+            'the email is stored folded to lower case, so a capital cannot lock him out');
+select t.eq((select count(*)::int from wh.setting where key='owner_email'), 1,
+            'and it is configuration in the database, not a literal in the repository');
 
--- the owner signs up in this project with a password only he knows, then redeems the code
-insert into auth.users(id, email, is_anonymous) values
-  ('bbbbbbbb-0000-0000-0000-000000000001','shanky@example.test', false);
-set role authenticated;
-select t.act_as('bbbbbbbb-0000-0000-0000-000000000001');
-select t.eq(wh.activate_device(:'code', 'Shanky phone') ->> 'role', 'owner',
-            'redeeming the code binds his own account to the owner person');
-select t.eq(wh.current_role(), 'owner', 'he is the owner in this project from now on');
+-- ---- who the warehouse believes is the owner -----------------------------
+select t.act_as_nobody();
+select t.eq(wh.jwt_is_owner(), false, 'a caller with no session is not the owner');
+select t.eq(wh.is_owner(), false, 'and holds no owner rights');
 
--- single use
-select t.raises(format($$select wh.activate_device(%L, 'again')$$, :'code'),
-                'already activated', 'the same phone cannot activate twice');
-reset role;
-insert into auth.users(id, is_anonymous) values ('bbbbbbbb-0000-0000-0000-000000000002', true);
-set role authenticated;
-select t.act_as('bbbbbbbb-0000-0000-0000-000000000002');
-select t.raises(format($$select wh.activate_device(%L, 'stolen code')$$, :'code'),
-                'not valid', 'a used code cannot be redeemed by anyone else');
+select set_config('request.jwt.claims',
+  '{"email":"someone.else@example.test","role":"authenticated"}', true);
+select t.eq(wh.jwt_is_owner(), false, 'a different signed-in account is not the owner');
+select t.raises($$select wh.require_owner()$$, 'not activated',
+                'and is refused owner work');
 
--- from here the owner issues codes for the staff through the normal path
-select t.act_as('bbbbbbbb-0000-0000-0000-000000000001');
-reset role;
+select set_config('request.jwt.claims',
+  '{"email":"OWNER@example.test","role":"authenticated"}', true);
+select t.eq(wh.jwt_is_owner(), true, 'the owner is recognised regardless of how he types his email');
+select t.eq(wh.current_role(), 'owner', 'and holds owner rights');
+select t.eq(wh.current_person_id(), :'owner'::uuid, 'resolving to the owner person history points at');
+select t.eq(wh.current_device_id(), null::uuid,
+            'with no device behind him -- he is at a desk, not on a warehouse phone');
+
+-- ---- the claim is the only way in ----------------------------------------
+select t.act_as_nobody();
+select set_config('request.jwt.claims', '{"email":"","role":"authenticated"}', true);
+select t.eq(wh.jwt_is_owner(), false, 'an empty email claim is not the owner');
+select set_config('request.jwt.claims', '{"role":"authenticated"}', true);
+select t.eq(wh.jwt_is_owner(), false, 'nor is a session with no email at all');
+
+-- ---- a staff phone can never become the owner ----------------------------
+select t.act_as_nobody();
 insert into wh.person(person_id, display_name, role)
 values ('22222222-2222-2222-2222-222222222222','राज','staff');
+insert into wh.device(device_id, person_id, label, token_hash, token_issued_at)
+values ('dddddddd-0000-0000-0000-00000000aa01','22222222-2222-2222-2222-222222222222',
+        'Raj phone', wh.fingerprint_token('tok-raj-x'), now());
+select t.act_as('tok-raj-x');
+select t.eq(wh.current_role(), 'staff', 'a warehouse credential resolves to its own person and role');
+select t.eq(wh.is_owner(), false, 'never to the owner');
+select t.raises($$select wh.set_rate('cccccccc-0000-0000-0000-000000000002', 100)$$,
+                'only the owner', 'so staff cannot touch money');
+
+-- and the two identities cannot be held at once
+select set_config('request.jwt.claims',
+  '{"email":"owner@example.test","role":"authenticated"}', true);
+select t.eq(wh.current_role(), 'staff',
+            'a device credential presented in a request wins over any claim alongside it');
+
+-- ---- the deploy door is closed to every client ---------------------------
 set role authenticated;
-select wh.issue_activation_code('22222222-2222-2222-2222-222222222222') as rcode \gset
-select t.act_as('bbbbbbbb-0000-0000-0000-000000000002');
-select t.eq(wh.activate_device(:'rcode', 'Raj phone') ->> 'person', 'राज',
-            'a staff phone activates against its own person');
-select t.eq(wh.current_role(), 'staff', 'and holds only staff rights');
-select t.raises($$select wh.bootstrap_owner('someone else')$$,
-                'permission denied', 'the bootstrap door is closed to every client');
-reset role;
+select t.raises($$select wh.bootstrap_owner('someone else','thief@example.test')$$,
+                'permission denied', 'the bootstrap door is closed to a signed-in client');
+set role anon;
+select t.raises($$select wh.bootstrap_owner('someone else','thief@example.test')$$,
+                'permission denied', 'and to the public key');

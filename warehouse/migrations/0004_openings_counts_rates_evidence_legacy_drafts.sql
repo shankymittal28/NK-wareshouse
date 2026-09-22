@@ -9,7 +9,7 @@ create table wh.opening (
   counted       numeric(18,4) not null check (counted >= 0),
   legacy_expected numeric(18,4),
   effective_at  timestamptz not null,
-  recorded_at   timestamptz not null default now(),
+  recorded_at   timestamptz not null default clock_timestamp(),
   by_person_id  uuid not null references wh.person(person_id),
   by_device_id  uuid references wh.device(device_id),
   status        text not null default 'active' check (status in ('active','superseded')),
@@ -25,7 +25,7 @@ create table wh.count_report (
   material_id   uuid not null references wh.material(material_id),
   counted       numeric(18,4) not null check (counted >= 0),
   counted_at    timestamptz not null,          -- physical time of the count
-  reported_at   timestamptz not null default now(),
+  reported_at   timestamptz not null default clock_timestamp(),   -- see stock_event.server_received_at
   recorded_at_count numeric(18,4) not null,    -- basis: stock at counted_at, as known at reported_at
   by_person_id  uuid not null references wh.person(person_id),
   by_device_id  uuid references wh.device(device_id),
@@ -108,6 +108,6 @@ create table wh.draft (
   status        text not null default 'open' check (status in ('open','confirmed','abandoned')),
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
-  server_received_at timestamptz not null default now()
+  server_received_at timestamptz not null default clock_timestamp()
 );
 create index draft_open_idx on wh.draft(person_id) where status = 'open';

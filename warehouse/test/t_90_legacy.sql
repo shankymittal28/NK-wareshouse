@@ -20,8 +20,7 @@ select t.eq((select expected_qty from wh.legacy_expected where material_id = :M:
 select t.eq(wh.stock_as_of(:M::uuid), null::numeric,
             'with no physical count yet, recorded stock is honestly unknown, not 10');
 
-set role authenticated;
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');
+select t.act_as('tok-raj-1');
 select wh.record_opening(:M::uuid, 8, now() - interval '1 day');
 select t.eq(wh.stock_as_of(:M::uuid), 8::numeric,
             'the physical count is the baseline; the old net does not add to it');
@@ -38,7 +37,6 @@ select t.eq((select (detail ->> 'recorded_by_name') from wh.trail(:M::uuid)
 select t.eq((select (detail ->> 'photos')::int from wh.trail(:M::uuid)
               where kind = 'legacy' order by at limit 1), 1,
             'their photographs are attached to the old line, not to any event');
-reset role;
 
 -- the separation is structural, not a convention
 select t.eq((select count(*)::int

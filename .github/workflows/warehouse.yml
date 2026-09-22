@@ -45,3 +45,5 @@ jobs:
         run: bash warehouse/test/import_rehearsal.sh
       - name: backup and recovery drill
         run: bash warehouse/test/recovery_drill.sh
+      - name: warehouse-only recovery inside a shared database
+        run: bash warehouse/test/shared_recovery_drill.sh

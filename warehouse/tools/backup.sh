@@ -23,13 +23,39 @@ mkdir -p "$SET/objects" || exit 1
 echo "backup set $STAMP"
 
 # 1. the database, as a logical dump: portable, restorable into any Postgres
-# --no-owner so it restores under whatever role does the restoring, but privileges ARE
-# kept: a drill proved that stripping them restores a database nobody can read, because
-# the grants that let the app roles reach the schema would be missing.
-"$PG_DUMP" --no-owner -n wh -Fc -f "$SET/warehouse.dump" "$WH_DB_URL" || {
+# Ownership and privileges are BOTH kept. Two drills taught this. Stripping
+# privileges restores a database nobody can read, because the grants that let
+# the app roles reach the schema go missing. Stripping ownership is worse: the
+# confined caretaker IS the security boundary, so a restore that hands the
+# warehouse to whoever ran it quietly rebuilds the system without its boundary.
+# restore.sh recreates the caretaker first, so the dump always lands correctly.
+"$PG_DUMP" -n wh -Fc -f "$SET/warehouse.dump" "$WH_DB_URL" || {
   echo "database dump failed"; exit 1; }
 # a plain-text copy too, so a restore never depends on a matching pg_restore build
-"$PG_DUMP" --no-owner -n wh -f "$SET/warehouse.sql" "$WH_DB_URL" || exit 1
+"$PG_DUMP" -n wh -f "$SET/warehouse.sql" "$WH_DB_URL" || exit 1
+
+# 1b. the public API. The wrappers in 0009 are the only warehouse objects that
+# live outside schema wh, so a -n wh dump misses them -- a recovery drill caught
+# exactly that. They are extracted by name, never by dumping schema public,
+# which holds other applications' tables that are none of the warehouse's business.
+psql -X -q -t -A --no-psqlrc -d "$WH_DB_URL" -o "$SET/public_api.sql" -c "
+  select string_agg(def, E'\n\n') from (
+    select pg_get_functiondef(p.oid) || E';\n'
+           || E'alter function ' || n.nspname || '.' || p.proname
+           || '(' || pg_get_function_identity_arguments(p.oid) || ') owner to '
+           || quote_ident(pg_get_userbyid(p.proowner)) || ';'
+           || coalesce(E'\n' || (select string_agg(
+                  'grant execute on function ' || n.nspname || '.' || p.proname || '('
+                  || pg_get_function_identity_arguments(p.oid) || ') to ' || quote_ident(g) || ';',
+                  E'\n')
+                from unnest(array['anon','authenticated','service_role']) g
+               where has_function_privilege(g, p.oid, 'EXECUTE')), '') as def
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public' and p.proname like 'wh\\_%'
+     order by p.proname) x" || exit 1
+if [ ! -s "$SET/public_api.sql" ]; then
+  echo "refusing to write a backup with no public API in it" >&2; exit 1
+fi
 
 # 2. the evidence objects. Supabase database backups do not restore object contents,
 #    so they are copied here on their own.

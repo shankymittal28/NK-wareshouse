@@ -74,3 +74,38 @@ Then, because a restore into a new project issues new keys and ends every phone 
    not proven.
 
 `warehouse/test/recovery_drill.sh` performs exactly these steps end to end.
+
+
+## Recovering the warehouse alone, inside the shared project
+
+The warehouse lives in `maios-tally-mirror` beside Tally, StaffPay and the
+legacy NK app. It is restored on its own, in place, and the neighbours are not
+touched. `test/shared_recovery_drill.sh` runs exactly this in CI.
+
+1. Move the damaged schema aside rather than dropping it — it may be evidence:
+   `alter schema wh rename to wh_damaged_<date>;`
+2. `WH_SET=<backup set> WH_RESTORE_URL=<project url> bash warehouse/tools/restore.sh`
+   The script recreates the confined caretaker first, verifies the set's
+   checksums, replays the schema, then replays the public API.
+3. Check the boundary came back: `psql "$WH_DB_URL" -f warehouse/test/t_85_boundary.sql`
+4. Re-issue activation codes for every phone. Device credentials from before
+   the restore point are gone by design.
+5. Drop `wh_damaged_<date>` once the restore is confirmed.
+
+**The trap to write on the wall:** if anyone ever restores the *whole project*
+backwards in time to rescue StaffPay or Tally, the warehouse travels back with
+it. Restore the warehouse again from its own backup afterwards, or six hours of
+recording silently disappears.
+
+## What the backup contains
+
+- `warehouse.dump` / `warehouse.sql` — schema `wh`, with ownership and
+  privileges kept. Both matter: privileges alone restore a database nobody can
+  read, and ownership alone restores a warehouse without its security boundary.
+  Two drills taught us that, one each.
+- `public_api.sql` — the `public.wh_*` wrappers, extracted by name. They are the
+  only warehouse objects outside schema `wh`, so a `-n wh` dump misses them. A
+  drill caught that too.
+- `objects/` — the evidence photographs. Supabase database backups do not
+  restore object contents.
+- `README.txt`, `checksums.sha256` — verified before anything is written.

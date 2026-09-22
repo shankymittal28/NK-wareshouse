@@ -1,8 +1,7 @@
 \set QUIET on
 \set ON_ERROR_STOP on
 -- Material identity: exact tuples are unique; look-alikes are reported, never merged.
-set role authenticated;
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');   -- Raj
+select t.act_as('tok-raj-1');   -- Raj
 
 select t.eq((wh.create_material('Plywood','{"brand":"Century","thickness":"18mm","size":"8x4"}') ->> 'material_id')::uuid,
             'cccccccc-0000-0000-0000-000000000001'::uuid,
@@ -22,4 +21,3 @@ select t.raises($$select wh.create_material('Plywood','{"brand":"Century","thick
                 'missing required attribute', 'an incomplete identity is refused');
 select t.raises($$select wh.create_material('Nope','{"a":"b"}')$$,
                 'unknown category', 'an unknown category is refused');
-reset role;

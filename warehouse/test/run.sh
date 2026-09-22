@@ -32,7 +32,10 @@ for t in "$HERE"/t_*.sql; do
   [ -n "${1:-}" ] && [[ "$name" != *"$1"* ]] && continue
   db="wht_$(echo "$name" | tr -cd 'a-z0-9')"
   fresh "$db" || { echo "could not create $db"; exit 1; }
-  out="$(psql -X -q --no-psqlrc -v ON_ERROR_STOP=1 -d "$db" -f "$t" 2>&1)"; rc=$?
+  # -1 runs the whole file in one transaction, which is what a PostgREST request
+  # is. The actor settings wh.assume_device() writes are transaction-local, so a
+  # test that did not do this would lose its identity after every statement.
+  out="$(psql -X -q --no-psqlrc -v ON_ERROR_STOP=1 -1 -d "$db" -f "$t" 2>&1)"; rc=$?
   n_ok=$(grep -c 'NOTICE: *ok ' <<<"$out"); n_bad=$(grep -c 'NOTICE: *NOT OK' <<<"$out")
   total_assertions=$((total_assertions + n_ok))
   if [ $rc -ne 0 ] || [ "$n_bad" -gt 0 ]; then

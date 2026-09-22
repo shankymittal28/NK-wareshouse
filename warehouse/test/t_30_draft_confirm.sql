@@ -1,8 +1,7 @@
 \set QUIET on
 \set ON_ERROR_STOP on
 -- Drafts are revision-safe and invisible to stock. Confirming is atomic and idempotent.
-set role authenticated;
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');   -- Raj, phone 1
+select t.act_as('tok-raj-1');   -- Raj, phone 1
 
 \set D '''d0000000-0000-0000-0000-0000000000a1'''
 select t.eq(wh.draft_put(:D::uuid, 1, '{"event_type":"IN","lines":[]}') ->> 'applied', 'true',
@@ -64,8 +63,7 @@ select t.eq(wh.stock_as_of('cccccccc-0000-0000-0000-000000000003'), -4::numeric,
             'physical reality wins: recorded stock goes negative and stays visible');
 
 -- somebody else's draft
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000003');   -- Suresh
+select t.act_as('tok-suresh-1');   -- Suresh
 select t.raises($$select wh.draft_put('d0000000-0000-0000-0000-0000000000a4'::uuid, 1, '{}'::jsonb);
                   select wh.draft_put('d0000000-0000-0000-0000-0000000000a1'::uuid, 9, '{}'::jsonb)$$,
    'belongs to someone else', 'one person cannot overwrite another person''s draft');
-reset role;

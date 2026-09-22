@@ -7,17 +7,17 @@ create schema if not exists wh;
 -- It never enforces uniqueness: two identities that merely normalise alike stay separate
 -- until a human says they are the same physical material.
 create or replace function wh.norm(p text) returns text
-language sql immutable strict as $$
+language sql immutable strict set search_path = '' as $$
   select lower(regexp_replace(p, '[^a-zA-Z0-9ऀ-ॿ]', '', 'g'))
 $$;
 
 create or replace function wh.norm_join(p text[]) returns text
-language sql immutable strict as $$
+language sql immutable strict set search_path = '' as $$
   select string_agg(coalesce(wh.norm(v), ''), '|') from unnest(p) as v
 $$;
 
 create or replace function wh.exact_join(p text[]) returns text
-language sql immutable strict as $$
+language sql immutable strict set search_path = '' as $$
   select string_agg(coalesce(btrim(v), ''), '|') from unnest(p) as v
 $$;
 
@@ -99,7 +99,7 @@ create index material_merged_idx on wh.material(merged_into_material_id) where m
 
 -- Identity keys and unit metadata are derived, never supplied by a caller.
 create or replace function wh.material_derive() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 declare
   v_vals text[];
   v_cat  wh.category%rowtype;
@@ -136,7 +136,7 @@ create trigger material_derive_trg before insert or update of attrs, category_co
 
 -- Display name in category attribute order, e.g. 'Century · 18mm · 8x4'
 create or replace function wh.material_name(p_material_id uuid) returns text
-language sql stable as $$
+language sql stable set search_path = '' as $$
   select string_agg(btrim(m.attrs ->> ca.attr_key), ' · ' order by ca.seq)
     from wh.material m
     join wh.category_attribute ca on ca.category_code = m.category_code
@@ -146,7 +146,7 @@ $$;
 -- Quantity rule: exact decimal, inside the material's permitted precision and step.
 create or replace function wh.check_quantity(p_material_id uuid, p_qty numeric,
                                             p_allow_zero boolean default false)
-returns void language plpgsql stable as $$
+returns void language plpgsql stable set search_path = '' as $$
 declare m wh.material%rowtype;
 begin
   select * into m from wh.material where material_id = p_material_id;
@@ -168,3 +168,25 @@ begin
       p_qty, m.step, wh.material_name(p_material_id) using errcode='23514';
   end if;
 end $$;
+
+-- ---------------------------------------------------------------- settings
+-- Tunables and deploy-time configuration. Defined here because 0002 reads
+-- the owner identity from it.
+create table wh.setting (
+  key   text primary key,
+  value jsonb not null,
+  note  text
+);
+insert into wh.setting(key, value, note) values
+  ('effective_future_tolerance_minutes','120','Clock skew allowed on a device-supplied physical time'),
+  ('effective_backdate_free_days','7','Older than this needs a stated reason'),
+  ('effective_backdate_max_days','400','Refused beyond this'),
+  ('near_duplicate_warn','true','Warn when a new identity normalises like an existing one');
+
+create or replace function wh.setting_num(p_key text, p_default numeric) returns numeric
+language sql stable set search_path = '' as $$
+  select coalesce((select value::text::numeric from wh.setting where key = p_key), p_default)
+$$;
+insert into wh.setting(key, value, note) values
+  ('owner_email', '""'::jsonb, 'The Supabase account that is the warehouse owner. Seeded at deploy; not a secret, but not written into the repository either.')
+  on conflict (key) do nothing;

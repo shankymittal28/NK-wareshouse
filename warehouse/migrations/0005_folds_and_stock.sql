@@ -6,7 +6,7 @@
 -- p_known_at answers "using only what NK had received by then".
 create or replace function wh.line_effective_as_of(p_known_at timestamptz)
 returns table(line_id uuid, event_id uuid, material_id uuid, qty numeric, voided boolean, is_added boolean)
-language sql stable as $$
+language sql stable set search_path = '' as $$
   select l.line_id, l.event_id,
     coalesce((select c.new_material_id from wh.line_correction c
                where c.line_id = l.line_id and c.new_material_id is not null and c.at <= p_known_at
@@ -27,7 +27,7 @@ returns table(event_id uuid, event_type text, effective_at timestamptz,
               handler_person_id uuid, counterparty text, kind text, vehicle text,
               ref_type text, ref_number text, ref_date date, no_paper boolean, notes text,
               server_received_at timestamptz, recorder_person_id uuid)
-language sql stable as $$
+language sql stable set search_path = '' as $$
   select e.event_id,
     coalesce((select c.new_event_type from wh.event_correction c
                where c.event_id = e.event_id and c.new_event_type is not null and c.at <= p_known_at
@@ -72,7 +72,7 @@ create view wh.line_effective as select * from wh.line_effective_as_of('infinity
 create view wh.event_effective as select * from wh.event_effective_as_of('infinity'::timestamptz);
 
 create or replace function wh.line_sign(p_event_type text) returns int
-language sql immutable strict as $$ select case p_event_type when 'OUT' then -1 else 1 end $$;
+language sql immutable strict set search_path = '' as $$ select case p_event_type when 'OUT' then -1 else 1 end $$;
 
 -- ---------------------------------------------------------------- stock
 -- Physical chronology decides what counts. p_physical_at bounds the goods' own timeline;
@@ -80,7 +80,7 @@ language sql immutable strict as $$ select case p_event_type when 'OUT' then -1 
 create or replace function wh.stock_as_of(p_material_id uuid,
                                           p_physical_at timestamptz default 'infinity',
                                           p_known_at timestamptz default 'infinity')
-returns numeric language sql stable as $$
+returns numeric language sql stable set search_path = '' as $$
   with o as (
     select opening_id, counted, effective_at
       from wh.opening
@@ -175,7 +175,7 @@ create view wh.valuation_coverage as
 create or replace function wh.trail(p_material_id uuid)
 returns table(kind text, at timestamptz, delta numeric, running numeric,
               label text, detail jsonb, event_id uuid, counts boolean)
-language sql stable as $$
+language sql stable set search_path = '' as $$
   with o as (select * from wh.opening_active where material_id = p_material_id),
   legacy as (
     select 'legacy'::text as kind, l.occurred_at as at,

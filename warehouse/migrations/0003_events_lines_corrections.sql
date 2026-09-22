@@ -7,12 +7,18 @@ create table wh.stock_event (
   -- three clocks, three jobs
   effective_at    timestamptz not null,        -- when the goods physically moved  -> arithmetic and history
   confirmed_at    timestamptz not null,        -- when the person completed it
-  server_received_at timestamptz not null default now(),  -- when NK accepted it  -> sync and audit only
+  -- when NK accepted it -> sync and audit only. clock_timestamp(), not now():
+  -- now() is fixed for a whole transaction, which would make two acceptances in
+  -- one transaction indistinguishable and break "arrived after" comparisons.
+  server_received_at timestamptz not null default clock_timestamp(),
   device_claimed_at  timestamptz,              -- raw device clock, kept for diagnosis
   backdated_reason   text,
   recorder_person_id uuid not null references wh.person(person_id),
   handler_person_id  uuid references wh.person(person_id),
-  device_id       uuid not null references wh.device(device_id),
+  -- null when the owner acts through his Supabase session rather than a phone,
+  -- as when he approves a count and the system places the adjustment. The
+  -- recorder is always known; the device is not always there to be known.
+  device_id       uuid references wh.device(device_id),
   counterparty    text,                        -- source for IN, destination for OUT
   kind            text,
   vehicle         text,
@@ -47,7 +53,7 @@ create index event_line_event_idx on wh.event_line(event_id);
 
 -- Defence in depth: even a faulty RPC cannot store a quantity the material does not permit.
 create or replace function wh.event_line_guard() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 declare v_type text;
 begin
   select event_type into v_type from wh.stock_event where event_id = new.event_id;
@@ -73,7 +79,7 @@ create table wh.line_correction (
   reason        text not null,
   by_person_id  uuid not null references wh.person(person_id),
   by_device_id  uuid references wh.device(device_id),
-  at            timestamptz not null default now(),
+  at            timestamptz not null default clock_timestamp(),
   check (new_material_id is not null or new_qty is not null or new_voided is not null)
 );
 create index line_correction_line_idx on wh.line_correction(line_id, seq);
@@ -97,7 +103,7 @@ create table wh.event_correction (
   reason        text not null,
   by_person_id  uuid not null references wh.person(person_id),
   by_device_id  uuid references wh.device(device_id),
-  at            timestamptz not null default now(),
+  at            timestamptz not null default clock_timestamp(),
   check (num_nonnulls(new_event_type, new_effective_at, new_handler_person_id, new_counterparty,
                       new_kind, new_vehicle, new_ref_type, new_ref_number, new_ref_date,
                       new_no_paper, new_notes) > 0)

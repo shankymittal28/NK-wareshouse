@@ -2,26 +2,10 @@
 -- No client role holds insert, update or delete on any table (see 0007).
 -- Every function below resolves the acting person from the credential, never from the payload.
 
-create table wh.setting (
-  key   text primary key,
-  value jsonb not null,
-  note  text
-);
-insert into wh.setting(key, value, note) values
-  ('effective_future_tolerance_minutes','120','Clock skew allowed on a device-supplied physical time'),
-  ('effective_backdate_free_days','7','Older than this needs a stated reason'),
-  ('effective_backdate_max_days','400','Refused beyond this'),
-  ('near_duplicate_warn','true','Warn when a new identity normalises like an existing one');
-
-create or replace function wh.setting_num(p_key text, p_default numeric) returns numeric
-language sql stable as $$
-  select coalesce((select value::text::numeric from wh.setting where key = p_key), p_default)
-$$;
-
 -- ---------------------------------------------------------------- materials
 create or replace function wh.create_material(p_category_code text, p_attrs jsonb)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; m wh.material%rowtype; v_norm text; v_look jsonb;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; m wh.material%rowtype; v_norm text; v_look jsonb;
 begin
   d := wh.require_actor();
   -- Idempotent: the same exact tuple returns the material that already exists.
@@ -59,8 +43,8 @@ end $$;
 -- One JSON document per movement in progress. A revision that is not newer is a no-op,
 -- so a replay or an out-of-order delivery cannot damage anything.
 create or replace function wh.draft_put(p_draft_id uuid, p_client_rev int, p_doc jsonb)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; cur wh.draft%rowtype;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; cur wh.draft%rowtype;
 begin
   d := wh.require_actor();
   select * into cur from wh.draft where draft_id = p_draft_id for update;
@@ -95,8 +79,8 @@ begin
 end $$;
 
 create or replace function wh.abandon_draft(p_draft_id uuid, p_reason text)
-returns void language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype;
+returns void language plpgsql security definer set search_path = '' as $$
+declare d wh.actor;
 begin
   d := wh.require_actor();
   update wh.draft set status = 'abandoned', updated_at = now()
@@ -109,9 +93,9 @@ end $$;
 -- Atomic, and idempotent by the device-minted identity: a retry returns the same event
 -- and has no second stock effect.
 create or replace function wh.submit_event(p_doc jsonb, p_client_rev int default 0)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
+returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
-  d wh.device%rowtype;
+  d wh.actor;
   cur wh.draft%rowtype;
   v_event_id uuid := (p_doc ->> 'draft_id')::uuid;
   v_type text := upper(coalesce(p_doc ->> 'event_type',''));
@@ -234,9 +218,9 @@ end $$;
 
 -- ---------------------------------------------------------------- corrections
 -- The confirmed rows are never touched. A correction appends the fields it changes.
-create or replace function wh.assert_may_correct(p_event_id uuid) returns wh.device
-language plpgsql stable security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; v_recorder uuid;
+create or replace function wh.assert_may_correct(p_event_id uuid) returns wh.actor
+language plpgsql stable security definer set search_path = '' as $$
+declare d wh.actor; v_recorder uuid;
 begin
   d := wh.require_actor();
   select recorder_person_id into v_recorder from wh.stock_event where event_id = p_event_id;
@@ -253,8 +237,8 @@ create or replace function wh.correct_line(p_line_id uuid, p_reason text,
                                            p_new_material_id uuid default null,
                                            p_new_qty numeric default null,
                                            p_void boolean default null)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; l wh.event_line%rowtype; v_eff_mat uuid; v_cid uuid;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; l wh.event_line%rowtype; v_eff_mat uuid; v_cid uuid;
 begin
   select * into l from wh.event_line where line_id = p_line_id;
   if not found then raise exception 'no such line' using errcode='23503'; end if;
@@ -289,8 +273,8 @@ end $$;
 
 -- A line noticed afterwards belongs to the same physical movement, added visibly.
 create or replace function wh.add_line(p_event_id uuid, p_material_id uuid, p_qty numeric, p_reason text)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; v_no int; v_line uuid;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; v_no int; v_line uuid;
 begin
   d := wh.assert_may_correct(p_event_id);
   if coalesce(btrim(p_reason),'') = '' then
@@ -309,8 +293,8 @@ begin
 end $$;
 
 create or replace function wh.correct_event(p_event_id uuid, p_reason text, p_fields jsonb)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; v_new_type text := upper(nullif(p_fields ->> 'event_type','')); v_cid uuid;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; v_new_type text := upper(nullif(p_fields ->> 'event_type','')); v_cid uuid;
 begin
   d := wh.assert_may_correct(p_event_id);
   if coalesce(btrim(p_reason),'') = '' then
@@ -345,8 +329,8 @@ end $$;
 -- ---------------------------------------------------------------- opening and counts
 create or replace function wh.record_opening(p_material_id uuid, p_counted numeric,
                                              p_effective_at timestamptz default now())
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; v_id uuid; v_expected numeric;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; v_id uuid; v_expected numeric;
 begin
   d := wh.require_actor();
   perform wh.check_quantity(p_material_id, p_counted, true);
@@ -369,8 +353,8 @@ end $$;
 
 create or replace function wh.supersede_opening(p_material_id uuid, p_counted numeric,
                                                 p_effective_at timestamptz, p_reason text)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; v_old uuid; v_new uuid;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; v_old uuid; v_new uuid;
 begin
   d := wh.require_owner();
   if coalesce(btrim(p_reason),'') = '' then
@@ -394,8 +378,8 @@ end $$;
 create or replace function wh.report_count(p_material_id uuid, p_counted numeric,
                                            p_counted_at timestamptz default now(),
                                            p_note text default null)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; v_basis numeric; v_id uuid; v_status text;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; v_basis numeric; v_id uuid; v_status text;
 begin
   d := wh.require_actor();
   perform wh.check_quantity(p_material_id, p_counted, true);
@@ -407,7 +391,7 @@ begin
   end if;
 
   -- The basis is the stock at the moment of counting, using only what NK knew by then.
-  v_basis := wh.stock_as_of(p_material_id, p_counted_at, now());
+  v_basis := wh.stock_as_of(p_material_id, p_counted_at, clock_timestamp());
   if v_basis is null then
     raise exception 'this count is earlier than the material''s baseline' using errcode='23514';
   end if;
@@ -429,7 +413,7 @@ end $$;
 
 -- What changed in the history at or before the count, after the count was reported.
 create or replace function wh.count_basis_changes(p_count_id uuid) returns jsonb
-language sql stable as $$
+language sql stable set search_path = '' as $$
   with c as (select * from wh.count_report where count_id = p_count_id)
   select jsonb_build_object(
     'late_events', coalesce((
@@ -452,8 +436,8 @@ language sql stable as $$
 $$;
 
 create or replace function wh.approve_count(p_count_id uuid, p_reason text default null)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; c wh.count_report%rowtype; v_now_basis numeric;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; c wh.count_report%rowtype; v_now_basis numeric;
         v_delta numeric; v_event uuid;
 begin
   d := wh.require_owner();
@@ -465,7 +449,7 @@ begin
 
   -- Recompute the same instant with everything now known. If the basis moved, the
   -- difference cannot be applied as it stands.
-  v_now_basis := wh.stock_as_of(c.material_id, c.counted_at, now());
+  v_now_basis := wh.stock_as_of(c.material_id, c.counted_at, clock_timestamp());
   if v_now_basis is distinct from c.recorded_at_count then
     update wh.count_report set status = 'needs_review', resolution_reason =
       'the recorded history before this count changed after the count was taken'
@@ -505,8 +489,8 @@ begin
 end $$;
 
 create or replace function wh.resolve_count(p_count_id uuid, p_status text, p_reason text)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor;
 begin
   d := wh.require_owner();
   if p_status not in ('rejected','recount') then
@@ -522,8 +506,8 @@ end $$;
 
 -- ---------------------------------------------------------------- valuation and evidence
 create or replace function wh.set_rate(p_material_id uuid, p_rate numeric)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor;
 begin
   d := wh.require_owner();
   if p_rate is null or p_rate <= 0 then raise exception 'a rate must be positive' using errcode='23514'; end if;
@@ -539,8 +523,8 @@ end $$;
 create or replace function wh.attach_evidence(p_event_id uuid, p_bucket_path text,
                                               p_sha256 text default null, p_bytes bigint default null,
                                               p_taken_at timestamptz default null)
-returns jsonb language plpgsql security definer set search_path = wh, public as $$
-declare d wh.device%rowtype; v_id uuid;
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare d wh.actor; v_id uuid;
 begin
   d := wh.require_actor();
   if not exists (select 1 from wh.stock_event where event_id = p_event_id) then
@@ -561,28 +545,26 @@ end $$;
 -- holding the service key, seeds the owner person and one activation code. The owner then
 -- creates his own password in this project, signs in, and redeems the code once from his
 -- phone. From then on he issues codes for everybody else through the normal path.
-create or replace function wh.bootstrap_owner(p_display_name text, p_hours int default 72)
-returns text language plpgsql security definer set search_path = wh, public as $$
-declare v_person uuid; v_code text; v_salt text;
+-- The one deploy-time door. There is no second owner auth realm: this names the
+-- Supabase account that already signs in to NK, and creates the owner person
+-- that history will point at. Run once, by whoever holds the service key.
+-- No client role can reach it.
+create or replace function wh.bootstrap_owner(p_display_name text, p_owner_email text)
+returns uuid language plpgsql security definer set search_path = '' as $$
+declare v_person uuid;
 begin
-  if exists (select 1 from wh.device d join wh.person p on p.person_id = d.person_id
-              where p.role = 'owner' and d.revoked_at is null) then
-    raise exception 'an owner device already exists; use issue_activation_code' using errcode='23505';
+  if coalesce(btrim(p_owner_email), '') = '' then
+    raise exception 'an owner email is required' using errcode='22023';
   end if;
   select person_id into v_person from wh.person where role = 'owner' and active order by created_at limit 1;
   if v_person is null then
     insert into wh.person(display_name, role) values (p_display_name, 'owner') returning person_id into v_person;
   end if;
-  select string_agg(substr('23456789ABCDEFGHJKLMNPQRSTUVWXYZ', 1 + (get_byte(b, i) % 32), 1), '')
-    into v_code
-    from (select uuid_send(gen_random_uuid()) || uuid_send(gen_random_uuid()) as b) r,
-         generate_series(0, 7) as i;
-  v_salt := encode(uuid_send(gen_random_uuid()) || uuid_send(gen_random_uuid()), 'hex');
-  update wh.activation_code set void_at = now() where person_id = v_person and used_at is null and void_at is null;
-  insert into wh.activation_code(person_id, salt, code_hash, expires_at)
-  values (v_person, v_salt, wh.hash_code(v_code, v_salt), now() + make_interval(hours => p_hours));
+  insert into wh.setting(key, value, note)
+  values ('owner_email', to_jsonb(lower(btrim(p_owner_email))), 'The Supabase account that is the warehouse owner')
+  on conflict (key) do update set value = excluded.value;
   insert into wh.audit(action, subject_type, subject_id, detail)
   values ('owner.bootstrap', 'person', v_person, jsonb_build_object('name', p_display_name));
-  return v_code;
+  return v_person;
 end $$;
-revoke all on function wh.bootstrap_owner(text,int) from public, anon, authenticated;
+revoke all on function wh.bootstrap_owner(text,text) from public, anon, authenticated;

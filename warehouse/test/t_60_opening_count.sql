@@ -2,8 +2,7 @@
 \set ON_ERROR_STOP on
 -- The first trusted baseline is the opening. Every later physical count is a report,
 -- and an approved report becomes an adjustment placed at the moment of counting.
-set role authenticated;
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');
+select t.act_as('tok-raj-1');
 \set M '''cccccccc-0000-0000-0000-000000000001'''
 
 select t.raises(format($$select wh.report_count(%L::uuid, 40)$$, :M),
@@ -35,7 +34,7 @@ select wh.submit_event(jsonb_build_object('draft_id','d0000000-0000-0000-0000-00
   'lines', jsonb_build_array(jsonb_build_object('material_id',:M,'qty',10))), 0);
 select t.eq(wh.stock_as_of(:M::uuid), 72::numeric, 'stock is now 72 before approval');
 
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000001');   -- owner approves
+select t.act_as_owner();   -- owner approves
 select t.eq((wh.approve_count((select count_id from wh.count_report
                                where material_id = :M::uuid and status='pending'), 'टूट-फूट') ->> 'delta')::numeric,
             -2::numeric, 'approving applies the difference the count actually found');
@@ -51,13 +50,13 @@ select t.ok((select e.effective_at = c.counted_at from wh.stock_event e
             'and it sits at the moment of counting, so later movements stay on top of it');
 
 -- a pre-count change arriving afterwards invalidates the basis
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');
+select t.act_as('tok-raj-1');
 select wh.report_count(:M::uuid, 66, now() - interval '1 day', 'फिर से गिना');
 select wh.submit_event(jsonb_build_object('draft_id','d0000000-0000-0000-0000-0000000000e3',
   'event_type','OUT','effective_at',(now() - interval '3 days')::text,'counterparty','दुकान',
   'backdated_reason','offline phone synced late',
   'lines', jsonb_build_array(jsonb_build_object('material_id',:M,'qty',4,'over_ack',true))), 0);
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000001');
+select t.act_as_owner();
 select t.eq(wh.approve_count((select count_id from wh.count_report
                                where material_id = :M::uuid and status='pending'), null) ->> 'status',
             'needs_review',
@@ -72,13 +71,12 @@ select t.eq(wh.resolve_count((select count_id from wh.count_report where materia
             'the owner asks for a recount rather than applying a stale difference');
 
 -- replacing a wrong baseline is the owner's, and keeps the original visible
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');
+select t.act_as('tok-raj-1');
 select t.raises(format($$select wh.supersede_opening(%L::uuid, 44, now(), 'ग़लत थी')$$, :M),
                 'only the owner', 'staff cannot replace a baseline');
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000001');
+select t.act_as_owner();
 select wh.supersede_opening(:M::uuid, 44, now() - interval '20 days', 'पहली गिनती में एक बंडल छूट गया था');
 select t.eq((select count(*)::int from wh.opening where material_id = :M::uuid), 2,
             'the replaced baseline is still on the record');
 select t.eq((select count(*)::int from wh.opening where material_id = :M::uuid and status='superseded'), 1,
             'marked superseded, with its reason');
-reset role;

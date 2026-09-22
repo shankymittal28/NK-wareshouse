@@ -34,18 +34,33 @@ begin
   end;
 end $$;
 
--- Acting as a given device, exactly as PostgREST would present a JWT.
-create or replace function t.act_as(p_auth_user uuid) returns void
+-- Acting as a given phone: exactly what a staff request does, through the real
+-- credential path. There is no test-only shortcut into the actor settings.
+create or replace function t.act_as(p_token text) returns void
 language plpgsql as $$
 begin
+  perform set_config('request.jwt.claims', '{}', true);   -- not the owner's session
+  perform wh.assume_device(p_token);
+end $$;
+
+-- The owner arrives differently: a signed Supabase claim, no device credential.
+create or replace function t.act_as_owner() returns void
+language plpgsql as $$
+begin
+  -- a session is one identity at a time: arriving as the owner clears any
+  -- device credential established earlier in this request
+  perform set_config('wh.person_id', '', true);
+  perform set_config('wh.device_id', '', true);
   perform set_config('request.jwt.claims',
-    json_build_object('sub', p_auth_user, 'role', 'authenticated')::text, false);
+    json_build_object('email','owner@example.test','role','authenticated')::text, true);
 end $$;
 
 create or replace function t.act_as_nobody() returns void
 language plpgsql as $$
 begin
-  perform set_config('request.jwt.claims', '{}', false);
+  perform set_config('request.jwt.claims', '{}', true);
+  perform set_config('wh.person_id', '', true);
+  perform set_config('wh.device_id', '', true);
 end $$;
 
 grant execute on all functions in schema t to authenticated, anon;
@@ -73,18 +88,21 @@ insert into wh.person(person_id, display_name, role) values
   ('22222222-2222-2222-2222-222222222222','राज','staff'),
   ('33333333-3333-3333-3333-333333333333','सुरेश','staff');
 
-insert into auth.users(id, email) values
-  ('aaaaaaaa-0000-0000-0000-000000000001','owner@example.test'),
-  ('aaaaaaaa-0000-0000-0000-000000000002',null),
-  ('aaaaaaaa-0000-0000-0000-000000000003',null),
-  ('aaaaaaaa-0000-0000-0000-000000000004',null),
-  ('aaaaaaaa-0000-0000-0000-000000000009',null);
+-- The owner's identity is his existing Supabase account, named in settings.
+update wh.setting set value = '"owner@example.test"'::jsonb where key = 'owner_email';
 
--- owner phone, Raj's first phone, Suresh's phone. 0004 stays unbound for negative tests.
-insert into wh.device(device_id, auth_user_id, person_id, label) values
-  ('dddddddd-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111','Shanky phone'),
-  ('dddddddd-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000002','22222222-2222-2222-2222-222222222222','Raj phone 1'),
-  ('dddddddd-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000003','33333333-3333-3333-3333-333333333333','Suresh phone');
+insert into auth.users(id, email) values
+  ('aaaaaaaa-0000-0000-0000-000000000001','owner@example.test');
+
+-- Three phones with known credentials. Test-only values: real ones are 256 bits
+-- of randomness that nothing but the phone ever sees.
+insert into wh.device(device_id, person_id, label, token_hash, token_issued_at) values
+  ('dddddddd-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111','Shanky phone',
+     wh.fingerprint_token('tok-owner-1'), now()),
+  ('dddddddd-0000-0000-0000-000000000002','22222222-2222-2222-2222-222222222222','Raj phone 1',
+     wh.fingerprint_token('tok-raj-1'), now()),
+  ('dddddddd-0000-0000-0000-000000000003','33333333-3333-3333-3333-333333333333','Suresh phone',
+     wh.fingerprint_token('tok-suresh-1'), now());
 
 insert into wh.material(material_id, category_code, attrs) values
   ('cccccccc-0000-0000-0000-000000000001','Plywood','{"brand":"Century","thickness":"18mm","size":"8x4"}'),

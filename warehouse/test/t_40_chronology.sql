@@ -2,8 +2,7 @@
 \set ON_ERROR_STOP on
 -- Physical time decides the arithmetic and ordinary history. System-receipt time is kept
 -- separately, for sync questions only. The two are never collapsed.
-set role authenticated;
-select t.act_as('aaaaaaaa-0000-0000-0000-000000000002');
+select t.act_as('tok-raj-1');
 \set M '''cccccccc-0000-0000-0000-000000000001'''
 
 select wh.record_opening(:M::uuid, 50, now() - interval '10 days');
@@ -57,4 +56,3 @@ select t.eq(wh.stock_as_of(:M::uuid, 'infinity',
               (select server_received_at from wh.stock_event
                 where event_id = 'd0000000-0000-0000-0000-0000000000b1')), 70::numeric,
             'as NK received the first movement, it knew 70');
-reset role;
