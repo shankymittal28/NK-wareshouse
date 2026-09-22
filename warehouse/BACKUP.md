@@ -1,5 +1,13 @@
 # Warehouse backups
 
+> **Status (owner decision, 2026-09-22): NOT a current requirement.**
+> Shanky has decided NK Warehouse does not need an independent offsite backup;
+> loss of warehouse data is acceptable to the business. The warehouse therefore
+> relies on Supabase's default platform durability, and the app has no dependency
+> on the Tally PC. The tooling below is kept, working and CI-guarded, purely so it
+> is ready if that decision is ever revisited. It is optional and is not a Stage gate.
+
+
 Supabase's managed backups cover the database. They do **not** restore the contents of
 Storage objects, and they live inside the same project as the thing being protected. So
 the warehouse carries its own independent backup as well, written somewhere else.

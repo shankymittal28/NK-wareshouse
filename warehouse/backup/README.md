@@ -1,5 +1,13 @@
 # NK Warehouse — the six-hourly backup
 
+> **Status (owner decision, 2026-09-22): NOT a current requirement.**
+> Shanky has decided NK Warehouse does not need an independent offsite backup;
+> loss of warehouse data is acceptable to the business. The warehouse therefore
+> relies on Supabase's default platform durability, and the app has no dependency
+> on the Tally PC. The tooling below is kept, working and CI-guarded, purely so it
+> is ready if that decision is ever revisited. It is optional and is not a Stage gate.
+
+
 This runs on one always-on machine at the shop (the Tally data-pump PC is the
 natural choice: it is on all day and already runs scheduled jobs against this
 same Supabase project). It makes a complete, restorable copy of the warehouse
