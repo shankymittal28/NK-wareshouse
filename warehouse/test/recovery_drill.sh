@@ -5,7 +5,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(dirname "$HERE")"
 PGHOST="${PGHOST:-/tmp}"; PGPORT="${PGPORT:-5433}"; PGUSER="${PGUSER:-postgres}"; export PGHOST PGPORT PGUSER
-BIN="${PGBIN:-/usr/lib/postgresql/16/bin}"
+PG_DUMP="${PGBIN:+$PGBIN/}pg_dump"
 WORK="${WH_DRILL_DIR:-$(mktemp -d)}"
 LIVE=whlive; REST=whrestored
 PSQL="psql -X -q -v ON_ERROR_STOP=1 --no-psqlrc"
@@ -41,7 +41,7 @@ WH_BACKUP_DIR="$WORK/backup" WH_LOCAL_BUCKET="$WORK/bucket" WH_RETAIN_DAYS=30 \
 SET=$(ls -d "$WORK"/backup/*Z | tail -1)
 BACKUP_SECONDS=$(( $(date +%s) - T0 ))
 # auth lives outside the wh schema, so the drill keeps it beside the set
-$BIN/pg_dump -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$LIVE" -n auth -f "$SET/auth.sql" || exit 1
+"$PG_DUMP" -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$LIVE" -n auth -f "$SET/auth.sql" || exit 1
 say "the backup holds the database, the objects and a manifest" \
     "$([ -s "$SET/warehouse.sql" ] && [ -s "$SET/objects/evidence.jpg" ] && [ -s "$SET/checksums.sha256" ] && echo yes || echo no)" "yes"
 

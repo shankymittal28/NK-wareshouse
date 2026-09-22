@@ -14,7 +14,9 @@
 set -uo pipefail
 : "${WH_DB_URL:?set WH_DB_URL}"; : "${WH_BACKUP_DIR:?set WH_BACKUP_DIR}"
 BUCKET="${WH_BUCKET:-wh-evidence}"; RETAIN="${WH_RETAIN_DAYS:-30}"
-BIN="${PGBIN:-/usr/lib/postgresql/16/bin}"
+# The dump tool must be at least the server's version, so it is taken from PATH
+# unless PGBIN points somewhere specific.
+PG_DUMP="${PGBIN:+$PGBIN/}pg_dump"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 SET="$WH_BACKUP_DIR/$STAMP"
 mkdir -p "$SET/objects" || exit 1
@@ -24,10 +26,10 @@ echo "backup set $STAMP"
 # --no-owner so it restores under whatever role does the restoring, but privileges ARE
 # kept: a drill proved that stripping them restores a database nobody can read, because
 # the grants that let the app roles reach the schema would be missing.
-"$BIN/pg_dump" --no-owner -n wh -Fc -f "$SET/warehouse.dump" "$WH_DB_URL" || {
+"$PG_DUMP" --no-owner -n wh -Fc -f "$SET/warehouse.dump" "$WH_DB_URL" || {
   echo "database dump failed"; exit 1; }
 # a plain-text copy too, so a restore never depends on a matching pg_restore build
-"$BIN/pg_dump" --no-owner -n wh -f "$SET/warehouse.sql" "$WH_DB_URL" || exit 1
+"$PG_DUMP" --no-owner -n wh -f "$SET/warehouse.sql" "$WH_DB_URL" || exit 1
 
 # 2. the evidence objects. Supabase database backups do not restore object contents,
 #    so they are copied here on their own.
