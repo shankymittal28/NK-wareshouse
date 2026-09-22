@@ -480,6 +480,26 @@ body.wbdragging{overflow:hidden}
 .whtl .d{font-size:12px;color:var(--mut2)}
 .whtl .l{font-size:14px;font-weight:600;color:var(--ink);margin-top:1px}
 .whin{color:var(--mint);font-weight:800}.whout{color:var(--rose);font-weight:800}
+.whchips{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 12px}
+.whchips button{background:var(--panel2);border:1px solid var(--hair);color:var(--mut);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;min-height:40px}
+.whchips button.on{background:rgba(36,87,166,.14);border-color:rgba(36,87,166,.55);color:var(--ink)}
+.whchips button .c{color:var(--mut2);font-weight:700;margin-left:6px}
+.whctrls{display:flex;gap:8px;margin-bottom:10px}
+.whsel{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.whsel span{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mut2);padding-left:2px}
+.whsel select{width:100%;font-size:14px;padding:12px 12px;border-radius:12px;border:1px solid var(--hair);background:var(--well);color:var(--ink);outline:none;min-height:46px;-webkit-appearance:none;appearance:none}
+.whcount{font-size:12.5px;color:var(--mut2);margin:2px 2px 12px}
+.whcount b{color:var(--ink)}
+.whpill.neg{color:var(--mut);background:var(--panel2);border:1px solid var(--hair)}
+.whm .rowcat{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--mut2);margin-bottom:4px}
+.whrev.tap{cursor:pointer;width:100%;text-align:left;display:block}
+.whrev.tap:active{background:var(--panel2)}
+.whrev .go{float:right;color:var(--mut2);font-weight:800;font-size:15px}
+.whgo{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--hair);border-radius:10px;padding:12px 12px;margin-top:8px;cursor:pointer;font-size:13px;color:var(--mut);min-height:44px}
+.whgo:active{background:var(--well)}
+.whgo b{color:var(--ink)}
+.whgo .go{float:right;color:var(--mut2);font-weight:800;font-size:15px}
+.whtapnote{font-size:12px;color:var(--mut2);margin:2px 2px 12px}
 </style></head>
 <body>
 
@@ -600,7 +620,33 @@ body.wbdragging{overflow:hidden}
     <button id="whVwRev" onclick="setWhView('rev')">Review</button>
     <button id="whVwVal" onclick="setWhView('val')">Value</button>
   </div>
-  <input id="whSearch" class="searchbar hide" placeholder="Search material&hellip;" oninput="renderWhCat()" style="margin-bottom:10px">
+  <div id="whTools" class="hide">
+    <input id="whSearch" class="searchbar" placeholder="Search brand, size, design&hellip;" oninput="renderWhCat()" style="margin-bottom:10px">
+    <div id="whChips" class="whchips"></div>
+    <div class="whctrls">
+      <label class="whsel"><span>Show</span>
+        <select id="whFilter" onchange="renderWhCat()">
+          <option value="all">All materials</option>
+          <option value="incomplete">Identity incomplete</option>
+          <option value="lookalike">Look-alike / needs review</option>
+          <option value="negqty">Negative old quantity</option>
+          <option value="norate">Missing rate</option>
+          <option value="hasrate">Has rate</option>
+          <option value="noopen">Opening not verified</option>
+        </select>
+      </label>
+      <label class="whsel"><span>Sort</span>
+        <select id="whSort" onchange="renderWhCat()">
+          <option value="name">Name (A&ndash;Z)</option>
+          <option value="qtyhi">Old quantity: high &rarr; low</option>
+          <option value="qtylo">Old quantity: low &rarr; high</option>
+          <option value="norate">Missing rate first</option>
+          <option value="valhi">Indicative value: high &rarr; low</option>
+        </select>
+      </label>
+    </div>
+    <div id="whCount" class="whcount"></div>
+  </div>
   <div id="whBody"><div class="whmut">Loading&hellip;</div></div>
 </div>
 
@@ -2142,13 +2188,14 @@ function mtSendOfficial(id,st,withReason){
 /* ================= Stage 1A: Owner Warehouse Preview (read-only) =================
    Owner-only, feature-flagged, real wh backend, NO writes. Every number that
    comes from the old import is labelled as "old records", never as stock. */
-let _whCat=null, _whRev=null, _whView='cat';
+let _whCat=null, _whRev=null, _whView='cat', _whCatSel=null, _whLook=null;
 function whFmt(v,dec){ if(v===null||v===undefined||v==='') return null;
   var n=Number(v); if(!isFinite(n)) return null;
   return n.toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:(dec||0)}); }
 function whMoney(v){ var n=Number(v); if(!isFinite(n)) return null;
   return '\u20B9'+Math.round(n).toLocaleString('en-IN'); }
 function whEsc(x){ return String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function whJsName(x){ return whEsc(String(x==null?'':x)).replace(/\\/g,"").replace(/'/g,"\\'"); }
 
 async function openWhPreview(){
   if(!WAREHOUSE_PREVIEW||!ownerLoggedIn()){ return; }
@@ -2160,49 +2207,130 @@ async function openWhPreview(){
     api("/rest/v1/rpc/wh_owner_review",{method:'POST',headers:HJ,body:'{}'})
   ]);
   if(!cat){ $('whBody').innerHTML='<div class="whmut">Could not load. Make sure you are signed in as the owner, then tap Back and open again.</div>'; return; }
-  _whCat=cat; _whRev=rev||{}; renderWhView();
+  _whCat=cat; _whRev=rev||{};
+  _whLook=new Set(); (_whRev.possible_same_material||[]).forEach(r=>{ if(r.material_id) _whLook.add(r.material_id); });
+  _whCatSel=null;
+  if($('whFilter')) $('whFilter').value='all';
+  if($('whSort')) $('whSort').value='name';
+  if($('whSearch')) $('whSearch').value='';
+  renderWhView();
 }
 function backToWhPreview(){ $('whtrail').classList.add('hide'); $('whprev').classList.remove('hide'); }
 function setWhChips(){ ['whVwCat','whVwRev','whVwVal'].forEach(id=>{var b=$(id); if(b)b.classList.remove('on');});
   var m={cat:'whVwCat',rev:'whVwRev',val:'whVwVal'}[_whView]; if($(m))$(m).classList.add('on');
-  $('whSearch').classList.toggle('hide', _whView!=='cat'); }
+  $('whTools').classList.toggle('hide', _whView!=='cat'); }
 function setWhView(v){ _whView=v; setWhChips(); renderWhView(); }
 function renderWhView(){ if(_whView==='cat') renderWhCat(); else if(_whView==='rev') renderWhReview(); else renderWhVal(); }
 
+// One material card. showCat adds the category label (used in flat lists,
+// where the category header is not repeated above the row).
+function whMatRow(m,showCat){
+  var unit=whEsc(m.unit_code||'');
+  var negq=(m.legacy_expected_qty!=null && Number(m.legacy_expected_qty)<0);
+  var exp=whFmt(m.legacy_expected_qty,m.decimals);
+  var expLine = exp!==null
+    ? 'Old records suggest: <b>'+exp+' '+unit+'</b>'
+    : 'No quantity in old records';
+  var rateLine = (m.rate!=null) ? '<div class="rowline">Rate on file: <b>'+whMoney(m.rate)+'</b> / '+unit+'</div>' : '';
+  var indLine  = (m.indicative_value!=null) ? '<div class="rowline">Indicative value from old records: <b>'+whMoney(m.indicative_value)+'</b></div>' : '';
+  var incPill  = m.identity_incomplete ? '<span class="whpill inc">Identity incomplete</span>' : '';
+  var lookPill = (_whLook&&_whLook.has(m.material_id)) ? '<span class="whpill inc">Look-alike &mdash; needs review</span>' : '';
+  var negPill  = negq ? '<span class="whpill neg">Old records below zero</span>' : '';
+  var openPill = m.has_opening
+    ? '<span class="whpill ok">Counted: '+whFmt(m.recorded_qty,m.decimals)+' '+unit+'</span>'
+    : '<span class="whpill warn">Opening not verified</span>';
+  var catLine  = showCat ? '<div class="rowcat">'+whEsc(m.category_code||'')+'</div>' : '';
+  return '<button class="whm" onclick="openWhTrail(\''+m.material_id+'\',\''+whEsc(String(m.name||'')).replace(/\\/g,"").replace(/'/g,"\\'")+'\')">'
+      +catLine
+      +'<div class="nm">'+whEsc(m.name||'(unnamed)')+'</div>'
+      +'<div class="rowline">'+expLine+'</div>'+rateLine+indLine
+      +'<div>'+openPill+incPill+lookPill+negPill+'</div></button>';
+}
+
+// Does one material pass the single active "Show" filter?
+function whPassFilter(m,f){
+  switch(f){
+    case 'incomplete': return !!m.identity_incomplete;
+    case 'lookalike':  return !!(_whLook&&_whLook.has(m.material_id));
+    case 'negqty':     return m.legacy_expected_qty!=null && Number(m.legacy_expected_qty)<0;
+    case 'norate':     return m.rate==null;
+    case 'hasrate':    return m.rate!=null;
+    case 'noopen':     return !m.has_opening;
+    default:           return true;
+  }
+}
+
+// Search haystack: name carries brand/variety/thickness/design/dimensions
+// already joined by the server, plus category and unit. Every typed word
+// must appear (AND), so "century 18" narrows sensibly.
+function whMatch(m,terms){
+  if(!terms.length) return true;
+  var hay=((m.name||'')+' '+(m.category_code||'')+' '+(m.unit_code||'')).toLowerCase();
+  return terms.every(t=>hay.indexOf(t)>=0);
+}
+
+// Sorting is neutral ordering, never a business recommendation. Missing
+// numbers sort to the end so a blank rate/qty never looks like a low value.
+function whSortMats(mats,s){
+  var numAsc=function(k,dir){ return function(a,b){
+    var av=a[k], bv=b[k]; var an=(av==null||av===''), bn=(bv==null||bv==='');
+    if(an&&bn) return (a.name||'').localeCompare(b.name||'');
+    if(an) return 1; if(bn) return -1;
+    var d=(Number(av)-Number(bv))*dir;
+    return d!==0 ? d : (a.name||'').localeCompare(b.name||'');
+  };};
+  var byName=function(a,b){ return (a.name||'').localeCompare(b.name||''); };
+  if(s==='qtyhi') return mats.sort(numAsc('legacy_expected_qty',-1));
+  if(s==='qtylo') return mats.sort(numAsc('legacy_expected_qty', 1));
+  if(s==='valhi') return mats.sort(numAsc('indicative_value',-1));
+  if(s==='norate') return mats.sort(function(a,b){
+    var ar=(a.rate==null)?0:1, br=(b.rate==null)?0:1;
+    return ar!==br ? ar-br : byName(a,b);
+  });
+  return mats.sort(byName);
+}
+
 function renderWhCat(){
   if(!_whCat){ return; }
-  var q=($('whSearch').value||'').trim().toLowerCase();
-  var mats=(_whCat.materials||[]).filter(m=>!q||String(m.name||'').toLowerCase().includes(q));
-  var t=_whCat.totals||{};
-  var head='<div class="whsub">'+ (t.materials||0) +' materials across '+ (t.categories||0) +
-    ' categories. Rates loaded for '+ (t.rated||0) +'. Opening counts done: <b>'+ (t.with_opening||0) +
-    '</b> &mdash; so nothing here is verified stock yet.</div>';
-  if(!mats.length){ $('whBody').innerHTML=head+'<div class="whmut">No materials match.</div>'; return; }
-  var byCat={}; mats.forEach(m=>{ (byCat[m.category_code]=byCat[m.category_code]||[]).push(m); });
-  var html=head;
-  Object.keys(byCat).sort().forEach(cat=>{
-    var list=byCat[cat];
-    html+='<div class="whcat">'+whEsc(cat)+' &middot; '+list.length+'</div>';
-    list.forEach(m=>{
-      var unit=whEsc(m.unit_code||'');
-      var exp=whFmt(m.legacy_expected_qty,m.decimals);
-      var expLine = exp!==null
-        ? 'Old records suggest: <b>'+exp+' '+unit+'</b>'
-        : 'No quantity in old records';
-      var rateLine = (m.rate!=null) ? '<div class="rowline">Rate on file: <b>'+whMoney(m.rate)+'</b> / '+unit+'</div>' : '';
-      var indLine  = (m.indicative_value!=null) ? '<div class="rowline">Indicative value from old records: <b>'+whMoney(m.indicative_value)+'</b></div>' : '';
-      var incPill  = m.identity_incomplete ? '<span class="whpill inc">Identity incomplete</span>' : '';
-      var openPill = m.has_opening
-        ? '<span class="whpill ok">Counted: '+whFmt(m.recorded_qty,m.decimals)+' '+unit+'</span>'
-        : '<span class="whpill warn">Opening not verified</span>';
-      html+='<button class="whm" onclick="openWhTrail(\''+m.material_id+'\',\''+whEsc(String(m.name||'')).replace(/\\/g,"").replace(/'/g,"\\'")+'\')">'
-          +'<div class="nm">'+whEsc(m.name||'(unnamed)')+'</div>'
-          +'<div class="rowline">'+expLine+'</div>'+rateLine+indLine
-          +'<div>'+openPill+incPill+'</div></button>';
+  var all=_whCat.materials||[]; var t=_whCat.totals||{};
+  // Category chips: All + every real category, each with its own count.
+  var counts={}; all.forEach(m=>{ counts[m.category_code]=(counts[m.category_code]||0)+1; });
+  var cats=Object.keys(counts).sort();
+  var chips='<button class="'+(_whCatSel===null?'on':'')+'" onclick="whPickCat(null)">All<span class="c">'+all.length+'</span></button>';
+  cats.forEach(c=>{ chips+='<button class="'+(_whCatSel===c?'on':'')+'" onclick="whPickCat(\''+whEsc(c).replace(/'/g,"\\'")+'\')">'
+      +whEsc(c)+'<span class="c">'+counts[c]+'</span></button>'; });
+  $('whChips').innerHTML=chips;
+
+  var terms=($('whSearch').value||'').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  var f=($('whFilter')&&$('whFilter').value)||'all';
+  var s=($('whSort')&&$('whSort').value)||'name';
+
+  var mats=all.filter(m=>(_whCatSel===null||m.category_code===_whCatSel) && whMatch(m,terms) && whPassFilter(m,f));
+
+  var active=(terms.length||f!=='all'||_whCatSel!==null);
+  $('whCount').innerHTML='Showing <b>'+mats.length+'</b> of '+all.length+' materials'
+    + (active?' (filtered)':'')
+    + '. Opening counts done: <b>'+(t.with_opening||0)+'</b> &mdash; nothing here is verified stock yet.';
+
+  if(!mats.length){ $('whBody').innerHTML='<div class="whmut">No materials match. Try a different word, category or filter.</div>'; return; }
+
+  var html='';
+  // Group by category only in the familiar A-Z view across all categories.
+  if(_whCatSel===null && s==='name'){
+    var byCat={}; mats.forEach(m=>{ (byCat[m.category_code]=byCat[m.category_code]||[]).push(m); });
+    Object.keys(byCat).sort().forEach(cat=>{
+      var list=whSortMats(byCat[cat],'name');
+      html+='<div class="whcat">'+whEsc(cat)+' &middot; '+list.length+'</div>';
+      list.forEach(m=>{ html+=whMatRow(m,false); });
     });
-  });
+  } else {
+    whSortMats(mats,s).forEach(m=>{ html+=whMatRow(m, _whCatSel===null); });
+  }
   $('whBody').innerHTML=html;
 }
+
+// Pick a category chip; keep the current search, filter and sort.
+function whPickCat(c){ _whCatSel=c; renderWhCat(); }
 
 function renderWhReview(){
   var rev=_whRev||{};
@@ -2210,24 +2338,27 @@ function renderWhReview(){
   var gk=Object.keys(groups);
   var inc=rev.incomplete_identity||[];
   var html='<div class="whsub">Review only &mdash; nothing here is changed or merged. These are the cases the import flagged for your eye.</div>';
+  html+='<div class="whtapnote">Tap any item to see its old records. Nothing is fixed or combined here.</div>';
   html+='<div class="whcat">Look-alike groups &middot; '+gk.length+'</div>';
   if(!gk.length){ html+='<div class="whmut">None.</div>'; }
   gk.forEach(id=>{
     var mem=groups[id];
     html+='<div class="whrev"><div class="t">'+whEsc(mem[0].category_code||'')+' &mdash; '+mem.length+' spellings that look alike</div>';
-    mem.forEach(m=>{ html+='<div class="m">&bull; <b>'+whEsc(m.material_name||'')+'</b>'
+    mem.forEach(m=>{ html+='<button class="whgo" onclick="openWhTrail(\''+m.material_id+'\',\''+whJsName(m.material_name)+'\')">'
+        +'<span class="go">&rsaquo;</span>&bull; <b>'+whEsc(m.material_name||'')+'</b>'
         + (m.legacy_expectation!=null?' &middot; old records: '+whFmt(m.legacy_expectation,0):'')
-        + (m.recorded_by?' &middot; by '+whEsc(m.recorded_by):'') +'</div>'; });
+        + (m.recorded_by?' &middot; by '+whEsc(m.recorded_by):'') +'</button>'; });
     html+='</div>';
   });
   html+='<div class="whcat">Incomplete identities &middot; '+inc.length+'</div>';
   if(!inc.length){ html+='<div class="whmut">None.</div>'; }
   inc.forEach(m=>{
-    html+='<div class="whrev"><div class="t">'+whEsc(m.material_name||'')+'</div>'
+    html+='<button class="whrev tap" onclick="openWhTrail(\''+m.material_id+'\',\''+whJsName(m.material_name)+'\')">'
+      +'<div class="t"><span class="go">&rsaquo;</span>'+whEsc(m.material_name||'')+'</div>'
       +'<div class="m">Category: '+whEsc(m.category_code||'')+'</div>'
       +'<div class="m">Missing: '+whEsc((m.missing_attrs||[]).join(', ')||'&mdash;')+'</div>'
       +'<div class="m">Old records: '+whFmt(m.legacy_expectation,0)+' across '+(m.legacy_lines||0)+' lines'
-      + (m.recorded_by?' &middot; by '+whEsc(m.recorded_by):'') +'</div></div>';
+      + (m.recorded_by?' &middot; by '+whEsc(m.recorded_by):'') +'</div></button>';
   });
   $('whBody').innerHTML=html;
 }
