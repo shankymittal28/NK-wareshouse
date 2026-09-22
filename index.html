@@ -676,7 +676,7 @@ const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6
 const OWNER_EMAIL="shankymittal28@gmail.com";
 // Stage 1A feature flag. OFF by default: the app behaves exactly as before.
 // Turn ON (true) to reveal the owner-only, read-only Warehouse Preview.
-const WAREHOUSE_PREVIEW=false;
+const WAREHOUSE_PREVIEW=true;
 let TOKEN=KEY;          // anon key by default (staff); becomes the owner's login token after sign-in
 let SESSION=null;       // {access_token, refresh_token} when the owner is signed in on this device
 const H={apikey:KEY,Authorization:"Bearer "+KEY};
