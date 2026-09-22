@@ -1,0 +1,19 @@
+-- Undo 0006: remove the write path. No data is deleted.
+drop function if exists wh.attach_evidence(uuid,text,text,bigint,timestamptz);
+drop function if exists wh.set_rate(uuid,numeric);
+drop function if exists wh.resolve_count(uuid,text,text);
+drop function if exists wh.approve_count(uuid,text);
+drop function if exists wh.count_basis_changes(uuid);
+drop function if exists wh.report_count(uuid,numeric,timestamptz,text);
+drop function if exists wh.supersede_opening(uuid,numeric,timestamptz,text);
+drop function if exists wh.record_opening(uuid,numeric,timestamptz);
+drop function if exists wh.correct_event(uuid,text,jsonb);
+drop function if exists wh.add_line(uuid,uuid,numeric,text);
+drop function if exists wh.correct_line(uuid,text,uuid,numeric,boolean);
+drop function if exists wh.assert_may_correct(uuid);
+drop function if exists wh.submit_event(jsonb,int);
+drop function if exists wh.abandon_draft(uuid,text);
+drop function if exists wh.draft_put(uuid,int,jsonb);
+drop function if exists wh.create_material(text,jsonb);
+drop function if exists wh.setting_num(text,numeric);
+drop table if exists wh.setting;

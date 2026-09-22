@@ -1,0 +1,7 @@
+# Backup secrets and output must never enter git.
+warehouse/backup/wh-backup.env
+warehouse/backup/*.env
+!warehouse/backup/wh-backup.env.example
+# Any staged/offsite backup material that happens to sit under the repo
+**/20*T*Z/
+*.dump

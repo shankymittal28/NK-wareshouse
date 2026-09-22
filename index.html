@@ -453,6 +453,33 @@ body.wbdragging{overflow:hidden}
 .mtfbtns button.on{background:#15734B;color:#fff;border-color:#15734B}
 .mtfbtns button.on.half{background:#fbbf24;color:#111}.mtfbtns button.on.abs{background:#be123c}
 .mtwarn{background:rgba(251,113,133,.14);border:1px solid rgba(176,56,76,.28);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+
+/* ---- Stage 1A: Owner Warehouse Preview (feature-flagged, read-only) ---- */
+#whprev .whhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+#whprev .whtag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);background:rgba(143,95,0,.10);border:1px solid rgba(143,95,0,.30);border-radius:999px;padding:3px 9px}
+#whprev .whsub{font-size:12.5px;color:var(--mut2);margin:2px 0 12px;line-height:1.5}
+#whprev .modew{margin-bottom:12px}
+.whcat{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin:16px 2px 8px}
+.whm{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:12px 14px;margin-bottom:8px;width:100%;text-align:left;display:block;cursor:pointer}
+.whm:active{background:var(--panel2)}
+.whm .nm{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.whm .rowline{font-size:13px;color:var(--mut);margin-top:3px}
+.whm .rowline b{color:var(--ink);font-weight:700}
+.whpill{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-top:7px;margin-right:6px}
+.whpill.warn{color:var(--amber);background:rgba(143,95,0,.10);border:1px solid rgba(143,95,0,.28)}
+.whpill.inc{color:var(--rose);background:rgba(176,56,76,.10);border:1px solid rgba(176,56,76,.28)}
+.whpill.ok{color:var(--mint);background:rgba(21,115,75,.10);border:1px solid rgba(21,115,75,.28)}
+.whmut{font-size:13px;color:var(--mut2);padding:10px 2px}
+.whbig{font-size:26px;font-weight:800;color:var(--ink)}
+.whnote{font-size:12px;color:var(--mut2);margin-top:4px;line-height:1.5}
+.whrev{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.whrev .t{font-size:14px;font-weight:700;margin-bottom:4px}
+.whrev .m{font-size:13px;color:var(--mut);margin:2px 0}
+.whwarn{background:rgba(143,95,0,.08);border:1px solid rgba(143,95,0,.30);border-radius:12px;padding:11px 13px;font-size:13px;color:var(--amber);font-weight:600;margin-bottom:12px;line-height:1.5}
+.whtl{background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:10px 13px;margin-bottom:7px}
+.whtl .d{font-size:12px;color:var(--mut2)}
+.whtl .l{font-size:14px;font-weight:600;color:var(--ink);margin-top:1px}
+.whin{color:var(--mint);font-weight:800}.whout{color:var(--rose);font-weight:800}
 </style></head>
 <body>
 
@@ -546,7 +573,7 @@ body.wbdragging{overflow:hidden}
 </div>
 
 <div id="owner" class="wrap hide">
-  <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" id="refreshBtn" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
+  <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" id="refreshBtn" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" id="whPrevBtn" onclick="openWhPreview()" style="display:none;font-weight:700">Warehouse Preview</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
   <div class="csum"><div class="csum-r"><span class="cl">Stock value</span><b class="cvbig num" id="stVal">&#8377;0</b></div><div class="cmeta"><b id="stQty">0</b> pcs in stock &middot; today <b id="stIn">0</b> in / <b id="stOut">0</b> out<span id="staleNote" class="vnote hide"> &middot; older data &mdash; tap &#8635;</span></div></div>
   <div class="modew" id="ownerView"><button id="vwHome" class="on" onclick="setOwnerView('home')">Today</button><button id="vwDay" onclick="setOwnerView('day')">By date</button><button id="vwItems" onclick="setOwnerView('items')">Stock</button><button id="vwLog" onclick="setOwnerView('log')">All</button></div>
   <input id="searchIn" class="searchbar hide" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
@@ -558,6 +585,32 @@ body.wbdragging{overflow:hidden}
   <div id="itemList" class="hide"></div>
   <div id="stockList" class="hide"></div>
   <div id="todayList" class="hide"></div>
+</div>
+
+<div id="whprev" class="wrap hide">
+  <div class="whhead">
+    <div><span class="whtag">Preview</span> &nbsp;<b>Warehouse</b></div>
+    <button class="iconlink" onclick="showOwner()">&#8592; Back</button>
+  </div>
+  <div class="whsub">A look at the new warehouse system with your old records loaded in.
+    Nothing here is counted or confirmed yet &mdash; figures are what the old records
+    <i>suggest</i>, shown so you can see them. This screen changes nothing.</div>
+  <div class="modew" id="whView">
+    <button id="whVwCat" class="on" onclick="setWhView('cat')">Catalogue</button>
+    <button id="whVwRev" onclick="setWhView('rev')">Review</button>
+    <button id="whVwVal" onclick="setWhView('val')">Value</button>
+  </div>
+  <input id="whSearch" class="searchbar hide" placeholder="Search material&hellip;" oninput="renderWhCat()" style="margin-bottom:10px">
+  <div id="whBody"><div class="whmut">Loading&hellip;</div></div>
+</div>
+
+<div id="whtrail" class="wrap hide">
+  <div class="whhead">
+    <div><span class="whtag">Preview</span> &nbsp;<b id="whTrailName">Material</b></div>
+    <button class="iconlink" onclick="backToWhPreview()">&#8592; Back</button>
+  </div>
+  <div class="whwarn">&#9888; Opening count not yet recorded. Everything below is from old records only &mdash; it is not verified stock.</div>
+  <div id="whTrailBody"><div class="whmut">Loading&hellip;</div></div>
 </div>
 
 <div id="manage" class="wrap hide">
@@ -621,6 +674,9 @@ const SB="https://enjlgflisuywkaorxetv.supabase.co";
 const PZ="https://project-zero-xafh.onrender.com";
 const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuamxnZmxpc3V5d2thb3J4ZXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5OTU3NjAsImV4cCI6MjA5ODU3MTc2MH0.qKoUBQonv1FYSSrIGfInqXzSWGZHRrGWWHtwgGfL9DQ";
 const OWNER_EMAIL="shankymittal28@gmail.com";
+// Stage 1A feature flag. OFF by default: the app behaves exactly as before.
+// Turn ON (true) to reveal the owner-only, read-only Warehouse Preview.
+const WAREHOUSE_PREVIEW=true;
 let TOKEN=KEY;          // anon key by default (staff); becomes the owner's login token after sign-in
 let SESSION=null;       // {access_token, refresh_token} when the owner is signed in on this device
 const H={apikey:KEY,Authorization:"Bearer "+KEY};
@@ -688,7 +744,7 @@ function renderStaffBtns(){ if(!staff.length){$('staffBtns').innerHTML='';$('noS
 /* The tapped name carries its Orders category assignment (owner Manage → 🏷)
    so the Orders window can narrow to it. Still a tapped name, not a login. */
 function pickStaff(n){ const s=(staff||[]).find(x=>x.name===n)||{}; me_={name:n,order_tags:Array.isArray(s.order_tags)?s.order_tags:[]}; origin='gate'; _wbTab=null; try{localStorage.setItem('nkg_last_staff',n);}catch(e){} tryResume(n); showAdd(); }
-function backToGate(){ ['add','owner','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('gate').classList.remove('hide'); loadStaff(); }
+function backToGate(){ ['add','owner','manage','khata','bill','whprev','whtrail'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('gate').classList.remove('hide'); loadStaff(); }
 function addBack(){ origin==='owner'?showOwner():backToGate(); }
 function ownerLogin(){
   if(ownerLoggedIn()){ showOwner(); return; }
@@ -1365,7 +1421,7 @@ function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),
 
 let ownerView='home', groups=[], rates={};
 const inr=n=>{const v=Math.round(Number(n)||0);return (v<0?'-₹':'₹')+Math.abs(v).toLocaleString('en-IN');};
-async function showOwner(){ ['gate','add','manage','khata','bill'].forEach(i=>$(i).classList.add('hide')); $('owner').classList.remove('hide'); await loadStock(); }
+async function showOwner(){ ['gate','add','manage','khata','bill','whprev','whtrail'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('owner').classList.remove('hide'); { const b=$('whPrevBtn'); if(b) b.style.display=(WAREHOUSE_PREVIEW&&ownerLoggedIn())?'':'none'; } await loadStock(); }
 async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('busy'); if(!stock.length){ $('itemList').innerHTML='<div class="empty">Loading&hellip;</div>'; }
   const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]);
   if(rb)rb.classList.remove('busy');
@@ -2082,6 +2138,142 @@ function mtSendOfficial(id,st,withReason){
     closeSheet(); toast('हाज़िरी दर्ज','ok');
     (mtFinal.members||[]).forEach(m=>{ if(m.id===id)m.official=st; }); mtRenderFinal(); })
   .catch(()=>{ if(withReason){ $('mtRsGo').disabled=false; $('mtRsErr').textContent='भेज नहीं पाए'; } else toast('भेज नहीं पाए','err'); }); }
+
+/* ================= Stage 1A: Owner Warehouse Preview (read-only) =================
+   Owner-only, feature-flagged, real wh backend, NO writes. Every number that
+   comes from the old import is labelled as "old records", never as stock. */
+let _whCat=null, _whRev=null, _whView='cat';
+function whFmt(v,dec){ if(v===null||v===undefined||v==='') return null;
+  var n=Number(v); if(!isFinite(n)) return null;
+  return n.toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:(dec||0)}); }
+function whMoney(v){ var n=Number(v); if(!isFinite(n)) return null;
+  return '\u20B9'+Math.round(n).toLocaleString('en-IN'); }
+function whEsc(x){ return String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function openWhPreview(){
+  if(!WAREHOUSE_PREVIEW||!ownerLoggedIn()){ return; }
+  ['gate','add','owner','manage','khata','bill','whtrail'].forEach(i=>$(i)&&$(i).classList.add('hide'));
+  $('whprev').classList.remove('hide'); _whView='cat'; setWhChips();
+  $('whBody').innerHTML='<div class="whmut">Loading the imported warehouse&hellip;</div>';
+  const [cat,rev]=await Promise.all([
+    api("/rest/v1/rpc/wh_owner_catalogue",{method:'POST',headers:HJ,body:'{}'}),
+    api("/rest/v1/rpc/wh_owner_review",{method:'POST',headers:HJ,body:'{}'})
+  ]);
+  if(!cat){ $('whBody').innerHTML='<div class="whmut">Could not load. Make sure you are signed in as the owner, then tap Back and open again.</div>'; return; }
+  _whCat=cat; _whRev=rev||{}; renderWhView();
+}
+function backToWhPreview(){ $('whtrail').classList.add('hide'); $('whprev').classList.remove('hide'); }
+function setWhChips(){ ['whVwCat','whVwRev','whVwVal'].forEach(id=>{var b=$(id); if(b)b.classList.remove('on');});
+  var m={cat:'whVwCat',rev:'whVwRev',val:'whVwVal'}[_whView]; if($(m))$(m).classList.add('on');
+  $('whSearch').classList.toggle('hide', _whView!=='cat'); }
+function setWhView(v){ _whView=v; setWhChips(); renderWhView(); }
+function renderWhView(){ if(_whView==='cat') renderWhCat(); else if(_whView==='rev') renderWhReview(); else renderWhVal(); }
+
+function renderWhCat(){
+  if(!_whCat){ return; }
+  var q=($('whSearch').value||'').trim().toLowerCase();
+  var mats=(_whCat.materials||[]).filter(m=>!q||String(m.name||'').toLowerCase().includes(q));
+  var t=_whCat.totals||{};
+  var head='<div class="whsub">'+ (t.materials||0) +' materials across '+ (t.categories||0) +
+    ' categories. Rates loaded for '+ (t.rated||0) +'. Opening counts done: <b>'+ (t.with_opening||0) +
+    '</b> &mdash; so nothing here is verified stock yet.</div>';
+  if(!mats.length){ $('whBody').innerHTML=head+'<div class="whmut">No materials match.</div>'; return; }
+  var byCat={}; mats.forEach(m=>{ (byCat[m.category_code]=byCat[m.category_code]||[]).push(m); });
+  var html=head;
+  Object.keys(byCat).sort().forEach(cat=>{
+    var list=byCat[cat];
+    html+='<div class="whcat">'+whEsc(cat)+' &middot; '+list.length+'</div>';
+    list.forEach(m=>{
+      var unit=whEsc(m.unit_code||'');
+      var exp=whFmt(m.legacy_expected_qty,m.decimals);
+      var expLine = exp!==null
+        ? 'Old records suggest: <b>'+exp+' '+unit+'</b>'
+        : 'No quantity in old records';
+      var rateLine = (m.rate!=null) ? '<div class="rowline">Rate on file: <b>'+whMoney(m.rate)+'</b> / '+unit+'</div>' : '';
+      var indLine  = (m.indicative_value!=null) ? '<div class="rowline">Indicative value from old records: <b>'+whMoney(m.indicative_value)+'</b></div>' : '';
+      var incPill  = m.identity_incomplete ? '<span class="whpill inc">Identity incomplete</span>' : '';
+      var openPill = m.has_opening
+        ? '<span class="whpill ok">Counted: '+whFmt(m.recorded_qty,m.decimals)+' '+unit+'</span>'
+        : '<span class="whpill warn">Opening not verified</span>';
+      html+='<button class="whm" onclick="openWhTrail(\''+m.material_id+'\',\''+whEsc(String(m.name||'')).replace(/\\/g,"").replace(/'/g,"\\'")+'\')">'
+          +'<div class="nm">'+whEsc(m.name||'(unnamed)')+'</div>'
+          +'<div class="rowline">'+expLine+'</div>'+rateLine+indLine
+          +'<div>'+openPill+incPill+'</div></button>';
+    });
+  });
+  $('whBody').innerHTML=html;
+}
+
+function renderWhReview(){
+  var rev=_whRev||{};
+  var groups={}; (rev.possible_same_material||[]).forEach(r=>{ (groups[r.group_id]=groups[r.group_id]||[]).push(r); });
+  var gk=Object.keys(groups);
+  var inc=rev.incomplete_identity||[];
+  var html='<div class="whsub">Review only &mdash; nothing here is changed or merged. These are the cases the import flagged for your eye.</div>';
+  html+='<div class="whcat">Look-alike groups &middot; '+gk.length+'</div>';
+  if(!gk.length){ html+='<div class="whmut">None.</div>'; }
+  gk.forEach(id=>{
+    var mem=groups[id];
+    html+='<div class="whrev"><div class="t">'+whEsc(mem[0].category_code||'')+' &mdash; '+mem.length+' spellings that look alike</div>';
+    mem.forEach(m=>{ html+='<div class="m">&bull; <b>'+whEsc(m.material_name||'')+'</b>'
+        + (m.legacy_expectation!=null?' &middot; old records: '+whFmt(m.legacy_expectation,0):'')
+        + (m.recorded_by?' &middot; by '+whEsc(m.recorded_by):'') +'</div>'; });
+    html+='</div>';
+  });
+  html+='<div class="whcat">Incomplete identities &middot; '+inc.length+'</div>';
+  if(!inc.length){ html+='<div class="whmut">None.</div>'; }
+  inc.forEach(m=>{
+    html+='<div class="whrev"><div class="t">'+whEsc(m.material_name||'')+'</div>'
+      +'<div class="m">Category: '+whEsc(m.category_code||'')+'</div>'
+      +'<div class="m">Missing: '+whEsc((m.missing_attrs||[]).join(', ')||'&mdash;')+'</div>'
+      +'<div class="m">Old records: '+whFmt(m.legacy_expectation,0)+' across '+(m.legacy_lines||0)+' lines'
+      + (m.recorded_by?' &middot; by '+whEsc(m.recorded_by):'') +'</div></div>';
+  });
+  $('whBody').innerHTML=html;
+}
+
+function renderWhVal(){
+  var mats=(_whCat&&_whCat.materials)||[]; var t=(_whCat&&_whCat.totals)||{};
+  var ind=0; mats.forEach(m=>{ if(m.indicative_value!=null) ind+=Number(m.indicative_value)||0; });
+  var html=''
+   +'<div class="msec"><h3>Indicative value from old records</h3>'
+   +'<div class="whbig">'+whMoney(ind)+'</div>'
+   +'<div class="whnote">This is what the old records imply (old expected quantity &times; rate on file). '
+   +'It is <b>not</b> a counted warehouse value.</div></div>'
+   +'<div class="msec"><h3>Coverage</h3>'
+   +'<div class="rowline">Rates available for: <b>'+(t.rated||0)+' / '+(t.materials||0)+'</b> materials</div>'
+   +'<div class="rowline">Materials with a verified opening count: <b>'+(t.with_opening||0)+'</b></div></div>'
+   +'<div class="msec"><h3>Verified warehouse value</h3>'
+   +'<div class="whbig" style="color:var(--mut2)">Not available yet</div>'
+   +'<div class="whnote">A real value needs physical opening counts, which have not started. '
+   +'Once counting begins, verified and unverified stock can be shown separately.</div></div>';
+  $('whBody').innerHTML=html;
+}
+
+async function openWhTrail(id,name){
+  $('whprev').classList.add('hide'); $('whtrail').classList.remove('hide');
+  $('whTrailName').textContent=name||'Material';
+  $('whTrailBody').innerHTML='<div class="whmut">Loading old records&hellip;</div>';
+  var rows=await api("/rest/v1/rpc/wh_owner_trail",{method:'POST',headers:HJ,body:JSON.stringify({p_material_id:id})});
+  if(!rows){ $('whTrailBody').innerHTML='<div class="whmut">Could not load.</div>'; return; }
+  if(!rows.length){ $('whTrailBody').innerHTML='<div class="whmut">No old records for this material.</div>'; return; }
+  var html='<div class="whcat">Old records &middot; '+rows.length+'</div>';
+  rows.forEach(r=>{
+    var d=r.detail||{}; var when=(r.at||'').slice(0,10);
+    var dir = r.delta>0 ? '<span class="whin">IN</span>' : (r.delta<0 ? '<span class="whout">OUT</span>' : '');
+    var qty = Math.abs(Number(r.delta)||0).toLocaleString('en-IN');
+    var kind = r.kind==='legacy' ? '' : (' &middot; '+whEsc(r.kind));
+    var who = d.recorded_by_name ? ' &middot; '+whEsc(d.recorded_by_name) : '';
+    var ph  = d.photos ? ' &middot; \uD83D\uDCF7 '+d.photos+' photo(s) in old records' : '';
+    var dup = d.suspect_duplicate ? ' <span class="whpill inc">possible duplicate</span>' : '';
+    html+='<div class="whtl"><div class="d">'+whEsc(when)+kind+who+'</div>'
+        +'<div class="l">'+dir+' '+qty+(r.label?' &middot; '+whEsc(r.label):'')+ph+dup+'</div></div>';
+  });
+  html+='<div class="whnote">Photos from old records are counted here; opening them comes in a later step. '
+     +'These lines are history only and are not part of any verified stock figure.</div>';
+  $('whTrailBody').innerHTML=html;
+}
+
 </script>
 </body>
 </html>

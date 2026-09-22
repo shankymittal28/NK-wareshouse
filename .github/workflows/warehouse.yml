@@ -1,0 +1,51 @@
+name: warehouse core
+# The warehouse schema, its write path and its migration tooling are proved on every push.
+# A release is a commit that passed this.
+on:
+  push:
+    paths: ['warehouse/**', '.github/workflows/warehouse.yml']
+  pull_request:
+    paths: ['warehouse/**', '.github/workflows/warehouse.yml']
+  workflow_dispatch:
+
+jobs:
+  sql:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+    env:
+      PGHOST: localhost
+      PGPORT: '5433'
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: install a client matching the server major version
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          pg_dump --version && psql --version
+      - name: migrations and tests
+        run: bash warehouse/test/run.sh
+      - name: rollback rehearsal
+        run: bash warehouse/test/rollback.sh
+      - name: import tooling on synthetic data
+        run: bash warehouse/test/import_rehearsal.sh
+      - name: backup and recovery drill
+        run: bash warehouse/test/recovery_drill.sh
+      - name: warehouse-only recovery inside a shared database
+        run: bash warehouse/test/shared_recovery_drill.sh
+      - name: scheduled backup wrapper drill
+        run: bash warehouse/test/backup_schedule_drill.sh

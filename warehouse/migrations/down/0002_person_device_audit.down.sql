@@ -1,0 +1,32 @@
+-- Undo 0002. DESTRUCTIVE: drops people, devices, credentials and the audit log.
+drop function if exists wh.expire_idle_devices(int);
+drop function if exists wh.touch_device(uuid);
+drop function if exists wh.revoke_device(uuid,text);
+drop function if exists wh.activate_device(text,text);
+drop function if exists wh.issue_activation_code(uuid,int,text);
+drop function if exists wh.require_owner();
+drop function if exists wh.require_actor();
+drop function if exists wh.is_bound();
+drop function if exists wh.is_owner();
+drop function if exists wh.current_role();
+drop function if exists wh.current_device();
+drop function if exists wh.current_device_id();
+drop function if exists wh.current_person_id();
+drop function if exists wh.owner_person_id();
+drop function if exists wh.jwt_is_owner();
+drop function if exists wh.owner_email();
+drop function if exists wh.assume_device(text);
+drop function if exists wh.log(text,text,uuid,text,jsonb);
+drop function if exists wh.throttle_ok(text,int,interval);
+drop function if exists wh.fingerprint_token(text);
+drop function if exists wh.fingerprint(text);
+drop function if exists wh.mint_code();
+drop function if exists wh.mint_secret();
+drop function if exists wh.pepper();
+drop table if exists wh.audit;
+drop table if exists wh.auth_throttle;
+drop table if exists wh.activation_code;
+drop table if exists wh.secret;
+drop table if exists wh.device;
+drop type if exists wh.actor;          -- after wh.device: require_actor used both
+drop table if exists wh.person;
