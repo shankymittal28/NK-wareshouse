@@ -1,0 +1,5 @@
+[Unit]
+Description=NK Warehouse backup (one run)
+[Service]
+Type=oneshot
+ExecStart=/opt/nk-warehouse/warehouse/backup/run-backup.sh /opt/nk-warehouse/warehouse/backup/wh-backup.env

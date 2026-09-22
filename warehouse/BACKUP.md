@@ -109,3 +109,13 @@ recording silently disappears.
 - `objects/` — the evidence photographs. Supabase database backups do not
   restore object contents.
 - `README.txt`, `checksums.sha256` — verified before anything is written.
+
+## The scheduled job (Stage 0 close)
+
+The six-hourly job, its installers and its checks live in `warehouse/backup/`.
+See `warehouse/backup/README.md`. In short: `run-backup.sh` is what the
+scheduler runs; `backup-status.sh` reports freshness; `restore-check.sh` proves
+a produced set by restoring and operating it. `test/backup_schedule_drill.sh`
+exercises the whole chain in CI. The one thing that can only be done on the
+backup machine is entering the database password into `wh-backup.env` and
+pointing the offsite path at a real synced folder.

@@ -1,0 +1,5 @@
+# NK Warehouse backup — every 6 hours. Install with:  crontab warehouse/backup/install/crontab.txt
+# Adjust the two absolute paths to where the repo and env file live on THIS machine.
+# The secret is in the env file, never here.
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+0 */6 * * * /opt/nk-warehouse/warehouse/backup/run-backup.sh /opt/nk-warehouse/warehouse/backup/wh-backup.env >> /opt/nk-warehouse-backup/offsite/_status/cron.out 2>&1

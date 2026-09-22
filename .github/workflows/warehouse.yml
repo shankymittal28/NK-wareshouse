@@ -47,3 +47,5 @@ jobs:
         run: bash warehouse/test/recovery_drill.sh
       - name: warehouse-only recovery inside a shared database
         run: bash warehouse/test/shared_recovery_drill.sh
+      - name: scheduled backup wrapper drill
+        run: bash warehouse/test/backup_schedule_drill.sh
