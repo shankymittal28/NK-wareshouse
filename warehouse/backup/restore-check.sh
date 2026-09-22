@@ -34,7 +34,7 @@ fi
 say "wh schema restored"       "$(Q "select count(*)>0 from pg_tables where schemaname='wh'")" "t"
 say "views restored"           "$(Q "select count(*)>0 from pg_views where schemaname='wh'")" "t"
 say "the caretaker owns wh"    "$(Q "select pg_get_userbyid(nspowner) from pg_namespace where nspname='wh'")" "wh_owner"
-say "the public API restored"  "$(Q "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\_%'")" "28"
+say "the public API restored"  "$(Q "select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'wh\_%'")" "29"
 say "no client role holds a privilege inside wh" \
     "$(Q "select count(*) from information_schema.role_table_grants where table_schema='wh' and grantee in ('anon','authenticated','PUBLIC')")" "0"
 # unrelated apps are NOT part of a warehouse restore

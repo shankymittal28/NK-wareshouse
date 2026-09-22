@@ -24,7 +24,7 @@ declare
     'wh_owner_stock','wh_owner_trail','wh_owner_create_material','wh_owner_set_rate',
     'wh_owner_record_opening','wh_owner_supersede_opening','wh_owner_approve_count',
     'wh_owner_resolve_count','wh_owner_count_basis_changes','wh_owner_correct_line',
-    'wh_owner_add_line','wh_owner_correct_event','wh_owner_review'];
+    'wh_owner_add_line','wh_owner_correct_event','wh_owner_review','wh_owner_catalogue'];
 
   procedure_check text;
 begin
