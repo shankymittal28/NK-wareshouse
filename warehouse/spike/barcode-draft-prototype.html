@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NK Warehouse — Barcode → Draft (SPIKE, no writes)</title>
+<!--
+  ISOLATED ARCHITECTURE SPIKE. This file is NOT part of the shipped app and is
+  NOT deployed. It proves ONE narrow flow:
+
+        scan a barcode  ->  identify an existing wh.material  ->  add it to a
+        movement DRAFT (in memory only)
+
+  It writes NOTHING. No stock event, no RPC write, no new inventory table. The
+  catalogue and the barcode->material map below are MOCK/local data that mirror
+  the shape of the real wh backend. In the real app the identification step is a
+  small association that lives INSIDE the wh model (e.g. a wh.material_barcode
+  table populated through an owner RPC), never a second inventory engine.
+
+  Scanner strategy (native-first, library fallback):
+    1) Web BarcodeDetector API when the browser has it (Android Chromium): zero
+       dependency, fastest camera start.
+    2) An open-source JS library as the fallback for browsers without it (notably
+       iOS Safari). The candidate is html5-qrcode (Apache-2.0). It is loaded
+       lazily from a CDN only if needed; if it is unavailable the manual /
+       simulate paths still work, so the flow is always demonstrable.
+    3) A "simulate scan" input + sample-barcode buttons, so the flow can be
+       exercised (and screenshotted) with no camera at all.
+
+  Because barcodes are NOT universal for our materials, a category/name PICKER
+  is always available as a first-class fallback — scanning never replaces it.
+-->
+<style>
+  :root{--bg:#F5F4F0;--surface:#fff;--panel:#fff;--panel2:#F1F0EB;--well:#EDECE7;
+    --ink:#1F2933;--mut:#5B6470;--mut2:#5E6874;--hair:rgba(31,41,51,.13);
+    --indigo:#2457A6;--mint:#15734B;--amber:#8F5F00;--rose:#B0384C;color-scheme:light}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif;
+    letter-spacing:-.01em;min-height:100dvh;padding:0 16px 40px}
+  .wrap{max-width:520px;margin:0 auto}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:18px 2px 6px}
+  .title{font-size:18px;font-weight:800}
+  .spike{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);
+    background:rgba(143,95,0,.10);border:1px solid rgba(143,95,0,.30);border-radius:999px;padding:4px 10px}
+  .banner{background:rgba(143,95,0,.08);border:1px solid rgba(143,95,0,.30);border-radius:12px;padding:11px 13px;
+    font-size:12.5px;color:var(--amber);font-weight:600;line-height:1.5;margin:8px 0 14px}
+  h3{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut2);margin:18px 2px 8px}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:14px;margin-bottom:10px}
+  .scanbox{border:1px dashed var(--hair);border-radius:14px;padding:14px;background:var(--panel2)}
+  #reader{width:100%;border-radius:12px;overflow:hidden;margin-bottom:10px}
+  .row{display:flex;gap:8px;align-items:center}
+  input,select{width:100%;font-size:15px;padding:12px 13px;border-radius:11px;border:1px solid var(--hair);
+    background:var(--well);color:var(--ink);outline:none}
+  input:focus,select:focus{border-color:var(--indigo)}
+  button{font-family:inherit;cursor:pointer}
+  .btn{background:var(--panel2);border:1px solid var(--hair);color:var(--ink);border-radius:11px;
+    padding:12px 14px;font-size:14px;font-weight:700;min-height:46px}
+  .btn.go{background:var(--indigo);color:#fff;border-color:transparent}
+  .btn.mint{background:var(--mint);color:#fff;border-color:transparent}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+  .chip{background:var(--panel);border:1px solid var(--hair);border-radius:999px;padding:8px 12px;font-size:12.5px;font-weight:700;color:var(--mut)}
+  .status{font-size:12.5px;color:var(--mut2);margin-top:8px;min-height:1.2em}
+  .found{color:var(--mint);font-weight:700}
+  .miss{color:var(--rose);font-weight:700}
+  .mat{border:1px solid var(--hair);border-radius:12px;padding:11px 13px;margin-bottom:8px;background:var(--panel)}
+  .mat .nm{font-weight:700}
+  .mat .sub{font-size:12.5px;color:var(--mut2);margin-top:2px}
+  .draftline{display:flex;align-items:center;gap:10px;border:1px solid var(--hair);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--panel)}
+  .draftline .nm{flex:1;min-width:0}
+  .draftline .nm b{font-weight:700}
+  .draftline .sub{font-size:12px;color:var(--mut2)}
+  .qty{width:74px;text-align:center;font-weight:800}
+  .x{background:none;border:none;color:var(--rose);font-size:20px;font-weight:800;padding:4px 8px}
+  .empty{font-size:13px;color:var(--mut2);padding:8px 2px}
+  .foot{font-size:12px;color:var(--mut2);line-height:1.55;margin-top:6px}
+  .lock{background:rgba(21,115,75,.07);border:1px solid rgba(21,115,75,.28);border-radius:12px;padding:12px 13px;
+    font-size:12.5px;color:var(--mint);font-weight:600;line-height:1.5;margin-top:12px}
+  .lock b{color:var(--ink)}
+  .pickwrap.hide,.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div class="title">Barcode → Draft</div><div class="spike">Spike · no writes</div></div>
+  <div class="banner">⚠ Prototype only. Nothing here is saved. No stock changes, no server event, no new tables.
+    Catalogue and barcode links below are local mock data mirroring the real <b>wh</b> shape.</div>
+
+  <h3>1 · Scan (or simulate)</h3>
+  <div class="scanbox">
+    <div id="reader" class="hide"></div>
+    <div class="row">
+      <button class="btn go" id="camBtn" onclick="toggleCam()">▣ Start camera scan</button>
+    </div>
+    <div class="status" id="scanEngine"></div>
+    <div style="margin-top:12px">
+      <div class="row">
+        <input id="simIn" inputmode="text" placeholder="Type / paste a barcode, then Enter"
+               onkeydown="if(event.key==='Enter')onScan(this.value,'manual')">
+        <button class="btn" onclick="onScan(document.getElementById('simIn').value,'manual')">Look up</button>
+      </div>
+      <div class="chips" id="sampleChips"></div>
+      <div class="status" id="scanStatus"></div>
+    </div>
+  </div>
+
+  <div class="pickwrap hide" id="pickWrap">
+    <h3>No match — pick it instead</h3>
+    <div class="card">
+      <div class="foot" style="margin-bottom:8px">A scan that isn't recognised falls back to the normal picker.
+        Scanning never removes the search/category picker.</div>
+      <input id="pickSearch" placeholder="Search material (brand, size, design)…" oninput="renderPicker()">
+      <div id="pickList" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <h3>2 · Movement draft <span id="draftKind" style="color:var(--indigo)">(IN)</span></h3>
+  <div class="card">
+    <div id="draftList"><div class="empty">Empty. Scan or pick a material to add a line.</div></div>
+    <div class="foot" id="draftFoot"></div>
+  </div>
+
+  <div class="lock">
+    <b>Where this stops.</b> This is a draft in the phone's memory. In the real app, pressing “confirm” would hand this
+    draft to the existing <b>wh</b> write RPC (<code>wh_submit_event</code>) — the same idempotent, audited path used
+    today — which mints the stock event and lines on the server. This spike deliberately has <b>no confirm button</b>
+    and performs <b>no write</b>. The barcode→material link would live as a small association inside <b>wh</b>
+    (e.g. <code>wh.material_barcode</code>, filled through an owner RPC), not as a second inventory engine.
+  </div>
+</div>
+
+<script>
+// ---- MOCK wh catalogue (shape mirrors wh_owner_catalogue: id, name, category, unit) ----
+const CATALOGUE = [
+  {material_id:'aaaa0001', name:'Century · 18mm · 8x4', category_code:'Plywood', unit_code:'sheet'},
+  {material_id:'aaaa0002', name:'Greenply · 12mm · 8x4', category_code:'Plywood', unit_code:'sheet'},
+  {material_id:'aaaa0003', name:'Flush · Teak · 84x36', category_code:'Doors', unit_code:'piece'},
+  {material_id:'aaaa0004', name:'Membrane · KP7098 · 78x38', category_code:'Doors', unit_code:'piece'},
+  {material_id:'aaaa0005', name:'Hinge · SS · 4inch', category_code:'Hardware', unit_code:'box'},
+];
+// ---- MOCK barcode -> material association (the "external barcode" pattern) ----
+// Real supplier EANs + one internally generated QR string. Not every material has one.
+const BARCODE_MAP = {
+  '8901234500011':'aaaa0001',   // supplier EAN on Century ply bundle
+  '8901234500028':'aaaa0002',   // supplier EAN on Greenply
+  '890555500035' :'aaaa0005',   // supplier EAN on hinge box
+  'NKQR-aaaa0003':'aaaa0003',   // our own generated QR for a flush door (no supplier barcode)
+};
+const byId = id => CATALOGUE.find(m=>m.material_id===id);
+
+// ---- draft state (ephemeral, in memory only) ----
+let DRAFT = [];   // [{material_id, qty}]
+
+function renderSamples(){
+  const el=document.getElementById('sampleChips');
+  el.innerHTML='<span style="font-size:12px;color:var(--mut2);align-self:center">samples:</span>'+
+    Object.keys(BARCODE_MAP).map(b=>`<button class="chip" onclick="onScan('${b}','sample')">${b}</button>`).join('')+
+    `<button class="chip" onclick="onScan('9999999999999','sample')">9999999999999 (unknown)</button>`;
+}
+
+function onScan(code, source){
+  code=(code||'').trim();
+  const st=document.getElementById('scanStatus');
+  if(!code){ st.textContent='Nothing to look up.'; return; }
+  const id=BARCODE_MAP[code];
+  if(id){
+    const m=byId(id);
+    st.innerHTML=`<span class="found">✓ ${code} → ${m.name}</span>`;
+    addToDraft(id);
+    hidePicker();
+  } else {
+    st.innerHTML=`<span class="miss">✗ ${code} — no material linked.</span> Use the picker below.`;
+    showPicker();
+  }
+}
+
+function addToDraft(id){
+  const existing=DRAFT.find(d=>d.material_id===id);
+  if(existing){ existing.qty += 1; } else { DRAFT.push({material_id:id, qty:1}); }
+  renderDraft();
+}
+function setQty(id,v){ const d=DRAFT.find(x=>x.material_id===id); if(d){ const n=parseInt(v,10); d.qty=isFinite(n)&&n>0?n:1; } renderDraft(); }
+function delLine(id){ DRAFT=DRAFT.filter(d=>d.material_id!==id); renderDraft(); }
+
+function renderDraft(){
+  const el=document.getElementById('draftList');
+  if(!DRAFT.length){ el.innerHTML='<div class="empty">Empty. Scan or pick a material to add a line.</div>';
+    document.getElementById('draftFoot').textContent=''; return; }
+  el.innerHTML=DRAFT.map(d=>{ const m=byId(d.material_id);
+    return `<div class="draftline">
+      <div class="nm"><b>${m.name}</b><div class="sub">${m.category_code}</div></div>
+      <input class="qty" inputmode="numeric" value="${d.qty}" onchange="setQty('${d.material_id}',this.value)">
+      <span class="sub">${m.unit_code}</span>
+      <button class="x" title="remove" onclick="delLine('${d.material_id}')">×</button>
+    </div>`; }).join('');
+  const lines=DRAFT.length, units=DRAFT.reduce((s,d)=>s+d.qty,0);
+  document.getElementById('draftFoot').textContent=`${lines} line(s), ${units} unit(s) — draft only, not saved.`;
+}
+
+// ---- picker fallback (barcode never replaces the picker) ----
+function showPicker(){ document.getElementById('pickWrap').classList.remove('hide'); renderPicker(); }
+function hidePicker(){ document.getElementById('pickWrap').classList.add('hide'); }
+function renderPicker(){
+  const q=(document.getElementById('pickSearch').value||'').trim().toLowerCase();
+  const rows=CATALOGUE.filter(m=>!q||(m.name+' '+m.category_code).toLowerCase().includes(q));
+  document.getElementById('pickList').innerHTML = rows.length
+    ? rows.map(m=>`<button class="mat" style="width:100%;text-align:left;display:block" onclick="addToDraft('${m.material_id}');document.getElementById('scanStatus').innerHTML='<span class=&quot;found&quot;>✓ picked ${m.name}</span>'">
+        <div class="nm">${m.name}</div><div class="sub">${m.category_code} · ${m.unit_code}</div></button>`).join('')
+    : '<div class="empty">No material matches.</div>';
+}
+
+// ---- scanner: native BarcodeDetector first, html5-qrcode fallback ----
+let camOn=false, h5=null, stream=null, rafId=null, detector=null;
+function announceEngine(txt){ document.getElementById('scanEngine').textContent=txt; }
+async function toggleCam(){
+  const btn=document.getElementById('camBtn'), reader=document.getElementById('reader');
+  if(camOn){ stopCam(); btn.textContent='▣ Start camera scan'; return; }
+  reader.classList.remove('hide'); btn.textContent='■ Stop camera';
+  // Path 1: native BarcodeDetector
+  if('BarcodeDetector' in window){
+    try{
+      const fmts=await window.BarcodeDetector.getSupportedFormats();
+      detector=new window.BarcodeDetector({formats:fmts});
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      const v=document.createElement('video'); v.setAttribute('playsinline',''); v.srcObject=stream;
+      reader.innerHTML=''; reader.appendChild(v); await v.play(); camOn=true;
+      announceEngine('Engine: native BarcodeDetector (no library needed).');
+      const tick=async()=>{ if(!camOn) return;
+        try{ const codes=await detector.detect(v); if(codes && codes.length){ onScan(codes[0].rawValue,'camera'); stopCam(); document.getElementById('camBtn').textContent='▣ Start camera scan'; return; } }catch(e){}
+        rafId=requestAnimationFrame(tick); };
+      tick(); return;
+    }catch(e){ announceEngine('Camera/native scan unavailable: '+e.message+' — trying library…'); }
+  }
+  // Path 2: html5-qrcode fallback (Apache-2.0), loaded lazily from CDN
+  try{
+    await loadScript('https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js');
+    reader.innerHTML='';
+    h5=new Html5Qrcode('reader');
+    await h5.start({facingMode:'environment'},{fps:10,qrbox:240},
+      txt=>{ onScan(txt,'camera'); stopCam(); document.getElementById('camBtn').textContent='▣ Start camera scan'; },
+      ()=>{});
+    camOn=true; announceEngine('Engine: html5-qrcode fallback (Apache-2.0).');
+  }catch(e){
+    announceEngine('No camera scanner here. Use “simulate” / picker — the flow is identical.');
+    reader.classList.add('hide'); document.getElementById('camBtn').textContent='▣ Start camera scan';
+  }
+}
+function stopCam(){ camOn=false;
+  if(rafId) cancelAnimationFrame(rafId);
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  if(h5){ try{ h5.stop().then(()=>h5.clear()); }catch(e){} h5=null; }
+  const reader=document.getElementById('reader'); reader.innerHTML=''; reader.classList.add('hide');
+}
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement('script');
+  s.src=src; s.onload=res; s.onerror=()=>rej(new Error('CDN load failed')); document.head.appendChild(s); }); }
+
+renderSamples(); renderDraft();
+announceEngine('BarcodeDetector' in window ? 'Camera engine ready: native BarcodeDetector.' : 'Camera will use the html5-qrcode fallback (or use simulate/picker).');
+</script>
+</body>
+</html>
