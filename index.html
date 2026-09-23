@@ -492,6 +492,7 @@ body.wbdragging{overflow:hidden}
 .whcount b{color:var(--ink)}
 .whpill.neg{color:var(--mut);background:var(--panel2);border:1px solid var(--hair)}
 .whm .rowcat{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--mut2);margin-bottom:4px}
+.whm .whsub2{color:var(--mut2);font-weight:600}
 .whrev.tap{cursor:pointer;width:100%;text-align:left;display:block}
 .whrev.tap:active{background:var(--panel2)}
 .whrev .go{float:right;color:var(--mut2);font-weight:800;font-size:15px}
@@ -500,6 +501,32 @@ body.wbdragging{overflow:hidden}
 .whgo b{color:var(--ink)}
 .whgo .go{float:right;color:var(--mut2);font-weight:800;font-size:15px}
 .whtapnote{font-size:12px;color:var(--mut2);margin:2px 2px 12px}
+/* Stage 1C opening-count screen */
+.ctitle{font-size:22px;font-weight:800;color:var(--ink);line-height:1.25;margin-top:4px}
+.csub{font-size:13px;color:var(--mut2);margin-top:3px}
+.clegacy{margin-top:14px;background:rgba(143,95,0,.07);border:1px solid rgba(143,95,0,.28);border-radius:12px;padding:12px 13px;font-size:13px;color:var(--amber);line-height:1.5}
+.clegacy b{color:var(--ink)}
+.cqtywrap{display:flex;align-items:center;gap:10px}
+#whcQty{font-size:40px;font-weight:800;padding:16px;height:auto}
+.cunit{font-size:16px;font-weight:700;color:var(--mut);min-width:52px}
+.cerr{margin-top:10px;font-size:13px;font-weight:600;color:var(--rose)}
+.crev{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:6px 14px;margin-top:6px}
+.crevrow{display:flex;justify-content:space-between;align-items:center;padding:11px 0;font-size:15px;color:var(--mut);border-bottom:1px solid var(--hair)}
+.crevrow:last-child{border-bottom:none}
+.crevrow b{color:var(--ink);font-weight:800;font-size:16px}
+.crevrow.big b{font-size:22px}
+.cwarn{margin-top:12px;background:rgba(176,56,76,.08);border:1px solid rgba(176,56,76,.30);border-radius:12px;padding:12px 13px;font-size:13px;color:var(--rose);font-weight:600;line-height:1.5}
+.cnote{margin-top:12px;font-size:13px;color:var(--mut);background:var(--panel2);border:1px solid var(--hair);border-radius:12px;padding:11px 13px}
+.cwhen{margin-top:10px;font-size:12.5px;color:var(--mut2)}
+.crowbtns{display:flex;gap:10px;margin-top:18px}
+.cfoot{margin-top:14px;font-size:12px;color:var(--mut2);line-height:1.5}
+.whverified{margin-bottom:12px;background:rgba(21,115,75,.08);border:1px solid rgba(21,115,75,.30);border-radius:12px;padding:12px 13px;font-size:13px;color:var(--mint);font-weight:600;line-height:1.5}
+.whverified b{color:var(--ink)}
+.whctacard{margin-bottom:12px;background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:14px}
+.whcta{display:block;width:100%;background:var(--grad);color:#fff;border:none;border-radius:13px;padding:15px;font-size:16px;font-weight:800;box-shadow:0 10px 24px -10px rgba(36,87,166,.4)}
+.whcta:active{transform:scale(.985)}
+.whctahint{font-size:12px;color:var(--mut2);margin-top:9px;line-height:1.5}
+.whblock{margin-bottom:12px;background:rgba(176,56,76,.07);border:1px solid rgba(176,56,76,.28);border-radius:12px;padding:12px 13px;font-size:13px;color:var(--rose);font-weight:600;line-height:1.5}
 </style></head>
 <body>
 
@@ -655,8 +682,55 @@ body.wbdragging{overflow:hidden}
     <div><span class="whtag">Preview</span> &nbsp;<b id="whTrailName">Material</b></div>
     <button class="iconlink" onclick="backToWhPreview()">&#8592; Back</button>
   </div>
-  <div class="whwarn">&#9888; Opening count not yet recorded. Everything below is from old records only &mdash; it is not verified stock.</div>
+  <div id="whTrailHead"></div>
   <div id="whTrailBody"><div class="whmut">Loading&hellip;</div></div>
+</div>
+
+<!-- Stage 1C: the owner-only opening-count screen. Establishes the trusted baseline. -->
+<div id="whcount" class="wrap hide">
+  <div class="whhead">
+    <div><span class="whtag" style="color:var(--mint);background:rgba(21,115,75,.10);border-color:rgba(21,115,75,.30)">Count</span></div>
+    <button class="iconlink" onclick="closeWhCount()">&#8592; Back</button>
+  </div>
+
+  <div id="whCountEntry">
+    <div class="ctitle" id="whcMat">Material</div>
+    <div class="csub" id="whcCat">&nbsp;</div>
+    <div class="clegacy" id="whcLegacy"></div>
+
+    <div class="lab" style="margin-top:20px">Physical count <span class="opt">&mdash; what you actually counted</span></div>
+    <div class="cqtywrap">
+      <input id="whcQty" class="qtyin" inputmode="decimal" autocomplete="off" placeholder="0"
+             oninput="whcQtyChange()">
+      <span class="cunit" id="whcUnit"></span>
+    </div>
+    <div class="cerr hide" id="whcQtyErr"></div>
+
+    <div class="lab" style="margin-top:18px">Note <span class="opt">&mdash; optional</span></div>
+    <input id="whcNote" class="optin" maxlength="200" placeholder="e.g. 3 damaged, kept aside">
+
+    <div class="lab" style="margin-top:18px">Effective time <span class="opt">&mdash; when this count is true as of</span></div>
+    <input id="whcWhen" class="optin" type="datetime-local">
+
+    <button class="save" id="whcReviewBtn" style="width:100%;margin-top:22px" onclick="whReviewCount()" disabled>Review count</button>
+  </div>
+
+  <div id="whCountReview" class="hide">
+    <div class="crev">
+      <div class="crevrow"><span>You counted</span><b id="whrvCount">&mdash;</b></div>
+      <div class="crevrow"><span>Old records suggested</span><b id="whrvLegacy">&mdash;</b></div>
+      <div class="crevrow big" id="whrvDiffRow"><span>Difference</span><b id="whrvDiff">&mdash;</b></div>
+    </div>
+    <div class="cwarn hide" id="whrvWarn"></div>
+    <div class="cnote hide" id="whrvNote"></div>
+    <div class="cwhen" id="whrvWhen"></div>
+    <div class="crowbtns">
+      <button class="obtn" onclick="whEditCount()">&#8592; Edit</button>
+      <button class="save" id="whcConfirmBtn" style="flex:2" onclick="confirmWhOpening()">&#10003; Confirm opening count</button>
+    </div>
+    <div class="cerr hide" id="whcConfirmErr"></div>
+    <div class="cfoot">This becomes the trusted starting stock for this material. Old records stay on the record; they are never changed.</div>
+  </div>
 </div>
 
 <div id="manage" class="wrap hide">
@@ -756,6 +830,19 @@ async function api(path,o){
     const t=await r.text(); return t?JSON.parse(t):[];
   }catch(e){ return null; }
 }
+// A write that needs its error surfaced (opening_exists, only the owner, precision...).
+// Returns {ok:true,data} or {ok:false,error} — never throws.
+async function apiRpc(path,bodyObj){
+  const hdr={...HJ, apikey:KEY, Authorization:"Bearer "+TOKEN};
+  const body=JSON.stringify(bodyObj||{});
+  try{
+    let r=await fetch(SB+path,{method:'POST',headers:hdr,body});
+    if(r.status===401 && SESSION){ if(await refreshSession()){ hdr.Authorization="Bearer "+TOKEN; r=await fetch(SB+path,{method:'POST',headers:hdr,body}); } }
+    const t=await r.text(); let j=null; try{ j=t?JSON.parse(t):null; }catch(_){}
+    if(!r.ok){ return {ok:false, error:(j&&(j.message||j.error||j.hint))||('Request failed ('+r.status+')')}; }
+    return {ok:true, data:j};
+  }catch(e){ return {ok:false, error:'Network problem — check the connection and try again.'}; }
+}
 
 // ---- Owner sign-in (real, server-checked) ----
 function uuid(){ try{ if(self.crypto&&crypto.randomUUID)return crypto.randomUUID();
@@ -790,7 +877,7 @@ function renderStaffBtns(){ if(!staff.length){$('staffBtns').innerHTML='';$('noS
 /* The tapped name carries its Orders category assignment (owner Manage → 🏷)
    so the Orders window can narrow to it. Still a tapped name, not a login. */
 function pickStaff(n){ const s=(staff||[]).find(x=>x.name===n)||{}; me_={name:n,order_tags:Array.isArray(s.order_tags)?s.order_tags:[]}; origin='gate'; _wbTab=null; try{localStorage.setItem('nkg_last_staff',n);}catch(e){} tryResume(n); showAdd(); }
-function backToGate(){ ['add','owner','manage','khata','bill','whprev','whtrail'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('gate').classList.remove('hide'); loadStaff(); }
+function backToGate(){ ['add','owner','manage','khata','bill','whprev','whtrail','whcount'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('gate').classList.remove('hide'); loadStaff(); }
 function addBack(){ origin==='owner'?showOwner():backToGate(); }
 function ownerLogin(){
   if(ownerLoggedIn()){ showOwner(); return; }
@@ -1467,7 +1554,7 @@ function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),
 
 let ownerView='home', groups=[], rates={};
 const inr=n=>{const v=Math.round(Number(n)||0);return (v<0?'-₹':'₹')+Math.abs(v).toLocaleString('en-IN');};
-async function showOwner(){ ['gate','add','manage','khata','bill','whprev','whtrail'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('owner').classList.remove('hide'); { const b=$('whPrevBtn'); if(b) b.style.display=(WAREHOUSE_PREVIEW&&ownerLoggedIn())?'':'none'; } await loadStock(); }
+async function showOwner(){ ['gate','add','manage','khata','bill','whprev','whtrail','whcount'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('owner').classList.remove('hide'); { const b=$('whPrevBtn'); if(b) b.style.display=(WAREHOUSE_PREVIEW&&ownerLoggedIn())?'':'none'; } await loadStock(); }
 async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('busy'); if(!stock.length){ $('itemList').innerHTML='<div class="empty">Loading&hellip;</div>'; }
   const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]);
   if(rb)rb.classList.remove('busy');
@@ -2188,7 +2275,7 @@ function mtSendOfficial(id,st,withReason){
 /* ================= Stage 1A: Owner Warehouse Preview (read-only) =================
    Owner-only, feature-flagged, real wh backend, NO writes. Every number that
    comes from the old import is labelled as "old records", never as stock. */
-let _whCat=null, _whRev=null, _whView='cat', _whCatSel=null, _whLook=null;
+let _whCat=null, _whRev=null, _whView='cat', _whCatSel=null, _whLook=null, _whMat=null;
 function whFmt(v,dec){ if(v===null||v===undefined||v==='') return null;
   var n=Number(v); if(!isFinite(n)) return null;
   return n.toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:(dec||0)}); }
@@ -2199,7 +2286,7 @@ function whJsName(x){ return whEsc(String(x==null?'':x)).replace(/\\/g,"").repla
 
 async function openWhPreview(){
   if(!WAREHOUSE_PREVIEW||!ownerLoggedIn()){ return; }
-  ['gate','add','owner','manage','khata','bill','whtrail'].forEach(i=>$(i)&&$(i).classList.add('hide'));
+  ['gate','add','owner','manage','khata','bill','whtrail','whcount'].forEach(i=>$(i)&&$(i).classList.add('hide'));
   $('whprev').classList.remove('hide'); _whView='cat'; setWhChips();
   $('whBody').innerHTML='<div class="whmut">Loading the imported warehouse&hellip;</div>';
   const [cat,rev]=await Promise.all([
@@ -2228,22 +2315,26 @@ function whMatRow(m,showCat){
   var unit=whEsc(m.unit_code||'');
   var negq=(m.legacy_expected_qty!=null && Number(m.legacy_expected_qty)<0);
   var exp=whFmt(m.legacy_expected_qty,m.decimals);
-  var expLine = exp!==null
-    ? 'Old records suggest: <b>'+exp+' '+unit+'</b>'
-    : 'No quantity in old records';
+  // Verified materials lead with trusted stock; the old records become context.
+  var mainLine, openPill;
+  if(m.has_opening){
+    mainLine = 'Trusted stock: <b>'+whFmt(m.recorded_qty,m.decimals)+' '+unit+'</b>'
+             + (exp!==null ? ' <span class="whsub2">(old records suggested '+exp+')</span>' : '');
+    openPill = '<span class="whpill ok">&#10003; Verified opening</span>';
+  } else {
+    mainLine = exp!==null ? 'Old records suggest: <b>'+exp+' '+unit+'</b>' : 'No quantity in old records';
+    openPill = '<span class="whpill warn">Opening not verified</span>';
+  }
   var rateLine = (m.rate!=null) ? '<div class="rowline">Rate on file: <b>'+whMoney(m.rate)+'</b> / '+unit+'</div>' : '';
-  var indLine  = (m.indicative_value!=null) ? '<div class="rowline">Indicative value from old records: <b>'+whMoney(m.indicative_value)+'</b></div>' : '';
+  var indLine  = (!m.has_opening && m.indicative_value!=null) ? '<div class="rowline">Indicative value from old records: <b>'+whMoney(m.indicative_value)+'</b></div>' : '';
   var incPill  = m.identity_incomplete ? '<span class="whpill inc">Identity incomplete</span>' : '';
   var lookPill = (_whLook&&_whLook.has(m.material_id)) ? '<span class="whpill inc">Look-alike &mdash; needs review</span>' : '';
-  var negPill  = negq ? '<span class="whpill neg">Old records below zero</span>' : '';
-  var openPill = m.has_opening
-    ? '<span class="whpill ok">Counted: '+whFmt(m.recorded_qty,m.decimals)+' '+unit+'</span>'
-    : '<span class="whpill warn">Opening not verified</span>';
+  var negPill  = (!m.has_opening && negq) ? '<span class="whpill neg">Old records below zero</span>' : '';
   var catLine  = showCat ? '<div class="rowcat">'+whEsc(m.category_code||'')+'</div>' : '';
   return '<button class="whm" onclick="openWhTrail(\''+m.material_id+'\',\''+whEsc(String(m.name||'')).replace(/\\/g,"").replace(/'/g,"\\'")+'\')">'
       +catLine
       +'<div class="nm">'+whEsc(m.name||'(unnamed)')+'</div>'
-      +'<div class="rowline">'+expLine+'</div>'+rateLine+indLine
+      +'<div class="rowline">'+mainLine+'</div>'+rateLine+indLine
       +'<div>'+openPill+incPill+lookPill+negPill+'</div></button>';
 }
 
@@ -2308,9 +2399,13 @@ function renderWhCat(){
   var mats=all.filter(m=>(_whCatSel===null||m.category_code===_whCatSel) && whMatch(m,terms) && whPassFilter(m,f));
 
   var active=(terms.length||f!=='all'||_whCatSel!==null);
+  var verified=all.filter(m=>m.has_opening).length; var pending=all.length-verified;
+  var cov = verified>0
+    ? 'Verified: <b>'+verified+' / '+all.length+'</b> materials'
+      + (pending>0 ? '. '+pending+' still not physically counted &mdash; those are old-record estimates.' : '. All materials verified.')
+    : 'Verified: <b>0 / '+all.length+'</b> &mdash; nothing is physically counted yet; all figures are old-record estimates.';
   $('whCount').innerHTML='Showing <b>'+mats.length+'</b> of '+all.length+' materials'
-    + (active?' (filtered)':'')
-    + '. Opening counts done: <b>'+(t.with_opening||0)+'</b> &mdash; nothing here is verified stock yet.';
+    + (active?' (filtered)':'') + '. ' + cov;
 
   if(!mats.length){ $('whBody').innerHTML='<div class="whmut">No materials match. Try a different word, category or filter.</div>'; return; }
 
@@ -2365,32 +2460,58 @@ function renderWhReview(){
 
 function renderWhVal(){
   var mats=(_whCat&&_whCat.materials)||[]; var t=(_whCat&&_whCat.totals)||{};
-  var ind=0; mats.forEach(m=>{ if(m.indicative_value!=null) ind+=Number(m.indicative_value)||0; });
+  // Verified value: ONLY materials with a trusted opening AND a rate. Never mixed
+  // with the legacy indicative figure, which stays a separate estimate.
+  var verVal=0, verN=0, verRated=0;
+  var ind=0, indN=0;
+  mats.forEach(m=>{
+    if(m.has_opening){ verN++;
+      if(m.rate!=null && m.recorded_qty!=null){ verVal+=Number(m.recorded_qty)*Number(m.rate); verRated++; } }
+    else if(m.indicative_value!=null){ ind+=Number(m.indicative_value)||0; indN++; }
+  });
+  var verifiedBlock = verRated>0
+    ? '<div class="whbig" style="color:var(--mint)">'+whMoney(verVal)+'</div>'
+      +'<div class="whnote">From <b>'+verRated+'</b> materials that are both physically counted and rated. '
+      +'This is real, trusted stock value &mdash; it does <b>not</b> include any un-counted material.</div>'
+    : '<div class="whbig" style="color:var(--mut2)">Not available yet</div>'
+      +'<div class="whnote">No material yet has both a verified opening count and a rate. '
+      +'As you count and rate materials, their trusted value appears here.</div>';
   var html=''
-   +'<div class="msec"><h3>Indicative value from old records</h3>'
-   +'<div class="whbig">'+whMoney(ind)+'</div>'
-   +'<div class="whnote">This is what the old records imply (old expected quantity &times; rate on file). '
-   +'It is <b>not</b> a counted warehouse value.</div></div>'
+   +'<div class="msec"><h3>Verified warehouse value</h3>'+verifiedBlock+'</div>'
    +'<div class="msec"><h3>Coverage</h3>'
-   +'<div class="rowline">Rates available for: <b>'+(t.rated||0)+' / '+(t.materials||0)+'</b> materials</div>'
-   +'<div class="rowline">Materials with a verified opening count: <b>'+(t.with_opening||0)+'</b></div></div>'
-   +'<div class="msec"><h3>Verified warehouse value</h3>'
-   +'<div class="whbig" style="color:var(--mut2)">Not available yet</div>'
-   +'<div class="whnote">A real value needs physical opening counts, which have not started. '
-   +'Once counting begins, verified and unverified stock can be shown separately.</div></div>';
+   +'<div class="rowline">Physically counted (trusted): <b>'+verN+' / '+(t.materials||mats.length)+'</b> materials</div>'
+   +'<div class="rowline">Rates available for: <b>'+(t.rated||0)+' / '+(t.materials||mats.length)+'</b> materials</div></div>'
+   +'<div class="msec"><h3>Indicative value from old records</h3>'
+   +'<div class="whbig" style="color:var(--mut2)">'+whMoney(ind)+'</div>'
+   +'<div class="whnote">A separate estimate for the <b>'+indN+'</b> materials not yet counted '
+   +'(old expected quantity &times; rate on file). It is <b>not</b> counted stock and is never added to the verified value above.</div></div>';
   $('whBody').innerHTML=html;
 }
 
 async function openWhTrail(id,name){
-  $('whprev').classList.add('hide'); $('whtrail').classList.remove('hide');
+  $('whprev').classList.add('hide'); $('whcount').classList.add('hide'); $('whtrail').classList.remove('hide');
   $('whTrailName').textContent=name||'Material';
+  _whMat=(_whCat&&_whCat.materials||[]).find(m=>m.material_id===id)||{material_id:id,name:name};
+  renderWhTrailHead();
   $('whTrailBody').innerHTML='<div class="whmut">Loading old records&hellip;</div>';
   var rows=await api("/rest/v1/rpc/wh_owner_trail",{method:'POST',headers:HJ,body:JSON.stringify({p_material_id:id})});
   if(!rows){ $('whTrailBody').innerHTML='<div class="whmut">Could not load.</div>'; return; }
   if(!rows.length){ $('whTrailBody').innerHTML='<div class="whmut">No old records for this material.</div>'; return; }
-  var html='<div class="whcat">Old records &middot; '+rows.length+'</div>';
+  var unit=whEsc((_whMat&&_whMat.unit_code)||'');
+  var legacyCount=rows.filter(r=>r.kind==='legacy').length;
+  var html='<div class="whcat">Old records &middot; '+legacyCount+'</div>';
   rows.forEach(r=>{
     var d=r.detail||{}; var when=(r.at||'').slice(0,10);
+    if(r.kind==='opening'){
+      var diff=(d.legacy_expected!=null)?(Number(r.delta)-Number(d.legacy_expected)):null;
+      var diffTxt=(diff!=null)?(' &middot; '+(diff>0?'+':'')+whFmt(diff,(_whMat&&_whMat.decimals)||0)+' vs old records'):'';
+      html+='<div class="whtl" style="border-color:rgba(21,115,75,.35);background:rgba(21,115,75,.06)">'
+          +'<div class="d">'+whEsc(when)+' &middot; the trusted baseline begins here</div>'
+          +'<div class="l"><span class="whin">&#10003; OPENING</span> '+whFmt(r.delta,(_whMat&&_whMat.decimals)||0)+' '+unit
+          + (d.by?' &middot; by '+whEsc(d.by):'') + diffTxt +'</div>'
+          + (d.note?'<div class="d" style="margin-top:4px">&ldquo;'+whEsc(d.note)+'&rdquo;</div>':'') +'</div>';
+      return;
+    }
     var dir = r.delta>0 ? '<span class="whin">IN</span>' : (r.delta<0 ? '<span class="whout">OUT</span>' : '');
     var qty = Math.abs(Number(r.delta)||0).toLocaleString('en-IN');
     var kind = r.kind==='legacy' ? '' : (' &middot; '+whEsc(r.kind));
@@ -2400,9 +2521,134 @@ async function openWhTrail(id,name){
     html+='<div class="whtl"><div class="d">'+whEsc(when)+kind+who+'</div>'
         +'<div class="l">'+dir+' '+qty+(r.label?' &middot; '+whEsc(r.label):'')+ph+dup+'</div></div>';
   });
-  html+='<div class="whnote">Photos from old records are counted here; opening them comes in a later step. '
-     +'These lines are history only and are not part of any verified stock figure.</div>';
+  html+='<div class="whnote">Old records are history only. They are shown for reference and are not part of any trusted stock figure until an opening count is confirmed.</div>';
   $('whTrailBody').innerHTML=html;
+}
+
+// ---- Stage 1C: the opening-count workflow (owner-only) ----
+function whWhenLocalNow(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  return d.toISOString().slice(0,16); }
+function openWhCount(){
+  var m=_whMat; if(!m||!ownerLoggedIn()){ return; }
+  if(m.has_opening || m.identity_incomplete){ return; }   // guarded; the CTA is only shown when allowed
+  $('whtrail').classList.add('hide'); $('whprev').classList.add('hide'); $('whcount').classList.remove('hide');
+  var unit=whEsc(m.unit_code||'');
+  $('whcMat').innerHTML=whEsc(m.name||'(unnamed)');
+  $('whcCat').innerHTML=whEsc(m.category_code||'')+' &middot; counted in '+unit;
+  var exp=whFmt(m.legacy_expected_qty,m.decimals||0);
+  $('whcLegacy').innerHTML= (exp!==null
+      ? 'Old records suggest <b>'+exp+' '+unit+'</b>. '
+      : 'Old records show no quantity for this material. ')
+    + 'This is <b>not</b> trusted — it may be wrong. Count what is physically there and enter that.';
+  $('whcUnit').textContent=(m.unit_code||'');
+  $('whcQty').value='';                 // never prefilled: prefilling would bias the count
+  $('whcNote').value='';
+  $('whcWhen').value=whWhenLocalNow();
+  $('whcQtyErr').className='cerr hide'; $('whcConfirmErr').className='cerr hide';
+  $('whcReviewBtn').disabled=true;
+  $('whCountReview').classList.add('hide'); $('whCountEntry').classList.remove('hide');
+  setTimeout(function(){ try{ $('whcQty').focus(); }catch(e){} }, 60);
+}
+function closeWhCount(){ $('whcount').classList.add('hide');
+  // return to the material's trail, refreshed
+  if(_whMat&&_whMat.material_id){ openWhTrail(_whMat.material_id, _whMat.name); }
+  else { $('whprev').classList.remove('hide'); } }
+function whcValidate(){
+  var m=_whMat||{}; var raw=($('whcQty').value||'').trim();
+  if(raw===''){ return {ok:false, msg:''}; }
+  if(!/^\d+(\.\d+)?$/.test(raw)){ return {ok:false, msg:'Enter a number — no minus sign.'}; }
+  var n=Number(raw); if(!isFinite(n)){ return {ok:false, msg:'Enter a valid number.'}; }
+  var dec=m.decimals||0; var parts=raw.split('.'); var places=parts[1]?parts[1].length:0;
+  if(places>dec){ return {ok:false, msg: dec===0
+      ? 'Counted in whole '+(m.unit_code||'units')+' — no decimals here.'
+      : 'Up to '+dec+' decimal place'+(dec>1?'s':'')+' for this material.'}; }
+  return {ok:true, n:n};
+}
+function whcQtyChange(){
+  var v=whcValidate(); var e=$('whcQtyErr');
+  if(v.ok){ e.className='cerr hide'; $('whcReviewBtn').disabled=false; }
+  else { e.textContent=v.msg||''; e.className=v.msg?'cerr':'cerr hide'; $('whcReviewBtn').disabled=true; }
+}
+function whReviewCount(){
+  var m=_whMat||{}; var v=whcValidate(); if(!v.ok){ whcQtyChange(); return; }
+  var unit=whEsc(m.unit_code||''); var dec=m.decimals||0;
+  $('whrvCount').innerHTML=whFmt(v.n,dec)+' '+unit;
+  var legacy=m.legacy_expected_qty;
+  if(legacy!=null){
+    $('whrvLegacy').innerHTML=whFmt(legacy,dec)+' '+unit;
+    var diff=v.n-Number(legacy);
+    $('whrvDiff').innerHTML=(diff>0?'+':'')+whFmt(diff,dec)+' '+unit;
+    $('whrvDiffRow').style.display='';
+    var big = Math.abs(diff) >= Math.max(3, 0.2*Math.abs(Number(legacy)));
+    if(diff!==0 && big){
+      $('whrvWarn').innerHTML='&#9888; This is a big difference from the old records. That is allowed &mdash; the physical count is the truth. Just make sure you counted correctly.';
+      $('whrvWarn').className='cwarn';
+    } else { $('whrvWarn').className='cwarn hide'; }
+  } else {
+    $('whrvLegacy').innerHTML='&mdash;';
+    $('whrvDiff').innerHTML='&mdash;'; $('whrvDiffRow').style.display='none';
+    $('whrvWarn').className='cwarn hide';
+  }
+  var note=($('whcNote').value||'').trim();
+  if(note){ $('whrvNote').innerHTML='Note: &ldquo;'+whEsc(note)+'&rdquo;'; $('whrvNote').className='cnote'; }
+  else { $('whrvNote').className='cnote hide'; }
+  var when=$('whcWhen').value; $('whrvWhen').textContent='Effective: '+(when?when.replace('T',' '):'now');
+  $('whcConfirmErr').className='cerr hide'; $('whcConfirmBtn').disabled=false;
+  $('whCountEntry').classList.add('hide'); $('whCountReview').classList.remove('hide');
+}
+function whEditCount(){ $('whCountReview').classList.add('hide'); $('whCountEntry').classList.remove('hide'); }
+async function confirmWhOpening(){
+  var m=_whMat||{}; var v=whcValidate(); if(!v.ok){ whEditCount(); whcQtyChange(); return; }
+  var btn=$('whcConfirmBtn'); btn.disabled=true; btn.textContent='Saving…';   // guard double-submit
+  var whenRaw=$('whcWhen').value; var eff=null;
+  if(whenRaw){ var d=new Date(whenRaw); if(!isNaN(d)){ if(d.getTime()>Date.now()) d=new Date(); eff=d.toISOString(); } }
+  if(!eff){ eff=new Date().toISOString(); }
+  var note=($('whcNote').value||'').trim();
+  var res=await apiRpc("/rest/v1/rpc/wh_owner_record_opening",
+    { p_material_id:m.material_id, p_counted:v.n, p_effective_at:eff, p_note: note||null });
+  if(res.ok){
+    toast('Opening count saved','ok');
+    await reloadWhCatalogue();
+    _whMat=(_whCat&&_whCat.materials||[]).find(x=>x.material_id===m.material_id)||_whMat;
+    $('whcount').classList.add('hide');
+    openWhTrail(m.material_id, m.name);
+  } else {
+    var msg=res.error||'Could not save.';
+    if(/opening_exists/i.test(msg)) msg='This material already has a verified opening.';
+    else if(/only the owner/i.test(msg)) msg='Only the owner can record an opening count.';
+    else if(/negative/i.test(msg)) msg='A count cannot be negative.';
+    else if(/precision|decimal/i.test(msg)) msg='That number has more precision than this material allows.';
+    else if(/future/i.test(msg)) msg='The effective time cannot be in the future.';
+    $('whcConfirmErr').textContent=msg; $('whcConfirmErr').className='cerr';
+    btn.disabled=false; btn.innerHTML='&#10003; Confirm opening count';
+  }
+}
+// Re-read the catalogue so verified state, coverage and value update everywhere.
+async function reloadWhCatalogue(){
+  var cat=await api("/rest/v1/rpc/wh_owner_catalogue",{method:'POST',headers:HJ,body:'{}'});
+  if(cat){ _whCat=cat; }
+}
+
+// The banner + call-to-action above the trail. Verified -> show the baseline.
+// Not verified -> offer to count (owner only). Identity too ambiguous -> ask to resolve first.
+function renderWhTrailHead(){
+  var m=_whMat||{}; var unit=whEsc(m.unit_code||''); var el=$('whTrailHead'); if(!el) return;
+  if(m.has_opening){
+    var v=whFmt(m.recorded_qty,m.decimals||0);
+    el.innerHTML='<div class="whverified">&#10003; Verified opening. Trusted stock: <b>'+v+' '+unit+'</b>.'
+      + (m.legacy_expected_qty!=null?' Old records suggested '+whFmt(m.legacy_expected_qty,m.decimals||0)+'.':'')
+      + ' The old records below are history only.</div>';
+    return;
+  }
+  if(m.identity_incomplete){
+    el.innerHTML='<div class="whblock">This material&rsquo;s identity is incomplete, so it is not yet clear exactly what would be counted. '
+      + 'Resolve its identity before verifying an opening count.</div>'
+      + '<div class="whwarn">&#9888; Opening count not yet recorded. Everything below is from old records only &mdash; it is not verified stock.</div>';
+    return;
+  }
+  el.innerHTML='<div class="whctacard"><button class="whcta" onclick="openWhCount()">&#10003; Verify opening count</button>'
+    + '<div class="whctahint">Physically count this material and record the real number. That becomes its trusted starting stock. Old records are only a reference and may be wrong.</div></div>'
+    + '<div class="whwarn">&#9888; Opening count not yet recorded. Everything below is from old records only &mdash; it is not verified stock.</div>';
 }
 
 </script>
