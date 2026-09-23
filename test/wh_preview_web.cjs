@@ -246,6 +246,103 @@ function j(o){ return { status:200, contentType:'application/json', body:JSON.st
   say('no horizontal scroll at 360px', overflow <= 1);
 
   await p.close();
+
+  // ================= TEST 3: Stage 1C — owner opening-count workflow =================
+  p = await browser.newPage();
+  const c3 = [];              // every rpc url
+  const writes = [];          // {url, body} for the opening-count POSTs we care about
+  let catCalls = 0;
+  // After a successful opening, the catalogue is re-read; return Century as verified then.
+  const catVerified = JSON.parse(JSON.stringify(CAT));
+  catVerified.materials[0].has_opening = true;
+  catVerified.materials[0].recorded_qty = 18;
+  catVerified.totals.with_opening = 2;
+  await p.route('**/rest/v1/**', r => r.fulfill(j([])));
+  await p.route('**/auth/v1/**', r => r.fulfill(j({})));
+  await p.route('**/rest/v1/rpc/**', async route => {
+    const u = route.request().url(); c3.push(u);
+    if (u.includes('wh_owner_catalogue')) { catCalls++; return route.fulfill(j(catCalls === 1 ? CAT : catVerified)); }
+    if (u.includes('wh_owner_review'))    return route.fulfill(j(REV));
+    if (u.includes('wh_owner_trail'))     return route.fulfill(j(TRAIL));
+    if (u.includes('wh_owner_record_opening')) {
+      let body = {}; try { body = JSON.parse(route.request().postData() || '{}'); } catch (e) {}
+      writes.push({ url: u, body });
+      return route.fulfill(j({ opening_id: '00000000-0000-0000-0000-0000000000aa', counted: body.p_counted, note: body.p_note }));
+    }
+    return route.fulfill(j([]));
+  });
+  await p.addInitScript(() => { try { localStorage.setItem('nkg_sess', JSON.stringify({ access_token:'owner-tok', refresh_token:'r' })); } catch(e){} });
+  await p.goto(on, { waitUntil:'domcontentloaded' });
+  await p.waitForTimeout(300);
+  await p.evaluate(() => { loadSession && loadSession(); });
+  await p.evaluate(() => openWhPreview());
+  await p.waitForTimeout(400);
+
+  // open the trail for Century (unverified) -> Verify CTA should appear
+  await p.evaluate(() => openWhTrail('aaaaaaaa-0000-0000-0000-000000000001', 'Century · 18mm · 8x4'));
+  await p.waitForTimeout(300);
+  say('1C trail: "Verify opening count" CTA on an unverified material',
+      /Verify opening count/i.test(await p.$eval('#whTrailHead', e => e.innerText)));
+  say('1C trail: honest "not verified stock" banner still shown',
+      /not verified stock/i.test(await p.$eval('#whTrailHead', e => e.innerText)));
+
+  // open the count screen
+  await p.evaluate(() => openWhCount());
+  await p.waitForTimeout(200);
+  say('1C count screen visible', !(await p.$eval('#whcount', e => e.classList.contains('hide'))));
+  say('1C count: physical input is NOT prefilled (no biasing)', (await p.$eval('#whcQty', e => e.value)) === '');
+  say('1C count: legacy shown as context + "not" trusted',
+      /Old records suggest|not/i.test(await p.$eval('#whcLegacy', e => e.innerText)));
+  say('1C count: Review button disabled until a number is entered',
+      await p.$eval('#whcReviewBtn', e => e.disabled));
+
+  // fractional count on a whole-unit material -> precision error, still disabled
+  await p.evaluate(() => { $('whcQty').value = '18.5'; whcQtyChange(); });
+  await p.waitForTimeout(120);
+  say('1C count: whole-unit material rejects a fractional count',
+      !/hide/.test(await p.$eval('#whcQtyErr', e => e.className)) && await p.$eval('#whcReviewBtn', e => e.disabled));
+
+  // valid count -> review shows the difference vs old records
+  await p.evaluate(() => { $('whcQty').value = '18'; whcQtyChange(); });
+  await p.waitForTimeout(100);
+  say('1C count: valid whole number enables Review', !(await p.$eval('#whcReviewBtn', e => e.disabled)));
+  await p.evaluate(() => { $('whcNote').value = 'shed A, 3 damaged kept aside'; whReviewCount(); });
+  await p.waitForTimeout(150);
+  const rv = await p.$eval('#whCountReview', e => e.innerText);
+  say('1C review: shows counted 18', /18/.test(rv));
+  say('1C review: shows old-records 73', /73/.test(rv));
+  say('1C review: shows the difference (-55)', /-55|−55/.test(rv));
+  say('1C review: large-difference warning shown (non-blocking)',
+      !/hide/.test(await p.$eval('#whrvWarn', e => e.className)));
+
+  // confirm -> the write rpc is called once, with the right payload
+  await p.evaluate(() => confirmWhOpening());
+  await p.waitForTimeout(500);
+  say('1C confirm: wh_owner_record_opening was called exactly once', writes.length === 1);
+  say('1C confirm: payload material id correct', writes[0] && writes[0].body.p_material_id === 'aaaaaaaa-0000-0000-0000-000000000001');
+  say('1C confirm: payload counted = 18 (not the legacy 73)', writes[0] && Number(writes[0].body.p_counted) === 18);
+  say('1C confirm: payload carries the note', writes[0] && /damaged/.test(writes[0].body.p_note || ''));
+  say('1C confirm: payload has an effective time', writes[0] && !!writes[0].body.p_effective_at);
+  say('1C confirm: catalogue re-read after saving', catCalls >= 2);
+  say('1C after save: trail shows the verified baseline',
+      /Verified opening|Trusted stock/i.test(await p.$eval('#whTrailHead', e => e.innerText)));
+
+  // identity-incomplete material must ask to resolve identity, and offer NO count
+  await p.evaluate(() => openWhTrail('cccccccc-0000-0000-0000-000000000003', '(not recorded) · Membrane · 80x42'));
+  await p.waitForTimeout(300);
+  const ih = await p.$eval('#whTrailHead', e => e.innerText);
+  say('1C identity-incomplete: asks to resolve identity first', /Resolve its identity|identity is incomplete/i.test(ih));
+  say('1C identity-incomplete: no Verify CTA offered', !/Verify opening count/i.test(ih));
+
+  // catalogue now reflects mixed trust
+  await p.evaluate(() => { backToWhPreview(); setWhView('cat'); });
+  await p.waitForTimeout(200);
+  say('1C catalogue: coverage line shows verified count', /Verified:/i.test(await p.$eval('#whCount', e => e.innerText)));
+
+  // discipline: the ONLY write rpc used is record_opening (no other writes leaked)
+  say('1C: no unexpected write rpc', !c3.some(u => /(submit_event|draft_put|set_rate|activate|correct_|approve_|resolve_count|supersede|add_person|create_material|attach_evidence|revoke_device|report_count|merge)/.test(u)));
+
+  await p.close();
   await browser.close();
   console.log(fail === 0 ? '\nALL PREVIEW TESTS PASSED' : ('\n' + fail + ' TEST(S) FAILED'));
   process.exit(fail ? 1 : 0);
