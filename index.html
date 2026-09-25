@@ -527,6 +527,63 @@ body.wbdragging{overflow:hidden}
 .whcta:active{transform:scale(.985)}
 .whctahint{font-size:12px;color:var(--mut2);margin-top:9px;line-height:1.5}
 .whblock{margin-bottom:12px;background:rgba(176,56,76,.07);border:1px solid rgba(176,56,76,.28);border-radius:12px;padding:12px 13px;font-size:13px;color:var(--rose);font-weight:600;line-height:1.5}
+/* Stage 1D — warehouse staff + owner-devices */
+.wmcard{background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:18px}
+.wmh{font-size:19px;font-weight:800}
+.wmsub{font-size:13px;color:var(--mut2);line-height:1.55;margin-top:8px}
+.wmerr{margin-top:10px;font-size:13px;font-weight:600;color:var(--rose)}
+.wmwarn{margin-top:10px;font-size:13px;font-weight:600;color:var(--amber);background:rgba(143,95,0,.08);border:1px solid rgba(143,95,0,.30);border-radius:11px;padding:10px 12px;line-height:1.5}
+.wmtag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--mint);border-radius:999px;padding:3px 10px}
+.wmtag.out{background:var(--rose)}
+.wmconn{font-size:12px;color:var(--mut2);margin:2px 2px 12px;min-height:1.1em}
+.wmconn.pend{color:var(--amber);font-weight:700}
+.wmbig{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.wmact{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:132px;border-radius:18px;border:1px solid var(--hair);font-size:18px;font-weight:800;color:#fff}
+.wmact .ic{font-size:34px;line-height:1}
+.wmact.in{background:var(--mint)}.wmact.out{background:var(--rose)}
+.wmact:active{transform:scale(.99)}
+.wmhdr{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:14px;margin-bottom:8px}
+.wmfield{display:block;margin-bottom:10px}
+.wmfield>span{display:block;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mut2);margin:0 2px 5px}
+.wmfield input{width:100%;font-size:15px;padding:11px 12px;border-radius:11px;border:1px solid var(--hair);background:var(--well);color:var(--ink);outline:none}
+.wmfield input:focus{border-color:var(--indigo)}
+.wmrow2{display:flex;gap:8px}.wmrow2 .wmfield{flex:1;min-width:0}
+.wmcheck{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink);margin:4px 2px 2px}
+.wmcheck input{width:20px;height:20px}
+.wmev{margin-top:12px}
+.btnghost{background:var(--panel2);border:1px solid var(--hair);color:var(--mut);border-radius:11px;padding:11px 13px;font-size:14px;font-weight:700}
+.wmphotostate{font-size:12.5px;color:var(--mut2);margin-top:8px}
+.wmphotostate.ok{color:var(--mint);font-weight:700}.wmphotostate.err{color:var(--rose);font-weight:700}
+.btnadd{width:100%;background:var(--panel2);border:1px dashed var(--hair2);color:var(--ink);border-radius:13px;padding:14px;font-size:15px;font-weight:800;margin-top:6px}
+.wmline{display:flex;align-items:center;gap:10px;border:1px solid var(--hair);border-radius:12px;padding:11px 13px;margin-bottom:8px;background:var(--panel)}
+.wmline .nm{flex:1;min-width:0}.wmline .nm b{font-weight:700}.wmline .sub{font-size:12px;color:var(--mut2)}
+.wmline .q{font-weight:800;white-space:nowrap}
+.wmline .x{background:none;border:none;color:var(--rose);font-size:20px;font-weight:800;padding:4px 8px}
+.wmcat{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wmcatbtn{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:18px 14px;font-size:16px;font-weight:800;color:var(--ink);text-align:left;min-height:64px}
+.wmcatbtn .c{display:block;font-size:12px;font-weight:700;color:var(--mut2);margin-top:3px}
+.wmstep{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mut2);margin:4px 2px 10px}
+.wmcrumb{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.wmcrumb .cb{font-size:12.5px;font-weight:700;background:rgba(36,87,166,.12);border:1px solid rgba(36,87,166,.4);color:var(--ink);border-radius:999px;padding:6px 11px}
+.wmopt{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:14px;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.wmopt:active{background:var(--panel2)}
+.wmmatch{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--hair);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.wmmatch .nm{font-weight:700}.wmmatch .sub{font-size:12.5px;color:var(--mut2);margin-top:2px}
+.wmqcard{background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:18px}
+.wmqname{font-size:20px;font-weight:800;line-height:1.25}
+.wmqsub{font-size:13px;color:var(--mut2);margin-top:3px}
+.wmqstock{font-size:13px;color:var(--mut);margin-top:10px}
+.wmqstock b{color:var(--ink)}
+.wmrevsec{background:var(--panel);border:1px solid var(--hair);border-radius:14px;padding:14px;margin-bottom:10px}
+.wmrevsec .t{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--mut2);margin-bottom:8px}
+.wmrevrow{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 0;border-bottom:1px solid var(--hair)}
+.wmrevrow:last-child{border-bottom:none}.wmrevrow b{font-weight:800}
+.wmuntrusted{background:rgba(143,95,0,.08);border:1px solid rgba(143,95,0,.30);border-radius:11px;padding:10px 12px;font-size:12.5px;color:var(--amber);font-weight:600;line-height:1.5;margin-top:8px}
+.wdperson{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--hair);border-radius:12px;padding:11px 13px;margin-bottom:8px;background:var(--panel)}
+.wddev{border:1px solid var(--hair);border-radius:12px;padding:11px 13px;margin-bottom:8px;background:var(--panel)}
+.wddev.revoked{opacity:.6}
+.wdcode{font-size:34px;font-weight:800;letter-spacing:.16em;text-align:center;color:var(--indigo);margin:6px 0}
+.wdsmall{font-size:12px;color:var(--mut2)}
 </style></head>
 <body>
 
@@ -535,6 +592,7 @@ body.wbdragging{overflow:hidden}
   <div class="namebtns" id="staffBtns"></div>
   <div class="nostaff hide" id="noStaff">No staff added yet.<br>Owner: tap below, add staff in <b>Manage</b>.</div>
   <button class="mtentry" id="myTasksBtn" onclick="showTasks()"><span class="ic">&#128203;</span><span class="tx">मेरा काम <span class="en">· My Tasks</span><span class="sub">अपना लॉगिन · अलग सिस्टम, ऑर्डर से नहीं जुड़ा</span></span></button>
+  <button class="mtentry" id="wmEntryBtn" onclick="openWm()" style="display:none;background:linear-gradient(135deg,rgba(36,87,166,.14),rgba(21,115,75,.12));border-color:rgba(36,87,166,.55)"><span class="ic">&#127981;</span><span class="tx">Warehouse <span class="en">· goods in / out</span><span class="sub">stock movements &mdash; activate this phone with an owner code</span></span></button>
   <button class="linkbtn" onclick="ownerLogin()">I'm the owner &rarr;</button>
 </div>
 
@@ -620,7 +678,7 @@ body.wbdragging{overflow:hidden}
 </div>
 
 <div id="owner" class="wrap hide">
-  <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" id="refreshBtn" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" id="whPrevBtn" onclick="openWhPreview()" style="display:none;font-weight:700">Warehouse Preview</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
+  <div class="top"><div class="who">Owner &middot; <b>NK Warehouse</b></div><div style="display:flex;gap:8px"><button class="iconlink" id="refreshBtn" onclick="loadStock()" aria-label="Refresh" title="Refresh">&#8635;</button><button class="iconlink" id="whPrevBtn" onclick="openWhPreview()" style="display:none;font-weight:700">Warehouse Preview</button><button class="iconlink" id="wdAdminBtn" onclick="openWdAdmin()" style="display:none;font-weight:700">Phones</button><button class="iconlink" onclick="ownerLogout()">Log out</button><button class="iconlink" onclick="backToGate()">Exit</button></div></div>
   <div class="csum"><div class="csum-r"><span class="cl">Stock value</span><b class="cvbig num" id="stVal">&#8377;0</b></div><div class="cmeta"><b id="stQty">0</b> pcs in stock &middot; today <b id="stIn">0</b> in / <b id="stOut">0</b> out<span id="staleNote" class="vnote hide"> &middot; older data &mdash; tap &#8635;</span></div></div>
   <div class="modew" id="ownerView"><button id="vwHome" class="on" onclick="setOwnerView('home')">Today</button><button id="vwDay" onclick="setOwnerView('day')">By date</button><button id="vwItems" onclick="setOwnerView('items')">Stock</button><button id="vwLog" onclick="setOwnerView('log')">All</button></div>
   <input id="searchIn" class="searchbar hide" placeholder="Search brand, design, customer&hellip;" oninput="renderOwner()" style="margin-top:12px">
@@ -733,6 +791,114 @@ body.wbdragging{overflow:hidden}
   </div>
 </div>
 
+<!-- =========================================================================
+     STAGE 1D — Warehouse staff movement app (Goods In / Out) + owner devices.
+     A separate surface: staff activate this phone with an owner code and hold a
+     device token on the phone (never Supabase Auth). Recorder identity is always
+     derived server-side from the device credential. Old NK is untouched.
+     ========================================================================= -->
+
+<!-- Owner: manage warehouse phones -->
+<div id="wd_admin" class="wrap hide">
+  <div class="top"><div class="who"><b>&#128241; Warehouse phones</b></div><button class="iconlink" onclick="showOwner()">&#8592; Back</button></div>
+  <div class="msec"><h3>People</h3><div id="wdPeople"><div class="whmut">Loading&hellip;</div></div>
+    <div class="maddrow" style="margin-top:8px"><input id="wdNewPerson" placeholder="Add a warehouse person (name)"><button onclick="wdAddPerson()">Add</button></div>
+  </div>
+  <div class="msec"><h3>Activated phones</h3><div id="wdDevices"><div class="whmut">Loading&hellip;</div></div></div>
+  <div id="wdCodeCard" class="hide"></div>
+</div>
+
+<!-- Staff: activate this phone -->
+<div id="wm_act" class="wrap hide">
+  <div class="top"><div class="who"><b>&#127981; Warehouse</b></div><button class="iconlink" onclick="wmExit()">Exit</button></div>
+  <div class="wmcard">
+    <div class="wmh">Activate this phone</div>
+    <div class="wmsub">Ask the owner for a one-time code, then type it here. The code lasts a few minutes and works once. This phone is not signed in with any account &mdash; only this device token is kept here.</div>
+    <input id="wmActCode" class="searchbar" maxlength="14" autocapitalize="characters" autocomplete="one-time-code" spellcheck="false" placeholder="e.g. 7K3P 9F2Q" style="margin-top:14px;text-align:center;font-size:20px;font-weight:800;letter-spacing:.12em">
+    <input id="wmActLabel" class="searchbar" maxlength="40" placeholder="Name this phone (optional, e.g. Godown phone)" style="margin-top:10px">
+    <div class="wmerr hide" id="wmActErr"></div>
+    <button class="save" id="wmActBtn" style="width:100%;margin-top:16px" onclick="wmActivate()">Activate</button>
+  </div>
+</div>
+
+<!-- Staff: home -->
+<div id="wm_home" class="wrap hide">
+  <div class="top"><div class="who">Warehouse &middot; <b id="wmWho">&mdash;</b></div>
+    <div style="display:flex;gap:6px"><button class="iconlink" id="wmSyncBtn" onclick="wmSync()" title="Sync">&#8635;</button><button class="iconlink" onclick="wmExit()">Exit</button></div></div>
+  <div class="wmconn" id="wmConn"></div>
+  <div class="wmbig">
+    <button class="wmact in" onclick="wmStart('IN')"><span class="ic">&#11015;</span><span>Goods In</span></button>
+    <button class="wmact out" onclick="wmStart('OUT')"><span class="ic">&#11014;</span><span>Goods Out</span></button>
+  </div>
+  <div id="wmPending"></div>
+  <button class="linkbtn" style="margin-top:18px" onclick="wmLogoutPhone()">Remove this phone&rsquo;s login</button>
+</div>
+
+<!-- Staff: movement builder -->
+<div id="wm_move" class="wrap hide">
+  <div class="top"><div class="who"><span class="wmtag" id="wmDirTag">IN</span> &nbsp;<b>Movement</b></div><button class="iconlink" onclick="wmHome()">&#8592; Back</button></div>
+  <div class="wmhdr">
+    <label class="wmfield"><span id="wmCpLabel">Source / supplier</span>
+      <input id="wmCp" maxlength="80" placeholder="who it came from"></label>
+    <div class="wmrow2">
+      <label class="wmfield"><span>Reference (bill/challan no.)</span><input id="wmRef" maxlength="40" placeholder="optional"></label>
+      <label class="wmfield"><span>Vehicle</span><input id="wmVeh" maxlength="40" placeholder="optional"></label>
+    </div>
+    <label class="wmfield"><span>Effective time</span><input id="wmWhen" type="datetime-local"></label>
+    <label class="wmfield"><span>Notes</span><input id="wmNotes" maxlength="200" placeholder="optional"></label>
+    <label class="wmcheck"><input type="checkbox" id="wmNoPaper"> <span>No paper (verbal / no document)</span></label>
+    <div class="wmev">
+      <button class="btnghost" id="wmPhotoBtn" onclick="wmPickPhoto()">&#128247; Add photo (optional)</button>
+      <input id="wmPhotoIn" type="file" accept="image/*" capture="environment" class="hide" onchange="wmOnPhoto(event)">
+      <div id="wmPhotoState" class="wmphotostate"></div>
+    </div>
+  </div>
+  <h3 style="margin-top:6px">Materials</h3>
+  <div id="wmLines"><div class="whmut">No material yet. Tap &ldquo;Add material&rdquo;.</div></div>
+  <button class="btnadd" onclick="wmOpenPick()">&#65291; Add material</button>
+  <button class="save" id="wmReviewBtn" style="width:100%;margin-top:16px" onclick="wmReview()" disabled>Review movement</button>
+</div>
+
+<!-- Staff: material picker (category-first) -->
+<div id="wm_pick" class="wrap hide">
+  <div class="top"><div class="who"><b id="wmPickTitle">Add material</b></div><button class="iconlink" onclick="wmPickBack()">&#8592; Back</button></div>
+  <input id="wmSearch" class="searchbar" placeholder="Search (e.g. Century 18, KP7098, 78x38)" oninput="wmSearchRender()" style="margin-bottom:12px">
+  <div id="wmPickBody"></div>
+</div>
+
+<!-- Staff: quantity for the picked material -->
+<div id="wm_qty" class="wrap hide">
+  <div class="top"><div class="who"><b>Quantity</b></div><button class="iconlink" onclick="wmQtyBack()">&#8592; Back</button></div>
+  <div class="wmqcard">
+    <div class="wmqname" id="wmQName">&mdash;</div>
+    <div class="wmqsub" id="wmQSub">&nbsp;</div>
+    <div class="wmqstock" id="wmQStock"></div>
+    <div class="cqtywrap" style="margin-top:14px">
+      <input id="wmQIn" class="qtyin" inputmode="decimal" placeholder="0" oninput="wmQtyChange()" style="font-size:38px;padding:16px">
+      <span class="cunit" id="wmQUnit"></span>
+    </div>
+    <div class="wmerr hide" id="wmQErr"></div>
+    <div class="wmwarn hide" id="wmQWarn"></div>
+    <button class="save" id="wmQAdd" style="width:100%;margin-top:18px" onclick="wmAddLine()" disabled>Add to this movement</button>
+  </div>
+</div>
+
+<!-- Staff: final review -->
+<div id="wm_rev" class="wrap hide">
+  <div class="top"><div class="who"><span class="wmtag" id="wmRevTag">IN</span> &nbsp;<b>Review</b></div><button class="iconlink" onclick="wmReviewBack()">&#8592; Back</button></div>
+  <div id="wmRevBody"></div>
+  <div class="wmerr hide" id="wmConfirmErr"></div>
+  <button class="save" id="wmConfirmBtn" style="width:100%;margin-top:14px" onclick="wmConfirm()">&#10003; Confirm movement</button>
+  <div class="cfoot">Once confirmed this becomes permanent warehouse history. A later mistake is fixed with a correction, never by editing or deleting.</div>
+</div>
+
+<!-- Staff: confirmed -->
+<div id="wm_done" class="wrap hide">
+  <div class="top"><div class="who"><b>&#10003; Recorded</b></div><button class="iconlink" onclick="wmHome()">Home</button></div>
+  <div id="wmDoneBody"></div>
+  <button class="save" id="wmDoneMore" style="width:100%;margin-top:16px" onclick="wmHome()">Done</button>
+</div>
+
 <div id="manage" class="wrap hide">
   <div class="top"><div class="who"><b>Manage</b> &middot; add or remove anytime</div><button class="iconlink" onclick="showOwner()">&#8592; Back</button></div>
   <div class="msec"><h3>&#127981; Ply brands</h3><div class="mchips" id="mBrand"></div><div class="maddrow"><input id="addBrandIn" placeholder="New brand"><button onclick="addOpt('brand',null,'addBrandIn')">Add</button></div></div>
@@ -797,6 +963,9 @@ const OWNER_EMAIL="shankymittal28@gmail.com";
 // Stage 1A feature flag. OFF by default: the app behaves exactly as before.
 // Turn ON (true) to reveal the owner-only, read-only Warehouse Preview.
 const WAREHOUSE_PREVIEW=true;
+// Stage 1D: the warehouse staff movement app (Goods In/Out) and owner device
+// management. Separate surface, device-token auth, old NK untouched.
+const WAREHOUSE_STAFF=true;
 let TOKEN=KEY;          // anon key by default (staff); becomes the owner's login token after sign-in
 let SESSION=null;       // {access_token, refresh_token} when the owner is signed in on this device
 const H={apikey:KEY,Authorization:"Bearer "+KEY};
@@ -877,7 +1046,8 @@ function renderStaffBtns(){ if(!staff.length){$('staffBtns').innerHTML='';$('noS
 /* The tapped name carries its Orders category assignment (owner Manage → 🏷)
    so the Orders window can narrow to it. Still a tapped name, not a login. */
 function pickStaff(n){ const s=(staff||[]).find(x=>x.name===n)||{}; me_={name:n,order_tags:Array.isArray(s.order_tags)?s.order_tags:[]}; origin='gate'; _wbTab=null; try{localStorage.setItem('nkg_last_staff',n);}catch(e){} tryResume(n); showAdd(); }
-function backToGate(){ ['add','owner','manage','khata','bill','whprev','whtrail','whcount'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('gate').classList.remove('hide'); loadStaff(); }
+function backToGate(){ ['add','owner','manage','khata','bill','whprev','whtrail','whcount','wd_admin','wm_act','wm_home','wm_move','wm_pick','wm_qty','wm_rev','wm_done'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('gate').classList.remove('hide'); wmRevealEntry(); loadStaff(); }
+function wmRevealEntry(){ var b=$('wmEntryBtn'); if(b) b.style.display=WAREHOUSE_STAFF?'':'none'; }
 function addBack(){ origin==='owner'?showOwner():backToGate(); }
 function ownerLogin(){
   if(ownerLoggedIn()){ showOwner(); return; }
@@ -1554,7 +1724,7 @@ function pushRecent(e){ todayCount++; localStorage.setItem('nkg_today_'+today(),
 
 let ownerView='home', groups=[], rates={};
 const inr=n=>{const v=Math.round(Number(n)||0);return (v<0?'-₹':'₹')+Math.abs(v).toLocaleString('en-IN');};
-async function showOwner(){ ['gate','add','manage','khata','bill','whprev','whtrail','whcount'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('owner').classList.remove('hide'); { const b=$('whPrevBtn'); if(b) b.style.display=(WAREHOUSE_PREVIEW&&ownerLoggedIn())?'':'none'; } await loadStock(); }
+async function showOwner(){ ['gate','add','manage','khata','bill','whprev','whtrail','whcount','wd_admin','wm_act','wm_home','wm_move','wm_pick','wm_qty','wm_rev','wm_done'].forEach(i=>$(i)&&$(i).classList.add('hide')); $('owner').classList.remove('hide'); { const b=$('whPrevBtn'); if(b) b.style.display=(WAREHOUSE_PREVIEW&&ownerLoggedIn())?'':'none'; const a=$('wdAdminBtn'); if(a) a.style.display=(WAREHOUSE_STAFF&&ownerLoggedIn())?'':'none'; } await loadStock(); }
 async function loadStock(){ const rb=$('refreshBtn'); if(rb)rb.classList.add('busy'); if(!stock.length){ $('itemList').innerHTML='<div class="empty">Loading&hellip;</div>'; }
   const [s,rt]=await Promise.all([api("/rest/v1/nkg_stock?select=*&order=created_at.desc"),api("/rest/v1/nkg_rates?select=k,rate")]);
   if(rb)rb.classList.remove('busy');
@@ -2029,6 +2199,7 @@ let tt; function toast(m,k){ const t=$('toast'); t.textContent=m; t.className=''
 
 loadSession();
 loadStaff();
+wmRevealEntry();
 if('serviceWorker' in navigator){ let _rf=false; navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_rf)return;_rf=true;location.reload();}); navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 
 /* ================= TEMPORARY DIAGNOSTIC — remove after the 487/81 bug is
@@ -2650,6 +2821,281 @@ function renderWhTrailHead(){
     + '<div class="whctahint">Physically count this material and record the real number. That becomes its trusted starting stock. Old records are only a reference and may be wrong.</div></div>'
     + '<div class="whwarn">&#9888; Opening count not yet recorded. Everything below is from old records only &mdash; it is not verified stock.</div>';
 }
+
+/* ===================== Stage 1D: warehouse staff movements + owner devices ===================== */
+const WM_EVIDENCE_BUCKET='wh-evidence';
+let WMDEV=null, WMCAT=null, WM=null, _wmPick={cat:null,chosen:{},material:null,stock:null};
+function wmEsc(x){ return whEsc(x); }
+function wmFmt(v,dec){ var s=whFmt(v,dec); return s==null?String(v):s; }
+function wmShow(id){ ['gate','owner','add','manage','khata','bill','mytasks','whprev','whtrail','whcount','wd_admin','wm_act','wm_home','wm_move','wm_pick','wm_qty','wm_rev','wm_done'].forEach(i=>$(i)&&$(i).classList.add('hide')); var t=$(id); if(t)t.classList.remove('hide'); window.scrollTo(0,0); }
+
+// staff RPC: always the anon key as bearer; the device token travels as an argument.
+async function wmRpc(fn,args){
+  try{
+    var r=await fetch(SB+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify(args||{})});
+    var t=await r.text(); var j=null; try{ j=t?JSON.parse(t):null; }catch(_){}
+    if(!r.ok) return {ok:false, error:(j&&(j.message||j.hint))||('HTTP '+r.status), status:r.status};
+    return {ok:true, data:j};
+  }catch(e){ return {ok:false, error:'network', status:0}; }
+}
+
+// ---- entry / session ----
+async function openWm(){
+  try{ WMDEV=JSON.parse(localStorage.getItem('wm_dev')||'null'); }catch(e){ WMDEV=null; }
+  if(WMDEV && WMDEV.token){ wmShow('wm_home'); $('wmWho').textContent=WMDEV.person||'—'; wmRenderPending(); await wmEnsureCat(); wmPing(); }
+  else { wmShow('wm_act'); $('wmActErr').className='wmerr hide'; $('wmActCode').value=''; $('wmActLabel').value=''; }
+}
+function wmHome(){ if(!WMDEV){ openWm(); return; } wmShow('wm_home'); $('wmWho').textContent=WMDEV.person||'—'; wmRenderPending(); }
+function wmExit(){ backToGate(); }
+async function wmEnsureCat(){ if(WMCAT)return; var r=await wmRpc('wh_catalogue',{p_token:WMDEV.token}); if(r.ok&&r.data) WMCAT=r.data; }
+async function wmPing(){ var r=await wmRpc('wh_ping',{p_token:WMDEV.token});
+  if(r.ok&&r.data&&r.data.ok){ WMDEV.person=r.data.person; WMDEV.role=r.data.role; try{localStorage.setItem('wm_dev',JSON.stringify(WMDEV));}catch(e){} $('wmWho').textContent=WMDEV.person; wmRenderPending(); }
+  else if(r.ok&&r.data&&r.data.ok===false){ wmLogoutPhone(true); } }
+function wmLogoutPhone(revoked){ try{localStorage.removeItem('wm_dev');}catch(e){} WMDEV=null; WMCAT=null; wmShow('wm_act');
+  var e=$('wmActErr'); if(revoked){ e.textContent='This phone’s access was removed by the owner. Enter a new code to use it again.'; e.className='wmerr'; } else { e.className='wmerr hide'; } $('wmActCode').value=''; }
+
+async function wmActivate(){
+  var code=($('wmActCode').value||'').trim().replace(/\s+/g,''); var label=($('wmActLabel').value||'').trim()||'Warehouse phone';
+  var e=$('wmActErr'); if(!code){ e.textContent='Enter the code the owner gave you.'; e.className='wmerr'; return; }
+  var btn=$('wmActBtn'); btn.disabled=true; btn.textContent='Activating…';
+  var r=await wmRpc('wh_activate',{p_code:code,p_label:label});
+  btn.disabled=false; btn.textContent='Activate';
+  if(r.ok && r.data && r.data.ok && r.data.token){
+    WMDEV={token:r.data.token, person:r.data.person, role:r.data.role, label:label};
+    try{localStorage.setItem('wm_dev',JSON.stringify(WMDEV));}catch(_){}
+    WMCAT=null; await wmEnsureCat();
+    wmShow('wm_home'); $('wmWho').textContent=WMDEV.person||'—'; wmRenderPending(); toast('Phone activated','ok');
+  } else { e.textContent='That code was not accepted. Check it, or ask the owner for a new one.'; e.className='wmerr'; }
+}
+
+// ---- movement builder ----
+function wmStart(dir){
+  if(!WMDEV){ openWm(); return; }
+  WM={dir:dir, draft_id:uuid(), rev:0, lines:[], photo:null};
+  $('wmDirTag').textContent=dir; $('wmDirTag').className='wmtag'+(dir==='OUT'?' out':'');
+  $('wmCpLabel').textContent = dir==='IN'?'Source / supplier':'Destination / customer';
+  $('wmCp').value=''; $('wmRef').value=''; $('wmVeh').value=''; $('wmWhen').value=whWhenLocalNow(); $('wmNotes').value=''; $('wmNoPaper').checked=false;
+  $('wmPhotoState').textContent=''; $('wmPhotoState').className='wmphotostate';
+  wmEnsureCat(); wmRenderLines(); wmShow('wm_move');
+}
+function wmRenderLines(){
+  var el=$('wmLines');
+  if(!WM||!WM.lines.length){ el.innerHTML='<div class="whmut">No material yet. Tap “Add material”.</div>'; $('wmReviewBtn').disabled=true; return; }
+  el.innerHTML=WM.lines.map((l,i)=>'<div class="wmline"><div class="nm"><b>'+wmEsc(l.name)+'</b><div class="sub">'+wmEsc(l.unit)+(l.over_ack?' · over recorded':'')+'</div></div><div class="q">'+wmFmt(l.qty,l.decimals)+' '+wmEsc(l.unit)+'</div><button class="x" aria-label="remove" onclick="wmDelLine('+i+')">×</button></div>').join('');
+  $('wmReviewBtn').disabled=false;
+}
+function wmDelLine(i){ WM.lines.splice(i,1); wmSaveDraft(); wmRenderLines(); }
+function wmReadHeader(){ if(!WM)return; WM.cp=$('wmCp').value.trim(); WM.ref=$('wmRef').value.trim(); WM.veh=$('wmVeh').value.trim(); WM.when=$('wmWhen').value; WM.notes=$('wmNotes').value.trim(); WM.no_paper=$('wmNoPaper').checked; }
+
+// ---- picker (category-first) ----
+function wmKeys(cat){ return (WMCAT&&WMCAT.attributes||[]).filter(a=>a.category_code===cat).sort((a,b)=>a.seq-b.seq).map(a=>a.attr_key); }
+function wmKeyLabel(cat,key){ var a=(WMCAT&&WMCAT.attributes||[]).find(x=>x.category_code===cat&&x.attr_key===key); return a?(a.label_en||a.attr_key):key; }
+function wmName(m){ return wmKeys(m.category_code).map(k=>String((m.attrs||{})[k]||'').trim()).filter(Boolean).join(' · ')||'(unnamed)'; }
+function wmMatsIn(cat,chosen){ return (WMCAT&&WMCAT.materials||[]).filter(m=>m.category_code===cat && Object.keys(chosen).every(k=>String((m.attrs||{})[k]||'')===String(chosen[k]))); }
+function wmOpenPick(){ if(!WMCAT){ wmEnsureCat().then(()=>{_wmOpenPick2();}); return; } _wmOpenPick2(); }
+function _wmOpenPick2(){ _wmPick={cat:null,chosen:{},material:null,stock:null}; $('wmSearch').value=''; $('wmPickTitle').textContent=(WM.dir==='IN'?'Goods In':'Goods Out')+' · add material'; wmPickRender(); wmShow('wm_pick'); }
+function wmPickBack(){ wmShow('wm_move'); }
+function wmPickCat(c){ _wmPick.cat=c; _wmPick.chosen={}; wmPickRender(); }
+function wmChoose(k,v){ _wmPick.chosen[k]=v; wmPickRender(); }
+function wmUnchoose(k){ delete _wmPick.chosen[k]; wmPickRender(); }
+function wmPickRender(){
+  var body=$('wmPickBody'); if(!WMCAT){ body.innerHTML='<div class="whmut">Loading catalogue…</div>'; return; }
+  if(!_wmPick.cat){
+    var counts={}; (WMCAT.materials||[]).forEach(m=>counts[m.category_code]=(counts[m.category_code]||0)+1);
+    body.innerHTML='<div class="wmstep">Choose a category</div><div class="wmcat">'+
+      (WMCAT.categories||[]).map(c=>'<button class="wmcatbtn" onclick="wmPickCat(\''+wmEsc(c.category_code)+'\')">'+wmEsc(c.name_en||c.category_code)+'<span class="c">'+(counts[c.category_code]||0)+' items</span></button>').join('')+'</div>';
+    return;
+  }
+  var keys=wmKeys(_wmPick.cat), chosen=_wmPick.chosen, mats=wmMatsIn(_wmPick.cat,chosen);
+  var crumb='<div class="wmcrumb"><button class="cb" onclick="wmPickCat(null)">'+wmEsc(_wmPick.cat)+' ✕</button>'+
+    keys.filter(k=>chosen[k]!=null).map(k=>'<button class="cb" data-k="'+wmEsc(k)+'" onclick="wmUnchoose(this.dataset.k)">'+wmEsc(chosen[k])+' ✕</button>').join('')+'</div>';
+  var html=crumb;
+  var nextKey=keys.find(k=>chosen[k]==null && new Set(mats.map(m=>String((m.attrs||{})[k]||'')).filter(Boolean)).size>1);
+  if(nextKey){
+    var vals=Array.from(new Set(mats.map(m=>String((m.attrs||{})[nextKey]||'')).filter(Boolean))).sort();
+    html+='<div class="wmstep">'+wmEsc(wmKeyLabel(_wmPick.cat,nextKey))+'</div>'+
+      vals.map(v=>'<button class="wmopt" data-v="'+wmEsc(v)+'" onclick="wmChoose(\''+wmEsc(nextKey)+'\',this.dataset.v)">'+wmEsc(v)+'</button>').join('');
+  }
+  if(mats.length && mats.length<=12){
+    html+='<div class="wmstep">'+(nextKey?'Or pick directly':'Materials')+'</div>'+
+      mats.map(m=>'<button class="wmmatch" onclick="wmPickMaterial(\''+m.material_id+'\')"><div class="nm">'+wmEsc(wmName(m))+(m.identity_incomplete?' <span class="whpill inc">identity incomplete</span>':'')+'</div><div class="sub">'+wmEsc(m.category_code)+' · '+wmEsc(m.unit_code)+'</div></button>').join('');
+  } else if(!mats.length){
+    html+='<div class="whmut">No such material in the catalogue. Ask the owner to add it — staff cannot create materials here.</div>';
+  }
+  body.innerHTML=html;
+}
+function wmSearchRender(){
+  var q=($('wmSearch').value||'').trim().toLowerCase(); if(!q){ wmPickRender(); return; }
+  var terms=q.split(/\s+/).filter(Boolean);
+  var mats=(WMCAT&&WMCAT.materials||[]).filter(m=>{ var hay=(wmName(m)+' '+m.category_code+' '+m.unit_code).toLowerCase(); return terms.every(t=>hay.indexOf(t)>=0); }).slice(0,40);
+  $('wmPickBody').innerHTML='<div class="wmstep">'+mats.length+' match(es)</div>'+(mats.length?
+    mats.map(m=>'<button class="wmmatch" onclick="wmPickMaterial(\''+m.material_id+'\')"><div class="nm">'+wmEsc(wmName(m))+'</div><div class="sub">'+wmEsc(m.category_code)+' · '+wmEsc(m.unit_code)+'</div></button>').join('')
+    :'<div class="whmut">No material matches. Try the category picker.</div>');
+}
+
+// ---- quantity ----
+async function wmPickMaterial(id){
+  var m=(WMCAT&&WMCAT.materials||[]).find(x=>x.material_id===id); if(!m)return;
+  _wmPick.material=m; _wmPick.stock=null;
+  $('wmQName').textContent=wmName(m); $('wmQSub').textContent=m.category_code+' · counted in '+m.unit_code; $('wmQUnit').textContent=m.unit_code;
+  $('wmQIn').value=''; $('wmQErr').className='wmerr hide'; $('wmQWarn').className='wmwarn hide'; $('wmQAdd').disabled=true;
+  var sd=$('wmQStock');
+  if(WM.dir==='OUT'){ sd.innerHTML='Checking recorded stock…';
+    var r=await wmRpc('wh_stock_for_staff',{p_token:WMDEV.token,p_material_id:id});
+    _wmPick.stock=(r.ok&&r.data&&r.data.qty!=null)?Number(r.data.qty):null;
+    sd.innerHTML=_wmPick.stock!=null?('Recorded stock now: <b>'+wmFmt(_wmPick.stock,m.decimals)+' '+wmEsc(m.unit_code)+'</b>'):'No verified opening yet — recorded stock is not known.';
+  } else { sd.innerHTML=''; }
+  wmShow('wm_qty'); setTimeout(()=>{try{$('wmQIn').focus();}catch(e){}},60);
+}
+function wmQtyBack(){ wmShow('wm_pick'); }
+function wmValidateQty(){
+  var m=_wmPick.material; var raw=($('wmQIn').value||'').trim();
+  if(raw==='') return {ok:false};
+  if(!/^\d+(\.\d+)?$/.test(raw)) return {ok:false,msg:'Enter a positive number.'};
+  var n=Number(raw); if(!isFinite(n)||n<=0) return {ok:false,msg:'Quantity must be more than zero.'};
+  var dec=m.decimals||0, parts=raw.split('.'), places=parts[1]?parts[1].length:0;
+  if(places>dec) return {ok:false,msg: dec===0?('Whole '+m.unit_code+' only — no decimals.'):('Up to '+dec+' decimal place'+(dec>1?'s':'')+'.')};
+  if(m.step){ var k=Math.round(n/Number(m.step)); if(Math.abs(n-k*Number(m.step))>1e-9) return {ok:false,msg:'Must be a multiple of '+m.step+'.'}; }
+  return {ok:true,n:n};
+}
+function wmQtyChange(){
+  var v=wmValidateQty(), e=$('wmQErr'), w=$('wmQWarn');
+  if(!v.ok){ e.textContent=v.msg||''; e.className=v.msg?'wmerr':'wmerr hide'; w.className='wmwarn hide'; $('wmQAdd').disabled=true; return; }
+  e.className='wmerr hide';
+  if(WM.dir==='OUT' && _wmPick.stock!=null && v.n>_wmPick.stock){
+    w.innerHTML='⚠ More than the '+wmFmt(_wmPick.stock,_wmPick.material.decimals)+' recorded. That is allowed — record what physically leaves; the difference is flagged.'; w.className='wmwarn';
+  } else { w.className='wmwarn hide'; }
+  $('wmQAdd').disabled=false;
+}
+function wmAddLine(){
+  var v=wmValidateQty(); if(!v.ok){ wmQtyChange(); return; }
+  var m=_wmPick.material, over=(WM.dir==='OUT' && _wmPick.stock!=null && v.n>_wmPick.stock);
+  var ex=WM.lines.find(l=>l.material_id===m.material_id);
+  if(ex){ ex.qty=v.n; ex.over_ack=over; } else { WM.lines.push({material_id:m.material_id, qty:v.n, over_ack:over, name:wmName(m), unit:m.unit_code, decimals:m.decimals}); }
+  wmSaveDraft(); wmRenderLines(); wmShow('wm_move');
+}
+
+// ---- draft (best-effort remote; local mirror) ----
+function wmToIso(local){ if(!local) return new Date().toISOString(); var d=new Date(local); if(isNaN(d)) return new Date().toISOString(); if(d.getTime()>Date.now()) d=new Date(); return d.toISOString(); }
+function wmDoc(){ wmReadHeader(); return { draft_id:WM.draft_id, event_type:WM.dir, effective_at:wmToIso(WM.when),
+    counterparty:WM.cp||null, ref_number:WM.ref||null, vehicle:WM.veh||null, notes:WM.notes||null, no_paper:!!WM.no_paper,
+    lines:WM.lines.map(l=>({material_id:l.material_id, qty:l.qty, over_ack:!!l.over_ack})) }; }
+function wmSaveDraft(){
+  try{ localStorage.setItem('wm_draft', JSON.stringify(WM)); }catch(e){}
+  if(!WMDEV||!WM||!WM.lines.length) return;
+  WM.rev=(WM.rev||0)+1; wmRpc('wh_draft_put',{p_token:WMDEV.token,p_draft_id:WM.draft_id,p_client_rev:WM.rev,p_doc:wmDoc()});
+}
+
+// ---- review + confirm ----
+function wmReviewBack(){ wmShow('wm_move'); }
+function wmRevRow(k,v){ return '<div class="wmrevrow"><span>'+wmEsc(k)+'</span><b>'+wmEsc(v)+'</b></div>'; }
+async function wmReview(){
+  wmReadHeader(); if(!WM.lines.length) return;
+  $('wmRevTag').textContent=WM.dir; $('wmRevTag').className='wmtag'+(WM.dir==='OUT'?' out':'');
+  var body=$('wmRevBody'); body.innerHTML='<div class="whmut">Preparing…</div>';
+  var untrusted=0;
+  for(var i=0;i<WM.lines.length;i++){ var l=WM.lines[i]; var r=await wmRpc('wh_stock_for_staff',{p_token:WMDEV.token,p_material_id:l.material_id}); l._stock=(r.ok&&r.data&&r.data.qty!=null)?Number(r.data.qty):null; if(l._stock==null) untrusted++; }
+  var ctx=wmRevRow(WM.dir==='IN'?'Source':'Destination', WM.cp||'—');
+  if(WM.ref) ctx+=wmRevRow('Reference', WM.ref);
+  if(WM.veh) ctx+=wmRevRow('Vehicle', WM.veh);
+  ctx+=wmRevRow('Effective', (WM.when||'now').replace('T',' '));
+  ctx+=wmRevRow('Paper', WM.no_paper?'No paper':'Has document');
+  ctx+=wmRevRow('Photo', WM.photo?('1 attached — '+WM.photo.name):'none');
+  ctx+=wmRevRow('Recorded by', WMDEV.person+' (from this phone)');
+  var lines=WM.lines.map(l=>'<div class="wmrevrow"><span>'+wmEsc(l.name)+(l.over_ack?' <b style="color:var(--amber)">· over recorded</b>':'')+'</span><b>'+wmFmt(l.qty,l.decimals)+' '+wmEsc(l.unit)+'</b></div>').join('');
+  var html='<div class="wmrevsec"><div class="t">'+(WM.dir==='IN'?'Goods In':'Goods Out')+'</div>'+ctx+'</div>'+
+           '<div class="wmrevsec"><div class="t">Materials ('+WM.lines.length+')</div>'+lines+'</div>';
+  if(untrusted) html+='<div class="wmuntrusted">Will be recorded as real history — but '+untrusted+' material(s) here have <b>no verified opening yet</b>, so their running total stays untrusted until an opening count is done. The legacy quantity is never used as the baseline.</div>';
+  body.innerHTML=html;
+  $('wmConfirmErr').className='wmerr hide'; $('wmConfirmErr').removeAttribute('style'); $('wmConfirmBtn').disabled=false; $('wmConfirmBtn').innerHTML='✓ Confirm movement';
+  wmShow('wm_rev');
+}
+async function wmConfirm(){
+  var btn=$('wmConfirmBtn'); btn.disabled=true; btn.textContent='Saving…';
+  var doc=wmDoc(); WM.rev=(WM.rev||0)+1;
+  var r=await wmRpc('wh_submit_event',{p_token:WMDEV.token,p_doc:doc,p_client_rev:WM.rev});
+  // over-stock safety net: acknowledge and retry once
+  if(!(r.ok&&r.data&&r.data.event_id) && r.error && /is recorded|acknowledg/i.test(r.error)){
+    doc.lines.forEach(l=>l.over_ack=true); WM.rev++;
+    r=await wmRpc('wh_submit_event',{p_token:WMDEV.token,p_doc:doc,p_client_rev:WM.rev});
+  }
+  if(r.ok && r.data && r.data.event_id){
+    var evId=r.data.event_id, evNote='';
+    if(WM.photo){ var up=await wmUploadEvidence(evId); evNote=up.ok?'Photo attached.':('Photo NOT attached — '+up.error+'. Movement saved without it.'); }
+    try{ localStorage.removeItem('wm_draft'); }catch(e){}
+    wmRemovePending(WM.draft_id);
+    $('wmDoneBody').innerHTML='<div class="wmrevsec"><div class="t">'+(WM.dir==='IN'?'Goods In':'Goods Out')+' recorded</div>'+
+      '<div class="wmrevrow"><span>Materials</span><b>'+WM.lines.length+' line(s)</b></div>'+
+      '<div class="wmrevrow"><span>Recorded by</span><b>'+wmEsc(WMDEV.person)+'</b></div>'+
+      (r.data.already?'<div class="wmrevrow"><span>Note</span><b>already recorded earlier</b></div>':'')+
+      (evNote?'<div class="wmrevrow"><span>Photo</span><b>'+wmEsc(evNote)+'</b></div>':'')+
+      '</div><div class="cfoot">This is now permanent warehouse history. The owner’s Warehouse Preview reflects it. A mistake is fixed with a correction, never by editing or deleting.</div>';
+    toast('Movement recorded','ok'); WM=null; wmShow('wm_done'); return;
+  }
+  var msg=r.error||'Could not save.';
+  if(r.status===0 || /network/i.test(r.error||'')){
+    wmQueuePending(doc);
+    var e=$('wmConfirmErr'); e.textContent='No signal — saved on this phone and will send automatically when back online.'; e.className='wmerr'; e.style.color='var(--amber)';
+    btn.disabled=false; btn.innerHTML='✓ Confirm movement'; return;
+  }
+  if(/rev_mismatch/i.test(msg)) msg='This movement changed since you reviewed it. Go back, check it, and review again.';
+  var e2=$('wmConfirmErr'); e2.textContent=msg; e2.className='wmerr'; e2.removeAttribute('style'); btn.disabled=false; btn.innerHTML='✓ Confirm movement';
+}
+
+// ---- evidence (best-effort; honest failure) ----
+function wmPickPhoto(){ $('wmPhotoIn').click(); }
+function wmOnPhoto(ev){ var f=ev.target.files&&ev.target.files[0]; if(!f||!WM)return; WM.photo={file:f,name:(f.name||'photo.jpg')}; var s=$('wmPhotoState'); s.textContent='Photo ready: '+WM.photo.name+' — attaches when you confirm'; s.className='wmphotostate ok'; }
+async function wmUploadEvidence(eventId){
+  try{
+    var f=WM.photo.file;
+    var path=String(WMDEV.person||'phone').replace(/\s+/g,'_')+'/'+eventId+'/'+Date.now()+'_'+String(WM.photo.name||'photo.jpg').replace(/[^A-Za-z0-9._-]/g,'_');
+    var r=await fetch(SB+'/storage/v1/object/'+WM_EVIDENCE_BUCKET+'/'+encodeURI(path),{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'x-upsert':'true'},body:f});
+    if(!r.ok) return {ok:false,error:'upload failed ('+r.status+')'};
+    var meta=await wmRpc('wh_attach_evidence',{p_token:WMDEV.token,p_event_id:eventId,p_bucket_path:path,p_sha256:null,p_bytes:f.size,p_taken_at:null});
+    if(!meta.ok) return {ok:false,error:'record failed'};
+    return {ok:true};
+  }catch(e){ return {ok:false,error:'no signal'}; }
+}
+
+// ---- pending / offline ----
+function wmPendingList(){ try{return JSON.parse(localStorage.getItem('wm_pending')||'[]');}catch(e){return [];} }
+function wmQueuePending(doc){ var p=wmPendingList().filter(x=>x.draft_id!==doc.draft_id); p.push(doc); try{localStorage.setItem('wm_pending',JSON.stringify(p));}catch(e){} }
+function wmRemovePending(id){ var p=wmPendingList().filter(x=>x.draft_id!==id); try{localStorage.setItem('wm_pending',JSON.stringify(p));}catch(e){} }
+async function wmSync(){
+  var p=wmPendingList();
+  if(!p.length){ wmRenderPending(); toast('Nothing to send','ok'); return; }
+  var keep=[]; for(var i=0;i<p.length;i++){ var r=await wmRpc('wh_submit_event',{p_token:WMDEV.token,p_doc:p[i],p_client_rev:1}); if(!(r.ok&&r.data&&r.data.event_id)) keep.push(p[i]); }
+  try{localStorage.setItem('wm_pending',JSON.stringify(keep));}catch(e){}
+  wmRenderPending(); if(p.length&&!keep.length) toast('Synced ✓','ok'); else if(keep.length) toast(keep.length+' still waiting','');
+}
+function wmRenderPending(){
+  var n=wmPendingList().length, el=$('wmPending'), c=$('wmConn');
+  if(el) el.innerHTML = n? '<div class="wmuntrusted">'+n+' movement(s) saved on this phone are waiting to send. Tap ↻ to retry.</div>':'';
+  if(c){ if(n){ c.textContent=n+' pending to send'; c.className='wmconn pend'; } else { c.textContent=navigator.onLine?'Online':'Offline — movements will send when back online'; c.className='wmconn'; } }
+}
+window.addEventListener('online', function(){ if(WMDEV) wmSync(); });
+
+// ---- owner: warehouse phones ----
+async function openWdAdmin(){ if(!ownerLoggedIn())return; wmShow('wd_admin'); var c=$('wdCodeCard'); c.className='hide'; c.innerHTML=''; await wdLoad(); }
+async function wdLoad(){
+  var res=await Promise.all([ api('/rest/v1/rpc/wh_owner_people',{method:'POST',headers:HJ,body:'{}'}), api('/rest/v1/rpc/wh_owner_devices',{method:'POST',headers:HJ,body:'{}'}) ]);
+  wdRenderPeople(res[0]||[]); wdRenderDevices(res[1]||[]);
+}
+function wdRenderPeople(people){
+  $('wdPeople').innerHTML = people.length ? people.map(p=>'<div class="wdperson"><div><b>'+whEsc(p.display_name)+'</b> <span class="wdsmall">· '+whEsc(p.role)+(p.active?'':' · inactive')+'</span></div>'+(p.active?'<button class="btnghost" onclick="wdIssue(\''+p.person_id+'\',\''+whJsName(p.display_name)+'\')">Issue code</button>':'')+'</div>').join('') : '<div class="whmut">No warehouse people yet. Add one below.</div>';
+}
+async function wdAddPerson(){ var v=($('wdNewPerson').value||'').trim(); if(!v)return; await api('/rest/v1/rpc/wh_owner_add_person',{method:'POST',headers:HJ,body:JSON.stringify({p_display_name:v,p_role:'staff'})}); $('wdNewPerson').value=''; await wdLoad(); toast('Person added','ok'); }
+async function wdIssue(personId,name){
+  var r=await api('/rest/v1/rpc/wh_owner_issue_code',{method:'POST',headers:HJ,body:JSON.stringify({p_person_id:personId,p_minutes:15,p_mode:'add'})});
+  if(!r||!r.code){ toast('Could not issue code','err'); return; }
+  var c=$('wdCodeCard'); c.className='msec';
+  c.innerHTML='<h3>Activation code for '+whEsc(name)+'</h3><div class="wdcode">'+whEsc(r.code)+'</div><div class="wdsmall">Give this to the worker to type into the phone’s Warehouse screen. It expires in ~15 minutes and works once.</div>';
+  window.scrollTo(0,document.body.scrollHeight);
+}
+function wdRenderDevices(devs){
+  $('wdDevices').innerHTML = devs.length ? devs.map(d=>'<div class="wddev'+(d.revoked_at?' revoked':'')+'"><div><b>'+whEsc(d.label||'phone')+'</b> <span class="wdsmall">· '+whEsc(d.person)+'</span></div><div class="wdsmall">'+(d.revoked_at?('revoked'+(d.revoked_reason?' — '+whEsc(d.revoked_reason):'')):('active · last seen '+(((d.last_seen_at||'')+'').slice(0,16).replace('T',' ')||'—')))+'</div>'+(d.revoked_at?'':'<button class="btnghost" style="margin-top:8px" onclick="wdRevoke(\''+d.device_id+'\')">Revoke this phone</button>')+'</div>').join('') : '<div class="whmut">No phones activated yet.</div>';
+}
+async function wdRevoke(id){ if(!confirm('Revoke this phone? It immediately loses warehouse access.'))return; await api('/rest/v1/rpc/wh_owner_revoke_device',{method:'POST',headers:HJ,body:JSON.stringify({p_device_id:id,p_reason:'revoked by owner'})}); await wdLoad(); toast('Phone revoked','ok'); }
 
 </script>
 </body>
