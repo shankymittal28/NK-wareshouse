@@ -31,6 +31,22 @@ npm i -D playwright-core     # or set PLAYWRIGHT_CORE to an existing install
 node test/wh_preview_web.cjs
 ```
 
+## `wh_movement_web.cjs` — Stage 1D staff Goods In / Out + owner devices
+
+Drives the warehouse **staff movement** app and the owner **device-management**
+screen in a real Chromium with every Supabase RPC route-mocked. It checks:
+device activation (token kept on the phone, no Supabase Auth), the staff home
+hiding rates/value, the category-first material picker, quantity precision, a
+multi-line IN, the OUT-over-recorded warning that still allows the movement, the
+honest "no verified opening yet → untrusted" note, that **no event is submitted
+until Confirm**, that the recorder is **not** in the payload (server derives it
+from the credential), idempotent re-submit, and the owner issuing an activation
+code / listing / revoking phones. Run it the same way:
+
+```bash
+node test/wh_movement_web.cjs
+```
+
 Optional environment overrides:
 
 - `PLAYWRIGHT_CORE` — path to a `playwright-core` module folder.
